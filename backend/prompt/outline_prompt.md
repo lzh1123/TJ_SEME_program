@@ -13,6 +13,7 @@
 生成一个 高质量 PPT 大纲生成提示词
 
 ## 输入类型判断规则
+
 1. 短主题判断标准
 
 满足以下条件之一：
@@ -105,51 +106,32 @@
 
 - 10页以内
 - 15页左右
+
 ## 输出提示词要求
 
-你必须输出 JSON 格式，遵循以下 schema：
-```json
-{
-  "input_analysis": {
-    "input_type": "short_topic | long_topic",
-    "core_topic": "",
-    "key_points": [],
-    "assumptions": []
-  },
-  "expanded_topic": "",
-  "ppt_prompt": "",
-  "outline_requirements": {
-    "target_audience": "",
-    "presentation_goal": "",
-    "tone": "",
-    "slide_count": "",
-    "structure": []
-  }
-}
-```
-字段说明
-input_analysis
+{format_instructions}
 
-分析用户输入
+字段说明:
 
-字段	说明
-input_type	short_topic 或 long_topic
-core_topic	核心主题
-key_points	关键要点
-assumptions	推断信息
-expanded_topic
+- input_analysis
 
-扩展后的完整主题
+> 分析用户输入
+> 字段	说明
+> - input_type	short_topic 或 long_topic
+> - core_topic	核心主题
+> - key_points	关键要点
+> - assumptions	推断信息
+> - expanded_topic 扩展后的完整主题
 
-ppt_prompt
+- ppt_prompt
 
-用于生成 PPT 大纲的最终提示词（核心输出）
+> 用于生成 PPT 大纲的最终提示词（核心输出）
 
-outline_requirements
+- outline_requirements 
 
-PPT结构要求
+> PPT结构要求
 
-输出示例
+### 输出示例: 
 
 用户输入：
 
@@ -157,8 +139,8 @@ PPT结构要求
 
 输出：
 ```json
-{
-  "input_analysis": {
+{{
+  "input_analysis": {{
     "input_type": "short_topic",
     "core_topic": "人工智能",
     "key_points": [],
@@ -166,10 +148,10 @@ PPT结构要求
       "用于商业或科普演讲",
       "面向普通听众"
     ]
-  },
+  }},
   "expanded_topic": "人工智能的发展趋势与商业应用介绍",
   "ppt_prompt": "请生成一份关于《人工智能的发展趋势与商业应用介绍》的PPT大纲，面向企业管理层，目标是帮助理解AI趋势及商业机会，PPT包含封面、背景介绍、市场趋势、应用案例、未来发展、总结等模块，约10-15页。",
-  "outline_requirements": {
+  "outline_requirements": {{
     "target_audience": "企业管理层",
     "presentation_goal": "趋势分析与商业机会识别",
     "tone": "专业、清晰",
@@ -184,8 +166,8 @@ PPT结构要求
       "未来发展",
       "总结"
     ]
-  }
-}
+  }}
+}}
 ```
 ## 行为准则
 

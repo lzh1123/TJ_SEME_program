@@ -1,21 +1,20 @@
-import os;
+import os
+from pathlib import Path
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
 from dotenv import load_dotenv
-from langchain_core.prompts import MessagesPlaceholder
-from parser import OutlineParser
+from parser import OutlinePromptParser
 
 load_dotenv()
 
-def outline_prompt_build(topic : str) -> str :
-    with open("backend/prompt/outline_prompt.md", "r", encoding="utf-8") as f:
-        system_prompt = f.read()
+def outline_prompt_build(topic: str):
+    prompt_path = Path(__file__).resolve().parents[1] / "prompt" / "outline_prompt.md"
+    system_prompt = prompt_path.read_text(encoding="utf-8")
     
-    parser = OutlineParser()
+    parser = OutlinePromptParser()
 
     prompt = ChatPromptTemplate.from_messages([
         ("system", system_prompt),
-        # MessagesPlaceholder(variable_name="chat_history"),
         ("human", "{topic}")
     ]).partial(
         format_instructions=parser.get_format_instructions()

@@ -54,3 +54,37 @@ class OutlinePromptSchema(BaseModel):
     outline_requirements: OutlineRequirements = Field(
         description="PPT大纲生成要求"
     )
+
+
+class OutlineSlide(BaseModel):
+    slide_number: int = Field(
+        description="幻灯片序号，从 1 开始"
+    )
+    section_title: str = Field(
+        description="所属章节标题，用于分组展示"
+    )
+    slide_title: str = Field(
+        description="该页标题"
+    )
+    key_points: List[str] = Field(
+        default_factory=list,
+        description="该页需要呈现的要点列表（用于正文）"
+    )
+    suggested_visuals: List[str] = Field(
+        default_factory=list,
+        description="建议的图表/示意图/案例形式（可选）"
+    )
+    speaker_notes: List[str] = Field(
+        default_factory=list,
+        description="演讲者备注（可选）"
+    )
+
+
+class OutlineBuildSchema(BaseModel):
+    title: str = Field(
+        description="整套 PPT 的标题（通常与 expanded_topic 一致或更精炼）"
+    )
+    slides: List[OutlineSlide] = Field(
+        default_factory=list,
+        description="按顺序排列的幻灯片列表"
+    )

@@ -122,30 +122,13 @@
       <!-- 中间画布区域 -->
       <main class="editor-canvas-area">
         <div class="canvas-wrapper">
-          <div class="slide-canvas" :style="canvasStyle">
+          <div class="slide-canvas" :style="getCanvasStyle()">
             <div class="slide-content" v-if="currentSlide.components">
               <div 
                 v-for="component in currentSlide.components" 
                 :key="component.id"
                 class="slide-component"
-                :style="{
-                  position: 'absolute',
-                  left: component.x + 'px',
-                  top: component.y + 'px',
-                  width: component.w + 'px',
-                  height: component.h + 'px',
-                  zIndex: component.z,
-                  color: component.style?.color,
-                  backgroundColor: component.style?.background,
-                  borderColor: component.style?.borderColor,
-                  borderWidth: component.style?.borderWidth ? component.style.borderWidth + 'px' : '0',
-                  borderRadius: component.style?.radius ? component.style.radius + 'px' : '0',
-                  fontFamily: component.style?.fontFamily,
-                  fontSize: component.style?.fontSize ? component.style.fontSize + 'px' : 'inherit',
-                  fontWeight: component.style?.bold ? 'bold' : 'normal',
-                  fontStyle: component.style?.italic ? 'italic' : 'normal',
-                  textAlign: component.style?.align
-                }"
+                :style="getComponentStyle(component)"
               >
                 <!-- 标题组件 -->
                 <div v-if="component.type === 'Title'" class="component-title">
@@ -381,15 +364,78 @@ const currentSlide = computed(() => {
   }
 })
 
+// 获取画布样式
+const getCanvasStyle = () => {
+  const slide = currentSlide.value
+  return {
+    width: (slide.width || 1280) + 'px',
+    height: (slide.height || 720) + 'px',
+    background: slide.background || 'white'
+  }
+}
+
+// 获取组件样式
+const getComponentStyle = (component) => {
+  const style = {
+    position: 'absolute',
+    left: component.x + 'px',
+    top: component.y + 'px',
+    width: component.w + 'px',
+    height: component.h + 'px',
+    zIndex: component.z
+  }
+
+  if (component.style) {
+    if (component.style.color) {
+      style.color = component.style.color
+    }
+    if (component.style.background) {
+      style.backgroundColor = component.style.background
+    }
+    if (component.style.borderColor) {
+      style.borderColor = component.style.borderColor
+      style.borderWidth = '1px'
+      style.borderStyle = 'solid'
+    }
+    if (component.style.borderWidth) {
+      style.borderWidth = component.style.borderWidth + 'px'
+    }
+    if (component.style.radius) {
+      style.borderRadius = component.style.radius + 'px'
+    }
+    if (component.style.fontFamily) {
+      style.fontFamily = component.style.fontFamily
+    }
+    if (component.style.fontSize) {
+      style.fontSize = component.style.fontSize + 'px'
+    }
+    if (component.style.bold) {
+      style.fontWeight = 'bold'
+    }
+    if (component.style.italic) {
+      style.fontStyle = 'italic'
+    }
+    if (component.style.align) {
+      style.textAlign = component.style.align
+    }
+  }
+
+  return style
+}
+
 // 从渲染树生成大纲和幻灯片
 const generateFromRenderTree = (tree) => {
   const newOutlineItems = []
   const newSlides = []
   let slideNum = 1
   let sectionNum = 1
-  
-  console.log('解析渲染树:', tree)
-  
+
+  console.log('🔍 解析渲染树:', tree)
+  console.log('📋 树的结构:', JSON.stringify(tree, null, 2))
+
+  // 获取主题信息
+  const theme = tree?.themeTokens
+
   if (tree?.slides) {
     // 创建一个默认的大纲章节
     const outlineItem = {
@@ -398,40 +444,92 @@ const generateFromRenderTree = (tree) => {
       expanded: true,
       children: []
     }
-    
+
     tree.slides.forEach(slide => {
+      console.log(`📄 处理幻灯片${slideNum}:`, slide)
       // 从第一个Title组件中提取标题
       let slideTitle = `页面${slideNum}`
+      let processedComponents = []
+      
       if (slide?.components) {
         const titleComponent = slide.components.find(c => c.type === 'Title')
         if (titleComponent?.props?.text) {
           slideTitle = titleComponent.props.text
         }
+        console.log(`🎯 找到${slide.components.length}个组件`)
+        
+        // 处理组件，应用主题
+        processedComponents = slide.components.map(component => {
+          const processedComponent = { ...component }
+          
+          // 如果有主题但组件没有特定样式，应用主题默认样式
+          if (theme && !processedComponent.style) {
+            processedComponent.style = {}
+          }
+          
+          // 应用主题颜色到组件
+          if (theme && processedComponent.style) {
+            // 根据组件类型应用主题颜色
+            if (component.type === 'Title') {
+              processedComponent.style.color = theme.colors?.text || '#111827'
+              if (theme.typography?.fontFamily) {
+                processedComponent.style.fontFamily = theme.typography.fontFamily
+              }
+            } else if (component.type === 'Subtitle') {
+              processedComponent.style.color = theme.colors?.muted || '#4B5563'
+              if (theme.typography?.fontFamily) {
+                processedComponent.style.fontFamily = theme.typography.fontFamily
+              }
+            } else if (component.type === 'Text') {
+              processedComponent.style.color = theme.colors?.text || '#111827'
+              if (theme.typography?.fontFamily) {
+                processedComponent.style.fontFamily = theme.typography.fontFamily
+              }
+            }
+          }
+          
+          return processedComponent
+        })
       }
-      
+
       // 添加到大纲
       outlineItem.children.push({
         pageNumber: slideNum,
         title: slideTitle
       })
-      
+
+      // 确定幻灯片背景
+      let slideBackground = slide.background
+      if (!slideBackground) {
+        if (slideNum === 1) {
+          // 首页使用渐变背景
+          slideBackground = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+        } else if (theme) {
+          // 使用主题背景
+          slideBackground = theme.colors?.surface || 'white'
+        } else {
+          slideBackground = 'white'
+        }
+      }
+
       // 添加到幻灯片
       newSlides.push({
         number: slideNum,
         title: slideTitle,
-        components: slide.components,
-        background: slide.background || (slideNum === 1 ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : 'white'),
+        components: processedComponents,
+        background: slideBackground,
         width: slide.width || 1280,
-        height: slide.height || 720
+        height: slide.height || 720,
+        theme: theme
       })
-      
+
       slideNum++
     })
-    
+
     newOutlineItems.push(outlineItem)
   }
-  
-  console.log('生成的幻灯片:', newSlides)
+
+  console.log('✅ 生成的幻灯片:', newSlides)
   return { outlineItems: newOutlineItems, slides: newSlides }
 }
 
@@ -1081,8 +1179,6 @@ onUnmounted(() => {
 }
 
 .slide-canvas {
-  width: 960px;
-  height: 540px;
   background: white;
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-xl);
@@ -1094,7 +1190,6 @@ onUnmounted(() => {
 .slide-content {
   width: 100%;
   height: 100%;
-  padding: 60px;
   position: relative;
 }
 
@@ -1104,60 +1199,84 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: flex-start;
+  overflow: hidden;
 }
 
 .component-title {
   width: 100%;
+  height: 100%;
   font-size: 48px;
   font-weight: 700;
   line-height: 1.2;
   color: inherit;
+  display: flex;
+  align-items: center;
 }
 
 .component-subtitle {
   width: 100%;
-  font-size: 24px;
+  height: 100%;
+  font-size: 28px;
   line-height: 1.4;
   color: inherit;
+  display: flex;
+  align-items: center;
 }
 
 .component-text {
   width: 100%;
-  font-size: 18px;
+  height: 100%;
+  font-size: 20px;
   line-height: 1.6;
   color: inherit;
+  white-space: pre-wrap;
+  display: flex;
+  align-items: flex-start;
 }
 
 .component-bullet-list {
   width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: flex-start;
+  padding-top: 8px;
 }
 
 .component-bullet-list ul {
   margin: 0;
-  padding-left: 24px;
-  font-size: 18px;
-  line-height: 1.8;
+  padding-left: 28px;
+  font-size: 20px;
+  line-height: 2;
+}
+
+.component-bullet-list li {
+  margin-bottom: 8px;
 }
 
 .component-quote {
   width: 100%;
-  border-left: 4px solid var(--primary-400);
-  padding-left: 20px;
-  font-size: 20px;
+  height: 100%;
+  border-left: 5px solid #667eea;
+  padding-left: 24px;
+  font-size: 22px;
   font-style: italic;
-  color: var(--gray-600);
+  color: #4a5568;
+  display: flex;
+  align-items: center;
 }
 
 .component-divider {
   width: 100%;
+  height: 100%;
   display: flex;
   align-items: center;
+  justify-content: center;
 }
 
 .component-divider hr {
   width: 100%;
   border: none;
-  border-top: 2px solid var(--gray-300);
+  border-top: 3px solid #e2e8f0;
 }
 
 .component-image {
@@ -1170,9 +1289,9 @@ onUnmounted(() => {
 }
 
 .component-image img {
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .component-other {
@@ -1181,11 +1300,12 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--gray-100);
-  color: var(--gray-500);
+  background: #f7fafc;
+  color: #718096;
   font-size: 14px;
-  border: 2px dashed var(--gray-300);
+  border: 2px dashed #cbd5e0;
   border-radius: 8px;
+  font-weight: 500;
 }
 
 .slide-layout-title {

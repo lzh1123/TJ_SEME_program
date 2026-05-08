@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import List
+from typing import Any, Dict, List, Optional
 
 
 class InputAnalysis(BaseModel):
@@ -88,3 +88,48 @@ class OutlineBuildSchema(BaseModel):
         default_factory=list,
         description="按顺序排列的幻灯片列表"
     )
+
+
+class PptTemplateSlide(BaseModel):
+    template_id: str = Field(
+        description="使用的模板 ID（来自 slide_layout_templates.json / list_slide_templates）"
+    )
+    content: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="模板内容映射（role -> text）"
+    )
+    images: Dict[str, str] = Field(
+        default_factory=dict,
+        description="模板图片映射（role -> 本地图片路径），没有图片可留空"
+    )
+
+
+class PptChartSpec(BaseModel):
+    slide_index: int = Field(description="要插入图表的 slide_index（从 0 开始）")
+    chart_type: str = Field(description="图表类型，如 column/line/pie 等")
+    left: float = Field(description="left（英寸）")
+    top: float = Field(description="top（英寸）")
+    width: float = Field(description="width（英寸）")
+    height: float = Field(description="height（英寸）")
+    categories: List[str] = Field(default_factory=list, description="分类标签列表")
+    series_names: List[str] = Field(default_factory=list, description="系列名称列表")
+    series_values: List[List[float]] = Field(default_factory=list, description="系列数值（二维数组）")
+    title: Optional[str] = Field(default=None, description="图表标题（可选）")
+    x_axis_title: Optional[str] = Field(default=None, description="X 轴标题（可选）")
+    y_axis_title: Optional[str] = Field(default=None, description="Y 轴标题（可选）")
+    color_scheme: Optional[str] = Field(default=None, description="配色方案（可选）")
+
+
+class PptPlanSchema(BaseModel):
+    title: str = Field(description="PPT 标题")
+    color_scheme: str = Field(default="modern_blue", description="全局配色方案")
+    template_sequence: List[PptTemplateSlide] = Field(
+        default_factory=list,
+        description="用于 create_presentation_from_templates 的模板序列"
+    )
+    charts: List[PptChartSpec] = Field(
+        default_factory=list,
+        description="需要额外插入的图表列表（可选）"
+    )
+    optimize_text: bool = Field(default=True, description="是否在生成后对每页执行 Optimize Slide Text")
+    enhance_slides: bool = Field(default=True, description="是否在生成后对每页执行 Enhance")

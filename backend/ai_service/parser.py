@@ -1,7 +1,7 @@
 try:
-    from .outline_schema import OutlinePromptSchema, OutlineBuildSchema
+    from .outline_schema import OutlinePromptSchema, OutlineBuildSchema, PptPlanSchema
 except ImportError:
-    from outline_schema import OutlinePromptSchema, OutlineBuildSchema
+    from outline_schema import OutlinePromptSchema, OutlineBuildSchema, PptPlanSchema
 from langchain_core.output_parsers import PydanticOutputParser
 
 def OutlinePromptParser():
@@ -10,6 +10,10 @@ def OutlinePromptParser():
 
 def OutlineBuildParser():
     return PydanticOutputParser(pydantic_object=OutlineBuildSchema)
+
+
+def PptPlanParser():
+    return PydanticOutputParser(pydantic_object=PptPlanSchema)
 
 
 def OutlineParser():

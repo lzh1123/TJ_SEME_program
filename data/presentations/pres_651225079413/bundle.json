@@ -1,0 +1,1350 @@
+{
+  "meta": {
+    "id": "pres_651225079413",
+    "topic": "软件工程介绍",
+    "createdAt": "2026-05-08T14:59:00.211161Z",
+    "updatedAt": "2026-05-08T14:59:31.924215Z",
+    "version": 2,
+    "extra": {
+      "ai": {
+        "llmConfigured": true,
+        "usedFallback": false,
+        "stage": "dsl_repair",
+        "error": "ValidationError: 15 validation errors for PresentationDSL\nslides.0\n  Unable to extract tag using discriminator 'intent' [type=union_tag_not_found, input_value={'id': 'cover', 'section'..., '掌握基本方法']}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/union_tag_not_found\nslides.1\n  Unable to extract tag using discriminator 'intent' [type=union_tag_not_found, input_value={'id': 'agenda', 'section...具', '职业道德']}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/union_tag_not_found\nslides.2\n  Unable to extract tag using discriminator 'intent' [type=union_tag_not_found, input_value={'id': 'text1', 'section'...成本、保证进度']}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/union_tag_not_found\nslides.3\n  Unable to extract tag using discriminator 'intent' [type=union_tag_not_found, input_value={'id': 'text2', 'section'..., '降低维护成本']}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/union_tag_not_found\nslides.4\n  Unable to extract tag using discriminator 'intent' [type=union_tag_not_found, input_value={'id': 'process_flow', 's...的修改与增强'}]}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/union_tag_not_found\nslides.5\n  Unable to extract tag using discriminator 'intent' [type=union_tag_not_found, input_value={'id': 'text3', 'section'...需求正确、一致']}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/union_tag_not_found\nslides.6\n  Unable to extract tag using discriminator 'intent' [type=union_tag_not_found, input_value={'id': 'text4', 'section'...：类图、时序图']}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/union_tag_not_found\nslides.7\n  Unable to extract tag using discriminator 'intent' [type=union_tag_not_found, input_value={'id': 'comparison', 'sec...需求多变项目']}}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/union_tag_not_found\nslides.8\n  Unable to extract tag using discriminator 'intent' [type=union_tag_not_found, input_value={'id': 'text5', 'section'...测试、白盒测试']}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/union_tag_not_found\nslides.9\n  Unable to extract tag using discriminator 'intent' [type=union_tag_not_found, input_value={'id': 'text6', 'section'...：防止未来问题']}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/union_tag_not_found\nslides.10\n  Unable to extract tag using discriminator 'intent' [type=union_tag_not_found, input_value={'id': 'timeline', 'secti...结与文档归档'}]}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/union_tag_not_found\nslides.11\n  Unable to extract tag using discriminator 'intent' [type=union_tag_not_found, input_value={'id': 'text7', 'section'...代码审查、走查']}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/union_tag_not_found\nslides.12\n  Unable to extract tag using discriminator 'intent' [type=union_tag_not_found, input_value={'id': 'multi_column', 's... 'Microsoft Project']}]}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/union_tag_not_found\nslides.13\n  Unable to extract tag using discriminator 'intent' [type=union_tag_not_found, input_value={'id': 'text8', 'section'...道德的工作要求']}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/union_tag_not_found\nslides.14\n  Unable to extract tag using discriminator 'intent' [type=union_tag_not_found, input_value={'id': 'quote', 'section'...', 'author': '佚名'}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/union_tag_not_found"
+      }
+    }
+  },
+  "dsl": {
+    "title": "软件工程介绍",
+    "audience": "学生或初学者",
+    "tone": "正式但亲和",
+    "theme": "academic_gray",
+    "slides": [
+      {
+        "id": "cover",
+        "intent": "text",
+        "section": "Introduction",
+        "title": "软件工程介绍",
+        "notes": [
+          "展示标题、演讲者信息及主题背景，吸引学生注意力"
+        ],
+        "paragraphs": [],
+        "bullets": [
+          "软件工程介绍"
+        ]
+      },
+      {
+        "id": "agenda",
+        "intent": "text",
+        "section": "Introduction",
+        "title": "议程",
+        "notes": [
+          "列出本次演讲的主要章节，帮助听众了解内容结构"
+        ],
+        "paragraphs": [],
+        "bullets": [
+          "议程"
+        ]
+      },
+      {
+        "id": "text1",
+        "intent": "text",
+        "section": "What is Software Engineering",
+        "title": "什么是软件工程",
+        "notes": [
+          "定义软件工程的概念、目标和核心思想"
+        ],
+        "paragraphs": [],
+        "bullets": [
+          "什么是软件工程"
+        ]
+      },
+      {
+        "id": "text2",
+        "intent": "text",
+        "section": "Importance",
+        "title": "为什么需要软件工程",
+        "notes": [
+          "解释软件工程在解决软件危机、提高质量与效率方面的重要性"
+        ],
+        "paragraphs": [],
+        "bullets": [
+          "为什么需要软件工程"
+        ]
+      },
+      {
+        "id": "process_flow",
+        "intent": "text",
+        "section": "Software Process",
+        "title": "软件工程流程",
+        "notes": [
+          "用流程图展示从需求到维护的完整生命周期阶段"
+        ],
+        "paragraphs": [],
+        "bullets": [
+          "软件工程流程"
+        ]
+      },
+      {
+        "id": "text3",
+        "intent": "text",
+        "section": "Requirements Engineering",
+        "title": "需求工程",
+        "notes": [
+          "介绍需求获取、分析、规格说明与验证的基本方法"
+        ],
+        "paragraphs": [],
+        "bullets": [
+          "需求工程"
+        ]
+      },
+      {
+        "id": "text4",
+        "intent": "text",
+        "section": "Software Design",
+        "title": "软件设计",
+        "notes": [
+          "讲解设计原则、架构设计、模块化与接口设计"
+        ],
+        "paragraphs": [],
+        "bullets": [
+          "软件设计"
+        ]
+      },
+      {
+        "id": "comparison",
+        "intent": "text",
+        "section": "Development Methods",
+        "title": "开发方法对比",
+        "notes": [
+          "对比瀑布模型与敏捷开发，说明各自适用场景与优劣"
+        ],
+        "paragraphs": [],
+        "bullets": [
+          "开发方法对比"
+        ]
+      },
+      {
+        "id": "text5",
+        "intent": "text",
+        "section": "Software Testing",
+        "title": "软件测试",
+        "notes": [
+          "概述测试的目的、级别（单元、集成、系统）和常用方法"
+        ],
+        "paragraphs": [],
+        "bullets": [
+          "软件测试"
+        ]
+      },
+      {
+        "id": "text6",
+        "intent": "text",
+        "section": "Software Maintenance",
+        "title": "软件维护",
+        "notes": [
+          "介绍维护的类型（纠正性、适应性、完善性、预防性）及其重要性"
+        ],
+        "paragraphs": [],
+        "bullets": [
+          "软件维护"
+        ]
+      },
+      {
+        "id": "timeline",
+        "intent": "text",
+        "section": "Project Management",
+        "title": "软件项目管理",
+        "notes": [
+          "用时间线展示项目启动、计划、执行、监控与收尾的关键节点"
+        ],
+        "paragraphs": [],
+        "bullets": [
+          "软件项目管理"
+        ]
+      },
+      {
+        "id": "text7",
+        "intent": "text",
+        "section": "Quality Assurance",
+        "title": "软件质量保证",
+        "notes": [
+          "阐述质量保证活动、标准（如ISO 9000、CMMI）及评审技术"
+        ],
+        "paragraphs": [],
+        "bullets": [
+          "软件质量保证"
+        ]
+      },
+      {
+        "id": "multi_column",
+        "intent": "text",
+        "section": "Tools & Technologies",
+        "title": "常用工具",
+        "notes": [
+          "分列展示开发环境、版本控制、测试与项目管理工具示例"
+        ],
+        "paragraphs": [],
+        "bullets": [
+          "常用工具"
+        ]
+      },
+      {
+        "id": "text8",
+        "intent": "text",
+        "section": "Ethics & Professionalism",
+        "title": "职业道德",
+        "notes": [
+          "讲解软件工程师的伦理责任、隐私与安全考量"
+        ],
+        "paragraphs": [],
+        "bullets": [
+          "职业道德"
+        ]
+      },
+      {
+        "id": "quote",
+        "intent": "text",
+        "section": "Conclusion",
+        "title": "结束语",
+        "notes": [
+          "引用经典名言总结软件工程的价值，激励学生深入学习"
+        ],
+        "paragraphs": [],
+        "bullets": [
+          "结束语"
+        ]
+      }
+    ]
+  },
+  "renderTree": {
+    "presentationId": "pres_651225079413",
+    "title": "软件工程介绍",
+    "themeName": "academic_gray",
+    "themeTokens": {
+      "name": "Academic Gray",
+      "colors": {
+        "background": "#FFFFFF",
+        "surface": "#F3F4F6",
+        "text": "#111827",
+        "muted": "#4B5563",
+        "primary": "#374151",
+        "secondary": "#6B7280",
+        "border": "rgba(17,24,39,0.10)"
+      },
+      "typography": {
+        "fontFamily": "Times New Roman, Georgia, serif",
+        "titlePt": 34,
+        "subtitlePt": 18,
+        "bodyPt": 16,
+        "smallPt": 12
+      },
+      "spacing": {
+        "slidePaddingPx": 64,
+        "gapPx": 16
+      }
+    },
+    "slides": [
+      {
+        "id": "cover",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "cover__title",
+            "type": "Title",
+            "x": 64.0,
+            "y": 64.0,
+            "w": 1152.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 34,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "软件工程介绍"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "cover__text",
+            "type": "Text",
+            "x": 64.0,
+            "y": 176.0,
+            "w": 1152.0,
+            "h": 480.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "\n• 软件工程介绍"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": [
+          "展示标题、演讲者信息及主题背景，吸引学生注意力"
+        ]
+      },
+      {
+        "id": "agenda",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "agenda__title",
+            "type": "Title",
+            "x": 64.0,
+            "y": 64.0,
+            "w": 1152.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 34,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "议程"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "agenda__text",
+            "type": "Text",
+            "x": 64.0,
+            "y": 176.0,
+            "w": 1152.0,
+            "h": 480.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "\n• 议程"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": [
+          "列出本次演讲的主要章节，帮助听众了解内容结构"
+        ]
+      },
+      {
+        "id": "text1",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "text1__title",
+            "type": "Title",
+            "x": 64.0,
+            "y": 64.0,
+            "w": 1152.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 34,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "什么是软件工程"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "text1__text",
+            "type": "Text",
+            "x": 64.0,
+            "y": 176.0,
+            "w": 1152.0,
+            "h": 480.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "\n• 什么是软件工程"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": [
+          "定义软件工程的概念、目标和核心思想"
+        ]
+      },
+      {
+        "id": "text2",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "text2__title",
+            "type": "Title",
+            "x": 64.0,
+            "y": 64.0,
+            "w": 1152.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 34,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "为什么需要软件工程"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "text2__text",
+            "type": "Text",
+            "x": 64.0,
+            "y": 176.0,
+            "w": 1152.0,
+            "h": 480.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "\n• 为什么需要软件工程"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": [
+          "解释软件工程在解决软件危机、提高质量与效率方面的重要性"
+        ]
+      },
+      {
+        "id": "process_flow",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "process_flow__title",
+            "type": "Title",
+            "x": 64.0,
+            "y": 64.0,
+            "w": 1152.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 34,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "软件工程流程"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "process_flow__text",
+            "type": "Text",
+            "x": 64.0,
+            "y": 176.0,
+            "w": 1152.0,
+            "h": 480.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "\n• 软件工程流程"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": [
+          "用流程图展示从需求到维护的完整生命周期阶段"
+        ]
+      },
+      {
+        "id": "text3",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "text3__title",
+            "type": "Title",
+            "x": 64.0,
+            "y": 64.0,
+            "w": 1152.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 34,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "需求工程"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "text3__text",
+            "type": "Text",
+            "x": 64.0,
+            "y": 176.0,
+            "w": 1152.0,
+            "h": 480.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "\n• 需求工程"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": [
+          "介绍需求获取、分析、规格说明与验证的基本方法"
+        ]
+      },
+      {
+        "id": "text4",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "text4__title",
+            "type": "Title",
+            "x": 64.0,
+            "y": 64.0,
+            "w": 1152.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 34,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "软件设计"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "text4__text",
+            "type": "Text",
+            "x": 64.0,
+            "y": 176.0,
+            "w": 1152.0,
+            "h": 480.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "\n• 软件设计"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": [
+          "讲解设计原则、架构设计、模块化与接口设计"
+        ]
+      },
+      {
+        "id": "comparison",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "comparison__title",
+            "type": "Title",
+            "x": 64.0,
+            "y": 64.0,
+            "w": 1152.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 34,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "开发方法对比"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "comparison__text",
+            "type": "Text",
+            "x": 64.0,
+            "y": 176.0,
+            "w": 1152.0,
+            "h": 480.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "\n• 开发方法对比"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": [
+          "对比瀑布模型与敏捷开发，说明各自适用场景与优劣"
+        ]
+      },
+      {
+        "id": "text5",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "text5__title",
+            "type": "Title",
+            "x": 64.0,
+            "y": 64.0,
+            "w": 1152.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 34,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "软件测试"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "text5__text",
+            "type": "Text",
+            "x": 64.0,
+            "y": 176.0,
+            "w": 1152.0,
+            "h": 480.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "\n• 软件测试"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": [
+          "概述测试的目的、级别（单元、集成、系统）和常用方法"
+        ]
+      },
+      {
+        "id": "text6",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "text6__title",
+            "type": "Title",
+            "x": 64.0,
+            "y": 64.0,
+            "w": 1152.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 34,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "软件维护"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "text6__text",
+            "type": "Text",
+            "x": 64.0,
+            "y": 176.0,
+            "w": 1152.0,
+            "h": 480.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "\n• 软件维护"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": [
+          "介绍维护的类型（纠正性、适应性、完善性、预防性）及其重要性"
+        ]
+      },
+      {
+        "id": "timeline",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "timeline__title",
+            "type": "Title",
+            "x": 64.0,
+            "y": 64.0,
+            "w": 1152.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 34,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "软件项目管理"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "timeline__text",
+            "type": "Text",
+            "x": 64.0,
+            "y": 176.0,
+            "w": 1152.0,
+            "h": 480.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "\n• 软件项目管理"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": [
+          "用时间线展示项目启动、计划、执行、监控与收尾的关键节点"
+        ]
+      },
+      {
+        "id": "text7",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "text7__title",
+            "type": "Title",
+            "x": 64.0,
+            "y": 64.0,
+            "w": 1152.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 34,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "软件质量保证"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "text7__text",
+            "type": "Text",
+            "x": 64.0,
+            "y": 176.0,
+            "w": 1152.0,
+            "h": 480.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "\n• 软件质量保证"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": [
+          "阐述质量保证活动、标准（如ISO 9000、CMMI）及评审技术"
+        ]
+      },
+      {
+        "id": "multi_column",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "multi_column__title",
+            "type": "Title",
+            "x": 64.0,
+            "y": 64.0,
+            "w": 1152.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 34,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "常用工具"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "multi_column__text",
+            "type": "Text",
+            "x": 64.0,
+            "y": 176.0,
+            "w": 1152.0,
+            "h": 480.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "\n• 常用工具"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": [
+          "分列展示开发环境、版本控制、测试与项目管理工具示例"
+        ]
+      },
+      {
+        "id": "text8",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "text8__title",
+            "type": "Title",
+            "x": 64.0,
+            "y": 64.0,
+            "w": 1152.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 34,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "职业道德"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "text8__text",
+            "type": "Text",
+            "x": 64.0,
+            "y": 176.0,
+            "w": 1152.0,
+            "h": 480.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "\n• 职业道德"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": [
+          "讲解软件工程师的伦理责任、隐私与安全考量"
+        ]
+      },
+      {
+        "id": "quote",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "quote__title",
+            "type": "Title",
+            "x": 64.0,
+            "y": 64.0,
+            "w": 1152.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 34,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "结束语"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "quote__text",
+            "type": "Text",
+            "x": 64.0,
+            "y": 176.0,
+            "w": 1152.0,
+            "h": 480.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "\n• 结束语"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": [
+          "引用经典名言总结软件工程的价值，激励学生深入学习"
+        ]
+      }
+    ],
+    "meta": {
+      "audience": "学生或初学者",
+      "tone": "正式但亲和"
+    }
+  },
+  "lastExportPptx": "data\\exports\\pres_651225079413\\pres_651225079413.pptx"
+}

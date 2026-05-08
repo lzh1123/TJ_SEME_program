@@ -1,0 +1,1705 @@
+{
+  "meta": {
+    "id": "pres_3e58c2762ea5",
+    "topic": "软件工程介绍",
+    "createdAt": "2026-05-08T15:48:17.553667Z",
+    "updatedAt": "2026-05-08T15:48:38.787678Z",
+    "version": 2,
+    "extra": {
+      "ai": {
+        "llmConfigured": true,
+        "usedFallback": false,
+        "stage": "ok",
+        "error": null
+      }
+    }
+  },
+  "dsl": {
+    "title": "软件工程介绍",
+    "audience": "学生或初学者",
+    "tone": "正式、教育性",
+    "theme": "academic_gray",
+    "slides": [
+      {
+        "id": "slide_1",
+        "intent": "cover",
+        "section": "引言",
+        "title": "软件工程介绍",
+        "notes": [
+          "引入主题，明确演讲目标与内容范围"
+        ],
+        "subtitle": "从概念到实践",
+        "tagline": "构建可靠软件的工程化方法",
+        "highlights": [
+          "理解软件工程的定义与重要性",
+          "掌握软件过程与方法的全貌",
+          "认识常用工具与体系结构"
+        ]
+      },
+      {
+        "id": "slide_2",
+        "intent": "agenda",
+        "section": "引言",
+        "title": "演讲议程",
+        "notes": [
+          "展示演讲结构，帮助听众掌握整体框架"
+        ],
+        "items": [
+          "基本概念：软件工程定义与层次",
+          "软件过程：发展历程、通用阶段与过程模型",
+          "软件方法：需求工程、设计原则与经典名言",
+          "工具与架构：常用工具、SWOT分析与体系结构",
+          "度量与数据：软件过程活动时间分布",
+          "总结与问答"
+        ]
+      },
+      {
+        "id": "slide_3",
+        "intent": "text",
+        "section": "基本概念",
+        "title": "什么是软件工程",
+        "notes": [
+          "给出软件工程的标准定义，明确其核心内涵"
+        ],
+        "paragraphs": [
+          "软件工程是应用系统化的、规范化的、可量化的方法开发、运行和维护软件的工程学科。",
+          "其核心目标是在预算和时间内生产高质量的软件产品，满足用户需求。",
+          "IEEE将软件工程定义为：将系统化的、规范的、可度量的方法应用于软件的开发、运行和维护的全过程。"
+        ],
+        "bullets": [
+          "关注大型、复杂软件的构建",
+          "强调过程管理、质量控制和团队协作",
+          "区别于个人编程，注重工程化思维"
+        ]
+      },
+      {
+        "id": "slide_4",
+        "intent": "text",
+        "section": "基本概念",
+        "title": "软件工程的层次结构",
+        "notes": [
+          "介绍软件工程的四个基本层次：质量焦点、过程、方法、工具"
+        ],
+        "paragraphs": [
+          "软件工程包含四个层次：质量焦点、过程、方法和工具。",
+          "质量焦点是基石，强调持续改进和质量管理（如CMMI、ISO 9000）。",
+          "过程定义了一系列活动及其顺序，确保开发有序进行。",
+          "方法提供了如何完成活动的技术指南（如结构化方法、面向对象方法）。",
+          "工具为方法和过程提供自动化支持（如IDE、版本控制、测试工具）。"
+        ],
+        "bullets": [
+          "质量焦点：确保软件满足需求并具有可靠性",
+          "过程：框架性的活动集合",
+          "方法：具体实现的技术手段",
+          "工具：提高效率的自动化支持"
+        ]
+      },
+      {
+        "id": "slide_5",
+        "intent": "timeline",
+        "section": "软件过程",
+        "title": "软件工程发展简史",
+        "notes": [
+          "通过时间线展示软件工程从萌芽到成熟的关键里程碑"
+        ],
+        "events": [
+          {
+            "label": "软件危机",
+            "date": "1968",
+            "detail": "NATO会议首次提出软件工程概念，应对成本超支和质量问题"
+          },
+          {
+            "label": "结构化方法",
+            "date": "1970s",
+            "detail": "Dijkstra、Wirth等人推动结构化编程和设计"
+          },
+          {
+            "label": "面向对象方法",
+            "date": "1980s-1990s",
+            "detail": "Smalltalk、C++、UML等推动面向对象分析与设计"
+          },
+          {
+            "label": "敏捷宣言",
+            "date": "2001",
+            "detail": "17位专家提出敏捷价值观和原则，Scrum、XP等兴起"
+          },
+          {
+            "label": "DevOps与AI辅助",
+            "date": "2010s至今",
+            "detail": "持续集成/持续交付、云计算、AI代码生成等新范式"
+          }
+        ]
+      },
+      {
+        "id": "slide_6",
+        "intent": "process_flow",
+        "section": "软件过程",
+        "title": "通用软件过程阶段",
+        "notes": [
+          "用流程图表展示需求、设计、实现、测试、维护的迭代关系"
+        ],
+        "steps": [
+          {
+            "name": "需求分析",
+            "detail": "与客户沟通，明确系统功能和非功能需求，产出需求规格说明"
+          },
+          {
+            "name": "系统设计",
+            "detail": "划分模块，定义体系结构和接口，设计数据库和用户界面"
+          },
+          {
+            "name": "实现（编码）",
+            "detail": "根据设计编写代码，进行单元测试"
+          },
+          {
+            "name": "测试",
+            "detail": "集成测试、系统测试、验收测试，确保质量"
+          },
+          {
+            "name": "维护",
+            "detail": "修复缺陷、适应环境变化、增加新功能"
+          }
+        ]
+      },
+      {
+        "id": "slide_7",
+        "intent": "comparison",
+        "section": "软件过程",
+        "title": "过程模型对比：瀑布与敏捷",
+        "notes": [
+          "对比传统瀑布模型与现代敏捷开发的特点、适用场景"
+        ],
+        "left": {
+          "title": "瀑布模型",
+          "bullets": [
+            "线性顺序，阶段严格划分",
+            "文档驱动，每个阶段有明确产出",
+            "适用于需求稳定、技术成熟的项目",
+            "变更成本高，适合大型系统"
+          ]
+        },
+        "right": {
+          "title": "敏捷开发（Scrum）",
+          "bullets": [
+            "迭代增量，快速交付",
+            "价值驱动，强调客户协作与响应变化",
+            "适用于需求模糊、快速变化的环境",
+            "变更成本低，适合中小团队"
+          ]
+        }
+      },
+      {
+        "id": "slide_8",
+        "intent": "text",
+        "section": "软件方法",
+        "title": "需求工程",
+        "notes": [
+          "介绍需求获取、分析、规格说明与验证的基本活动"
+        ],
+        "paragraphs": [
+          "需求工程是软件工程的关键活动，旨在理解用户期望并准确表达。",
+          "包括四个主要阶段：需求获取、需求分析、需求规格说明、需求验证。",
+          "常用技术有：面谈、问卷调查、用例、原型法。"
+        ],
+        "bullets": [
+          "需求获取：与利益相关者沟通，收集原始需求",
+          "需求分析：分类、建模、检查冲突",
+          "规格说明：以SRS形式精确描述需求",
+          "需求验证：确保需求完整、一致、可测试"
+        ]
+      },
+      {
+        "id": "slide_9",
+        "intent": "text",
+        "section": "软件方法",
+        "title": "软件设计基础",
+        "notes": [
+          "讲解模块化、信息隐藏、高内聚低耦合等设计原则"
+        ],
+        "paragraphs": [
+          "软件设计是将需求转化为可实现的系统结构的过程。",
+          "核心原则包括模块化、信息隐藏、高内聚、低耦合。",
+          "模块化将系统分解为独立的部分，易于开发与维护。",
+          "信息隐藏使得模块内部细节对外部不可见，降低复杂性。",
+          "高内聚意味着模块内部元素紧密相关，低耦合意味着模块间依赖最小化。"
+        ],
+        "bullets": [
+          "模块化：分而治之",
+          "信息隐藏：接口清晰，实现隐藏",
+          "高内聚：职责单一",
+          "低耦合：依赖最小化"
+        ]
+      },
+      {
+        "id": "slide_10",
+        "intent": "quote",
+        "section": "软件方法",
+        "title": "经典名言：没有银弹",
+        "notes": [
+          "引用Fred Brooks的著名论断，引发对软件工程本质的思考"
+        ],
+        "quote": "没有一种技术或管理上的突破，能在十年内使软件生产率、可靠性或简洁性提高一个数量级。",
+        "author": "Fred Brooks, 1986"
+      },
+      {
+        "id": "slide_11",
+        "intent": "multi_column",
+        "section": "工具与架构",
+        "title": "常用软件工程工具",
+        "notes": [
+          "按类别（IDE、版本控制、测试、项目管理）列举典型工具"
+        ],
+        "columns": [
+          {
+            "title": "集成开发环境 (IDE)",
+            "bullets": [
+              "Visual Studio",
+              "IntelliJ IDEA",
+              "Eclipse",
+              "VS Code"
+            ]
+          },
+          {
+            "title": "版本控制",
+            "bullets": [
+              "Git",
+              "Subversion (SVN)",
+              "Mercurial"
+            ]
+          },
+          {
+            "title": "测试工具",
+            "bullets": [
+              "JUnit (单元测试)",
+              "Selenium (自动化测试)",
+              "JMeter (性能测试)"
+            ]
+          },
+          {
+            "title": "项目管理",
+            "bullets": [
+              "JIRA",
+              "Trello",
+              "Microsoft Project"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "slide_12",
+        "intent": "swot",
+        "section": "工具与架构",
+        "title": "软件工程的SWOT分析",
+        "notes": [
+          "分析当前软件工程的优势、劣势、机会与威胁"
+        ],
+        "swot": {
+          "strengths": [
+            "成熟的过程模型与最佳实践",
+            "强大的工具生态系统",
+            "不断完善的度量与质量体系"
+          ],
+          "weaknesses": [
+            "人员技能差异大，依赖经验",
+            "需求变更仍带来高风险",
+            "复杂系统调试与维护成本高"
+          ],
+          "opportunities": [
+            "人工智能辅助开发（代码生成、测试）",
+            "云原生与DevOps提升自动化水平",
+            "低代码/无代码平台降低门槛"
+          ],
+          "threats": [
+            "快速变化的技术栈增加学习成本",
+            "安全漏洞和隐私问题日益严峻",
+            "领域特定语言兴起对通用方法的冲击"
+          ]
+        }
+      },
+      {
+        "id": "slide_13",
+        "intent": "architecture",
+        "section": "工具与架构",
+        "title": "软件体系结构概述",
+        "notes": [
+          "介绍分层架构、MVC、微服务等常见体系结构风格"
+        ],
+        "layers": [
+          {
+            "name": "分层架构",
+            "items": [
+              "表现层 (UI)",
+              "业务逻辑层",
+              "数据访问层",
+              "数据库层"
+            ]
+          },
+          {
+            "name": "MVC模式",
+            "items": [
+              "Model (数据与业务规则)",
+              "View (用户界面)",
+              "Controller (控制流)"
+            ]
+          },
+          {
+            "name": "微服务架构",
+            "items": [
+              "独立部署的服务",
+              "API网关",
+              "服务发现",
+              "配置中心"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "slide_14",
+        "intent": "chart",
+        "section": "度量与数据",
+        "title": "软件过程活动时间分布",
+        "notes": [
+          "用柱状图展示不同过程阶段在典型项目中占用的时间比例"
+        ],
+        "chart": {
+          "chartType": "bar",
+          "labels": [
+            "需求分析",
+            "系统设计",
+            "编码实现",
+            "测试",
+            "维护"
+          ],
+          "series": [
+            {
+              "name": "时间占比 (%)",
+              "values": [
+                15.0,
+                15.0,
+                30.0,
+                25.0,
+                15.0
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": "slide_15",
+        "intent": "divider",
+        "section": "总结",
+        "title": "总结与问答",
+        "notes": [
+          "概括关键要点，提供进一步学习资源，开放提问环节"
+        ],
+        "subtitle": null
+      }
+    ]
+  },
+  "renderTree": {
+    "presentationId": "pres_3e58c2762ea5",
+    "title": "软件工程介绍",
+    "themeName": "academic_gray",
+    "themeTokens": {
+      "name": "Academic Gray",
+      "colors": {
+        "background": "#FFFFFF",
+        "surface": "#F3F4F6",
+        "text": "#111827",
+        "muted": "#4B5563",
+        "primary": "#374151",
+        "secondary": "#6B7280",
+        "border": "rgba(17,24,39,0.10)"
+      },
+      "typography": {
+        "fontFamily": "Times New Roman, Georgia, serif",
+        "titlePt": 34,
+        "subtitlePt": 18,
+        "bodyPt": 16,
+        "smallPt": 12
+      },
+      "spacing": {
+        "slidePaddingPx": 64,
+        "gapPx": 16
+      }
+    },
+    "slides": [
+      {
+        "id": "slide_1",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "slide_1__title",
+            "type": "Title",
+            "x": 64.0,
+            "y": 64.0,
+            "w": 1152.0,
+            "h": 120.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 34,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "软件工程介绍"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "slide_1__subtitle",
+            "type": "Subtitle",
+            "x": 64.0,
+            "y": 200.0,
+            "w": 1152.0,
+            "h": 70.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#4B5563",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 18,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "从概念到实践"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "slide_1__tagline",
+            "type": "Text",
+            "x": 64.0,
+            "y": 286.0,
+            "w": 1152.0,
+            "h": 60.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "构建可靠软件的工程化方法"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "slide_1__highlights",
+            "type": "BulletList",
+            "x": 64.0,
+            "y": 362.0,
+            "w": 1152.0,
+            "h": 278.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "items": [
+                "理解软件工程的定义与重要性",
+                "掌握软件过程与方法的全貌",
+                "认识常用工具与体系结构"
+              ]
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": [
+          "引入主题，明确演讲目标与内容范围"
+        ]
+      },
+      {
+        "id": "slide_2",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "slide_2__title",
+            "type": "Title",
+            "x": 64.0,
+            "y": 64.0,
+            "w": 1152.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 34,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "演讲议程"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "slide_2__bullets",
+            "type": "BulletList",
+            "x": 64.0,
+            "y": 176.0,
+            "w": 1152.0,
+            "h": 480.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "items": [
+                "基本概念：软件工程定义与层次",
+                "软件过程：发展历程、通用阶段与过程模型",
+                "软件方法：需求工程、设计原则与经典名言",
+                "工具与架构：常用工具、SWOT分析与体系结构",
+                "度量与数据：软件过程活动时间分布",
+                "总结与问答"
+              ]
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": [
+          "展示演讲结构，帮助听众掌握整体框架"
+        ]
+      },
+      {
+        "id": "slide_3",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "slide_3__title",
+            "type": "Title",
+            "x": 64.0,
+            "y": 64.0,
+            "w": 1152.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 34,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "什么是软件工程"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "slide_3__text",
+            "type": "Text",
+            "x": 64.0,
+            "y": 176.0,
+            "w": 1152.0,
+            "h": 480.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "软件工程是应用系统化的、规范化的、可量化的方法开发、运行和维护软件的工程学科。\n其核心目标是在预算和时间内生产高质量的软件产品，满足用户需求。\nIEEE将软件工程定义为：将系统化的、规范的、可度量的方法应用于软件的开发、运行和维护的全过程。\n\n• 关注大型、复杂软件的构建\n• 强调过程管理、质量控制和团队协作\n• 区别于个人编程，注重工程化思维"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": [
+          "给出软件工程的标准定义，明确其核心内涵"
+        ]
+      },
+      {
+        "id": "slide_4",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "slide_4__title",
+            "type": "Title",
+            "x": 64.0,
+            "y": 64.0,
+            "w": 1152.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 34,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "软件工程的层次结构"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "slide_4__text",
+            "type": "Text",
+            "x": 64.0,
+            "y": 176.0,
+            "w": 1152.0,
+            "h": 480.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "软件工程包含四个层次：质量焦点、过程、方法和工具。\n质量焦点是基石，强调持续改进和质量管理（如CMMI、ISO 9000）。\n过程定义了一系列活动及其顺序，确保开发有序进行。\n方法提供了如何完成活动的技术指南（如结构化方法、面向对象方法）。\n工具为方法和过程提供自动化支持（如IDE、版本控制、测试工具）。\n\n• 质量焦点：确保软件满足需求并具有可靠性\n• 过程：框架性的活动集合\n• 方法：具体实现的技术手段\n• 工具：提高效率的自动化支持"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": [
+          "介绍软件工程的四个基本层次：质量焦点、过程、方法、工具"
+        ]
+      },
+      {
+        "id": "slide_5",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "slide_5__title",
+            "type": "Title",
+            "x": 64.0,
+            "y": 64.0,
+            "w": 1152.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 34,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "软件工程发展简史"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "slide_5__timeline",
+            "type": "Timeline",
+            "x": 64.0,
+            "y": 176.0,
+            "w": 1152.0,
+            "h": 480.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "events": [
+                {
+                  "label": "软件危机",
+                  "date": "1968",
+                  "detail": "NATO会议首次提出软件工程概念，应对成本超支和质量问题"
+                },
+                {
+                  "label": "结构化方法",
+                  "date": "1970s",
+                  "detail": "Dijkstra、Wirth等人推动结构化编程和设计"
+                },
+                {
+                  "label": "面向对象方法",
+                  "date": "1980s-1990s",
+                  "detail": "Smalltalk、C++、UML等推动面向对象分析与设计"
+                },
+                {
+                  "label": "敏捷宣言",
+                  "date": "2001",
+                  "detail": "17位专家提出敏捷价值观和原则，Scrum、XP等兴起"
+                },
+                {
+                  "label": "DevOps与AI辅助",
+                  "date": "2010s至今",
+                  "detail": "持续集成/持续交付、云计算、AI代码生成等新范式"
+                }
+              ]
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": [
+          "通过时间线展示软件工程从萌芽到成熟的关键里程碑"
+        ]
+      },
+      {
+        "id": "slide_6",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "slide_6__title",
+            "type": "Title",
+            "x": 64.0,
+            "y": 64.0,
+            "w": 1152.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 34,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "通用软件过程阶段"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "slide_6__process",
+            "type": "ProcessFlow",
+            "x": 64.0,
+            "y": 176.0,
+            "w": 1152.0,
+            "h": 480.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "steps": [
+                {
+                  "name": "需求分析",
+                  "detail": "与客户沟通，明确系统功能和非功能需求，产出需求规格说明"
+                },
+                {
+                  "name": "系统设计",
+                  "detail": "划分模块，定义体系结构和接口，设计数据库和用户界面"
+                },
+                {
+                  "name": "实现（编码）",
+                  "detail": "根据设计编写代码，进行单元测试"
+                },
+                {
+                  "name": "测试",
+                  "detail": "集成测试、系统测试、验收测试，确保质量"
+                },
+                {
+                  "name": "维护",
+                  "detail": "修复缺陷、适应环境变化、增加新功能"
+                }
+              ]
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": [
+          "用流程图表展示需求、设计、实现、测试、维护的迭代关系"
+        ]
+      },
+      {
+        "id": "slide_7",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "slide_7__title",
+            "type": "Title",
+            "x": 64.0,
+            "y": 64.0,
+            "w": 1152.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 34,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "过程模型对比：瀑布与敏捷"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "slide_7__comparison",
+            "type": "ComparisonTable",
+            "x": 64.0,
+            "y": 176.0,
+            "w": 1152.0,
+            "h": 480.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": "#F3F4F6",
+              "borderColor": "rgba(17,24,39,0.10)",
+              "borderWidth": 1,
+              "radius": 12,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "left": {
+                "title": "瀑布模型",
+                "bullets": [
+                  "线性顺序，阶段严格划分",
+                  "文档驱动，每个阶段有明确产出",
+                  "适用于需求稳定、技术成熟的项目",
+                  "变更成本高，适合大型系统"
+                ]
+              },
+              "right": {
+                "title": "敏捷开发（Scrum）",
+                "bullets": [
+                  "迭代增量，快速交付",
+                  "价值驱动，强调客户协作与响应变化",
+                  "适用于需求模糊、快速变化的环境",
+                  "变更成本低，适合中小团队"
+                ]
+              }
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": [
+          "对比传统瀑布模型与现代敏捷开发的特点、适用场景"
+        ]
+      },
+      {
+        "id": "slide_8",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "slide_8__title",
+            "type": "Title",
+            "x": 64.0,
+            "y": 64.0,
+            "w": 1152.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 34,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "需求工程"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "slide_8__text",
+            "type": "Text",
+            "x": 64.0,
+            "y": 176.0,
+            "w": 1152.0,
+            "h": 480.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "需求工程是软件工程的关键活动，旨在理解用户期望并准确表达。\n包括四个主要阶段：需求获取、需求分析、需求规格说明、需求验证。\n常用技术有：面谈、问卷调查、用例、原型法。\n\n• 需求获取：与利益相关者沟通，收集原始需求\n• 需求分析：分类、建模、检查冲突\n• 规格说明：以SRS形式精确描述需求\n• 需求验证：确保需求完整、一致、可测试"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": [
+          "介绍需求获取、分析、规格说明与验证的基本活动"
+        ]
+      },
+      {
+        "id": "slide_9",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "slide_9__title",
+            "type": "Title",
+            "x": 64.0,
+            "y": 64.0,
+            "w": 1152.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 34,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "软件设计基础"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "slide_9__text",
+            "type": "Text",
+            "x": 64.0,
+            "y": 176.0,
+            "w": 1152.0,
+            "h": 480.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "软件设计是将需求转化为可实现的系统结构的过程。\n核心原则包括模块化、信息隐藏、高内聚、低耦合。\n模块化将系统分解为独立的部分，易于开发与维护。\n信息隐藏使得模块内部细节对外部不可见，降低复杂性。\n高内聚意味着模块内部元素紧密相关，低耦合意味着模块间依赖最小化。\n\n• 模块化：分而治之\n• 信息隐藏：接口清晰，实现隐藏\n• 高内聚：职责单一\n• 低耦合：依赖最小化"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": [
+          "讲解模块化、信息隐藏、高内聚低耦合等设计原则"
+        ]
+      },
+      {
+        "id": "slide_10",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "slide_10__quote",
+            "type": "Quote",
+            "x": 64.0,
+            "y": 176.0,
+            "w": 1152.0,
+            "h": 480.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": "#F3F4F6",
+              "borderColor": "#374151",
+              "borderWidth": 2,
+              "radius": 16,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 18,
+              "bold": null,
+              "italic": true,
+              "align": "center"
+            },
+            "props": {
+              "quote": "没有一种技术或管理上的突破，能在十年内使软件生产率、可靠性或简洁性提高一个数量级。",
+              "author": "Fred Brooks, 1986"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": [
+          "引用Fred Brooks的著名论断，引发对软件工程本质的思考"
+        ]
+      },
+      {
+        "id": "slide_11",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "slide_11__title",
+            "type": "Title",
+            "x": 64.0,
+            "y": 64.0,
+            "w": 1152.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 34,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "常用软件工程工具"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "slide_11__columns",
+            "type": "MultiColumn",
+            "x": 64.0,
+            "y": 176.0,
+            "w": 1152.0,
+            "h": 480.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": "#F3F4F6",
+              "borderColor": "rgba(17,24,39,0.10)",
+              "borderWidth": 1,
+              "radius": 12,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "columns": [
+                {
+                  "title": "集成开发环境 (IDE)",
+                  "bullets": [
+                    "Visual Studio",
+                    "IntelliJ IDEA",
+                    "Eclipse",
+                    "VS Code"
+                  ]
+                },
+                {
+                  "title": "版本控制",
+                  "bullets": [
+                    "Git",
+                    "Subversion (SVN)",
+                    "Mercurial"
+                  ]
+                },
+                {
+                  "title": "测试工具",
+                  "bullets": [
+                    "JUnit (单元测试)",
+                    "Selenium (自动化测试)",
+                    "JMeter (性能测试)"
+                  ]
+                },
+                {
+                  "title": "项目管理",
+                  "bullets": [
+                    "JIRA",
+                    "Trello",
+                    "Microsoft Project"
+                  ]
+                }
+              ]
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": [
+          "按类别（IDE、版本控制、测试、项目管理）列举典型工具"
+        ]
+      },
+      {
+        "id": "slide_12",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "slide_12__title",
+            "type": "Title",
+            "x": 64.0,
+            "y": 64.0,
+            "w": 1152.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 34,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "软件工程的SWOT分析"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "slide_12__swot",
+            "type": "Swot",
+            "x": 64.0,
+            "y": 176.0,
+            "w": 1152.0,
+            "h": 480.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": "#F3F4F6",
+              "borderColor": "rgba(17,24,39,0.10)",
+              "borderWidth": 1,
+              "radius": 12,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "strengths": [
+                "成熟的过程模型与最佳实践",
+                "强大的工具生态系统",
+                "不断完善的度量与质量体系"
+              ],
+              "weaknesses": [
+                "人员技能差异大，依赖经验",
+                "需求变更仍带来高风险",
+                "复杂系统调试与维护成本高"
+              ],
+              "opportunities": [
+                "人工智能辅助开发（代码生成、测试）",
+                "云原生与DevOps提升自动化水平",
+                "低代码/无代码平台降低门槛"
+              ],
+              "threats": [
+                "快速变化的技术栈增加学习成本",
+                "安全漏洞和隐私问题日益严峻",
+                "领域特定语言兴起对通用方法的冲击"
+              ]
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": [
+          "分析当前软件工程的优势、劣势、机会与威胁"
+        ]
+      },
+      {
+        "id": "slide_13",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "slide_13__title",
+            "type": "Title",
+            "x": 64.0,
+            "y": 64.0,
+            "w": 1152.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 34,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "软件体系结构概述"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "slide_13__arch",
+            "type": "ArchitectureDiagram",
+            "x": 64.0,
+            "y": 176.0,
+            "w": 1152.0,
+            "h": 480.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "layers": [
+                {
+                  "name": "分层架构",
+                  "items": [
+                    "表现层 (UI)",
+                    "业务逻辑层",
+                    "数据访问层",
+                    "数据库层"
+                  ]
+                },
+                {
+                  "name": "MVC模式",
+                  "items": [
+                    "Model (数据与业务规则)",
+                    "View (用户界面)",
+                    "Controller (控制流)"
+                  ]
+                },
+                {
+                  "name": "微服务架构",
+                  "items": [
+                    "独立部署的服务",
+                    "API网关",
+                    "服务发现",
+                    "配置中心"
+                  ]
+                }
+              ]
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": [
+          "介绍分层架构、MVC、微服务等常见体系结构风格"
+        ]
+      },
+      {
+        "id": "slide_14",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "slide_14__title",
+            "type": "Title",
+            "x": 64.0,
+            "y": 64.0,
+            "w": 1152.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 34,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "软件过程活动时间分布"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "slide_14__chart",
+            "type": "Chart",
+            "x": 64.0,
+            "y": 176.0,
+            "w": 1152.0,
+            "h": 480.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": "#F3F4F6",
+              "borderColor": "rgba(17,24,39,0.10)",
+              "borderWidth": 1,
+              "radius": 12,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "chartType": "bar",
+              "labels": [
+                "需求分析",
+                "系统设计",
+                "编码实现",
+                "测试",
+                "维护"
+              ],
+              "series": [
+                {
+                  "name": "时间占比 (%)",
+                  "values": [
+                    15.0,
+                    15.0,
+                    30.0,
+                    25.0,
+                    15.0
+                  ]
+                }
+              ]
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": [
+          "用柱状图展示不同过程阶段在典型项目中占用的时间比例"
+        ]
+      },
+      {
+        "id": "slide_15",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "slide_15__divider",
+            "type": "Divider",
+            "x": 64.0,
+            "y": 64.0,
+            "w": 1152.0,
+            "h": 592.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": "#FFFFFF",
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 34,
+              "bold": true,
+              "italic": null,
+              "align": "center"
+            },
+            "props": {
+              "title": "总结与问答",
+              "subtitle": null
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": [
+          "概括关键要点，提供进一步学习资源，开放提问环节"
+        ]
+      }
+    ],
+    "meta": {
+      "audience": "学生或初学者",
+      "tone": "正式、教育性"
+    }
+  },
+  "lastExportPptx": "data\\exports\\pres_3e58c2762ea5\\pres_3e58c2762ea5.pptx"
+}

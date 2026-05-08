@@ -24,6 +24,17 @@ def _strip_markdown_fences(text: str) -> str:
         inner = inner[4:].lstrip()
     return inner.strip()
 
+def _extract_json_substring(text: str) -> str:
+    s = text.strip()
+    if not s:
+        return s
+    for open_ch, close_ch in (("{", "}"), ("[", "]")):
+        start = s.find(open_ch)
+        end = s.rfind(close_ch)
+        if start >= 0 and end >= 0 and end > start:
+            return s[start : end + 1].strip()
+    return s
+
 
 def make_llm() -> ChatOpenAI:
     if not settings.llm_api_key:
@@ -64,10 +75,10 @@ T = TypeVar("T", bound=BaseModel)
 
 
 def parse_model(model_cls: Type[T], raw_text: str) -> T:
-    text = _strip_markdown_fences(raw_text)
+    text = _extract_json_substring(_strip_markdown_fences(raw_text))
     data = json.loads(text)
     return TypeAdapter(model_cls).validate_python(data)
 
 
 def parse_json(raw_text: str) -> Any:
-    return json.loads(_strip_markdown_fences(raw_text))
+    return json.loads(_extract_json_substring(_strip_markdown_fences(raw_text)))

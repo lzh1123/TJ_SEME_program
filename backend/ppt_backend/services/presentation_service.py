@@ -31,11 +31,12 @@ class PresentationService:
 
     def create(self, topic: str, theme: Optional[str] = None) -> PresentationBundle:
         presentation_id = new_id("pres")
-        dsl = self._ai.generate_dsl(topic=topic, theme=theme)
+        dsl, ai_debug = self._ai.generate_dsl_with_debug(topic=topic, theme=theme)
         theme_tokens = get_theme_tokens(dsl.theme)
         tree = self._compiler.compile(presentation_id, dsl, theme_tokens)
         tree = apply_theme_to_tree(tree, theme_tokens)
         meta = PresentationMeta(id=presentation_id, topic=topic)
+        meta.extra = {"ai": ai_debug}
         bundle = PresentationBundle(meta=meta, dsl=dsl, renderTree=tree)
         self._repo.save(bundle)
         return bundle
@@ -126,7 +127,8 @@ class PresentationService:
     def regenerate(self, presentation_id: str, topic: Optional[str] = None, section: Optional[str] = None) -> PresentationBundle:
         bundle = self._repo.load(presentation_id)
         base_topic = topic or bundle.meta.topic
-        new_dsl = self._ai.generate_dsl(topic=base_topic, theme=bundle.dsl.theme)
+        new_dsl, ai_debug = self._ai.generate_dsl_with_debug(topic=base_topic, theme=bundle.dsl.theme)
+        bundle.meta.extra = {"ai": ai_debug}
         if section:
             old_ids = [s.id for s in bundle.dsl.slides if getattr(s, "section", "") == section]
             new_slides = [s for s in new_dsl.slides if getattr(s, "section", "") == section]
@@ -142,4 +144,3 @@ class PresentationService:
         bundle.meta.version += 1
         self._repo.save(bundle)
         return bundle
-

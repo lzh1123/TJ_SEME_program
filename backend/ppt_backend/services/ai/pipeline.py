@@ -33,16 +33,18 @@ from ...domain.dsl import (
 )
 from ...domain.ids import new_id
 from ...domain.theme import get_theme_tokens
-from .client import invoke_llm_text, make_llm, parse_model
+from .client import invoke_llm_text, make_llm, parse_json, parse_model
 from .schemas import IntentAnalysis, PresentationPlan
 
 
 class AiPipeline:
     def __init__(self):
         self._llm = None
+        self._init_error: Optional[str] = None
         try:
             self._llm = make_llm()
-        except Exception:
+        except Exception as e:
+            self._init_error = f"{type(e).__name__}: {e}"
             self._llm = None
 
     def analyze_intent(self, topic: str) -> IntentAnalysis:
@@ -60,7 +62,10 @@ class AiPipeline:
             ]
         )
         raw = invoke_llm_text(self._llm, prompt, {"topic": topic})
-        return parse_model(IntentAnalysis, raw)
+        analysis = parse_model(IntentAnalysis, raw)
+        if not analysis.topic:
+            analysis.topic = topic
+        return analysis
 
     def plan_presentation(self, analysis: IntentAnalysis) -> PresentationPlan:
         if not self._llm:
@@ -78,20 +83,43 @@ class AiPipeline:
             ]
         )
         raw = invoke_llm_text(self._llm, prompt, {"analysis_json": analysis.model_dump_json(by_alias=True)})
-        return parse_model(PresentationPlan, raw)
+        plan = parse_model(PresentationPlan, raw)
+        if not plan.title:
+            plan.title = analysis.topic
+        return plan
 
     def generate_dsl(self, topic: str, theme: Optional[str] = None) -> PresentationDSL:
+        dsl, _ = self.generate_dsl_with_debug(topic=topic, theme=theme)
+        return dsl
+
+    def generate_dsl_with_debug(self, topic: str, theme: Optional[str] = None):
         if not topic:
             raise ValueError("topic required")
 
         if not self._llm:
-            return self._fallback(topic, theme)
+            return (
+                self._fallback(topic, theme),
+                {
+                    "llmConfigured": False,
+                    "usedFallback": True,
+                    "stage": "init",
+                    "error": self._init_error or "LLM not configured",
+                },
+            )
 
         try:
             analysis = self.analyze_intent(topic)
             plan = self.plan_presentation(analysis)
-        except Exception:
-            return self._fallback(topic, theme)
+        except Exception as e:
+            return (
+                self._fallback(topic, theme),
+                {
+                    "llmConfigured": True,
+                    "usedFallback": True,
+                    "stage": "analyze_or_plan",
+                    "error": f"{type(e).__name__}: {e}",
+                },
+            )
 
         theme_name = theme or plan.theme or analysis.preferred_theme or "modern_blue"
         _ = get_theme_tokens(theme_name)
@@ -103,32 +131,506 @@ class AiPipeline:
                     "你是 PPT DSL Generator。你只输出 JSON，不要输出任何解释文字。\n"
                     "你必须输出 PresentationDSL：包含 title/audience/tone/theme/slides。\n"
                     "slides 是语义化页面 DSL，使用 intent 作为 discriminant。\n"
+                    "每页必须包含：id(intent)/section/title/notes。\n"
+                    "字段类型必须严格匹配：\n"
+                    "- cover: subtitle/tagline/highlights(list[str])\n"
+                    "- agenda: items(list[str])，不要输出对象数组\n"
+                    "- text: paragraphs(list[str]) / bullets(list[str])\n"
+                    "- timeline: events(list[object])，每个 event 至少有 label，可选 date/detail\n"
+                    "- kpi: items(list[object])，每个 item 有 label/value，可选 unit/delta\n"
+                    "- comparison: left/right(object) 各含 title(str)/bullets(list[str])\n"
+                    "- swot: swot(object) 含 strengths/weaknesses/opportunities/threats(list[str])\n"
+                    "- roadmap: phases(list[object]) 含 name/timeframe/deliverables(list[str])\n"
+                    "- process_flow: steps(list[object]) 含 name/detail\n"
+                    "- chart: chart(object) 含 chartType(bar|line|pie)/labels(list[str])/series(list[object])，其中每个 series 对象包含 name 与 values(list[number])\n"
+                    "- multi_column: columns(list[object]) 含 title/bullets(list[str])\n"
+                    "- architecture: layers(list[object]) 含 name/items(list[str])\n"
+                    "- quote: quote(str)/author(str|null)\n"
+                    "- divider: subtitle(str|null)\n"
+                    "- team: members(list[object]) 含 name/role/highlights(list[str])\n"
                     "严格禁止输出任何布局字段：x/y/w/h/fontSize/templateId/坐标/尺寸。\n"
                     "只输出结构化语义数据（如 items/events/phases/steps/columns/layers 等）。",
                 ),
                 ("human", "topic: {topic}\nanalysis: {analysis_json}\nplan: {plan_json}\ntheme: {theme_name}"),
             ]
         )
-        raw = invoke_llm_text(
-            self._llm,
-            prompt,
-            {
-                "topic": topic,
-                "analysis_json": analysis.model_dump_json(by_alias=True),
-                "plan_json": plan.model_dump_json(),
-                "theme_name": theme_name,
-            },
-        )
+        try:
+            raw = invoke_llm_text(
+                self._llm,
+                prompt,
+                {
+                    "topic": topic,
+                    "analysis_json": analysis.model_dump_json(by_alias=True),
+                    "plan_json": plan.model_dump_json(),
+                    "theme_name": theme_name,
+                },
+            )
+        except Exception as e:
+            return (
+                self._fallback(topic, theme_name),
+                {
+                    "llmConfigured": True,
+                    "usedFallback": True,
+                    "stage": "dsl_invoke",
+                    "error": f"{type(e).__name__}: {e}",
+                },
+            )
         try:
             dsl = parse_model(PresentationDSL, raw)
-        except Exception:
-            return self._fallback(topic, theme_name)
+        except Exception as e:
+            try:
+                data = parse_json(raw)
+                repaired = self._repair_dsl_dict(data, topic=topic, analysis=analysis, theme_name=theme_name)
+                dsl = PresentationDSL.model_validate(repaired)
+                dsl.theme = theme_name
+                if not dsl.title:
+                    dsl.title = plan.title or topic
+                return (
+                    dsl,
+                    {
+                        "llmConfigured": True,
+                        "usedFallback": False,
+                        "stage": "dsl_repair",
+                        "error": f"{type(e).__name__}: {e}",
+                    },
+                )
+            except Exception as e2:
+                return (
+                    self._fallback(topic, theme_name),
+                    {
+                        "llmConfigured": True,
+                        "usedFallback": True,
+                        "stage": "dsl_parse",
+                        "error": f"{type(e).__name__}: {e} | repair_failed: {type(e2).__name__}: {e2}",
+                    },
+                )
         dsl.theme = theme_name
         if not dsl.title:
             dsl.title = plan.title or topic
         if not dsl.slides:
-            return self._fallback(topic, theme_name)
-        return dsl
+            return (
+                self._fallback(topic, theme_name),
+                {
+                    "llmConfigured": True,
+                    "usedFallback": True,
+                    "stage": "dsl_empty",
+                    "error": "empty slides",
+                },
+            )
+        return (
+            dsl,
+            {
+                "llmConfigured": True,
+                "usedFallback": False,
+                "stage": "ok",
+                "error": None,
+            },
+        )
+
+    def _repair_dsl_dict(self, data: dict, *, topic: str, analysis: IntentAnalysis, theme_name: str) -> dict:
+        title = data.get("title") or topic
+        audience = data.get("audience") or analysis.audience or "通用受众"
+        tone = data.get("tone") or analysis.tone or "清晰、教学"
+
+        slides_in = data.get("slides")
+        if not isinstance(slides_in, list):
+            slides_in = []
+
+        slides_out = []
+        for s in slides_in:
+            if not isinstance(s, dict):
+                continue
+            slides_out.append(self._repair_slide_dict(s, topic=title))
+
+        if not slides_out:
+            return {
+                "title": title,
+                "audience": audience,
+                "tone": tone,
+                "theme": theme_name,
+                "slides": [],
+            }
+
+        return {
+            "title": title,
+            "audience": audience,
+            "tone": tone,
+            "theme": theme_name,
+            "slides": slides_out,
+        }
+
+    def _repair_slide_dict(self, s: dict, *, topic: str) -> dict:
+        allowed_intents = {
+            "cover",
+            "agenda",
+            "text",
+            "timeline",
+            "kpi",
+            "comparison",
+            "swot",
+            "roadmap",
+            "process_flow",
+            "chart",
+            "multi_column",
+            "architecture",
+            "quote",
+            "divider",
+            "team",
+        }
+
+        def as_str(v) -> str:
+            if v is None:
+                return ""
+            if isinstance(v, str):
+                return v
+            return str(v)
+
+        def as_str_list(v):
+            if v is None:
+                return []
+            if isinstance(v, str):
+                txt = v.strip()
+                return [txt] if txt else []
+            if isinstance(v, list):
+                out = []
+                for it in v:
+                    if it is None:
+                        continue
+                    if isinstance(it, str):
+                        t = it.strip()
+                        if t:
+                            out.append(t)
+                        continue
+                    if isinstance(it, dict):
+                        for k in ("label", "title", "name", "text", "content"):
+                            if isinstance(it.get(k), str) and it.get(k).strip():
+                                out.append(it.get(k).strip())
+                                break
+                        continue
+                    out.append(str(it))
+                return out
+            if isinstance(v, dict):
+                for k in ("items", "bullets", "highlights", "paragraphs", "texts"):
+                    if k in v:
+                        return as_str_list(v.get(k))
+                for k in ("label", "title", "name", "text", "content"):
+                    if isinstance(v.get(k), str) and v.get(k).strip():
+                        return [v.get(k).strip()]
+                return []
+            return [str(v)]
+
+        def pick_slide_intent(slide_dict: dict) -> str:
+            v = slide_dict.get("intent")
+            if isinstance(v, str) and v in allowed_intents:
+                return v
+            for k in allowed_intents:
+                if isinstance(slide_dict.get(k), dict):
+                    return k
+            return as_str(v)
+
+        intent = pick_slide_intent(s)
+        wrapper = s.get(intent) if isinstance(s.get(intent), dict) else {}
+        if not isinstance(wrapper, dict):
+            wrapper = {}
+
+        slide_id = s.get("id") or wrapper.get("id") or new_id("slide")
+        section = s.get("section") or wrapper.get("section") or ""
+        title = s.get("title") or wrapper.get("title") or topic
+        notes_raw = s.get("notes") if s.get("notes") is not None else wrapper.get("notes")
+
+        base = {
+            "id": as_str(slide_id) or new_id("slide"),
+            "intent": intent if intent in allowed_intents else "text",
+            "section": as_str(section),
+            "title": as_str(title) or topic,
+            "notes": as_str_list(notes_raw),
+        }
+
+        if intent == "cover":
+            return {
+                **base,
+                "subtitle": as_str(s.get("subtitle") if s.get("subtitle") is not None else wrapper.get("subtitle")) or None,
+                "tagline": as_str(s.get("tagline") if s.get("tagline") is not None else wrapper.get("tagline")) or None,
+                "highlights": as_str_list(s.get("highlights") if s.get("highlights") is not None else wrapper.get("highlights")),
+            }
+
+        if intent == "agenda":
+            items_raw = s.get("items") if s.get("items") is not None else wrapper.get("items")
+            return {**base, "items": as_str_list(items_raw)}
+
+        if intent == "text":
+            content = s.get("content") or wrapper.get("content")
+            paragraphs_raw = s.get("paragraphs") if s.get("paragraphs") is not None else wrapper.get("paragraphs")
+            bullets_raw = s.get("bullets") if s.get("bullets") is not None else wrapper.get("bullets")
+            paragraphs = as_str_list(paragraphs_raw)
+            bullets = as_str_list(bullets_raw)
+            if (not paragraphs) and (not bullets) and isinstance(content, str) and content.strip():
+                paragraphs = [content.strip()]
+            if (not paragraphs) and isinstance(content, dict):
+                paragraphs = as_str_list(content.get("paragraphs") or content.get("content") or content.get("text"))
+                if not bullets:
+                    bullets = as_str_list(content.get("bullets") or content.get("items"))
+            return {
+                **base,
+                "paragraphs": paragraphs,
+                "bullets": bullets,
+            }
+
+        if intent == "timeline":
+            events_raw = s.get("events") if s.get("events") is not None else wrapper.get("events")
+            events_out = []
+            if isinstance(events_raw, list):
+                for it in events_raw:
+                    if it is None:
+                        continue
+                    if isinstance(it, str):
+                        txt = it.strip()
+                        if txt:
+                            events_out.append({"label": txt})
+                        continue
+                    if isinstance(it, dict):
+                        label = it.get("label") or it.get("title") or it.get("name") or it.get("event")
+                        if not isinstance(label, str) or not label.strip():
+                            continue
+                        date = it.get("date") or it.get("time") or it.get("when")
+                        detail = it.get("detail") or it.get("desc") or it.get("description") or it.get("content")
+                        ev = {"label": label.strip()}
+                        if isinstance(date, str) and date.strip():
+                            ev["date"] = date.strip()
+                        if isinstance(detail, str) and detail.strip():
+                            ev["detail"] = detail.strip()
+                        events_out.append(ev)
+                        continue
+            return {**base, "events": events_out}
+
+        if intent == "kpi":
+            items_raw = s.get("items") if s.get("items") is not None else wrapper.get("items")
+            items_out = []
+            if isinstance(items_raw, list):
+                for it in items_raw:
+                    if it is None:
+                        continue
+                    if isinstance(it, str):
+                        txt = it.strip()
+                        if not txt:
+                            continue
+                        if "：" in txt:
+                            k, v = txt.split("：", 1)
+                            items_out.append({"label": k.strip() or txt, "value": v.strip() or ""})
+                        elif ":" in txt:
+                            k, v = txt.split(":", 1)
+                            items_out.append({"label": k.strip() or txt, "value": v.strip() or ""})
+                        else:
+                            items_out.append({"label": txt, "value": ""})
+                        continue
+                    if isinstance(it, dict):
+                        label = it.get("label") or it.get("name") or it.get("title")
+                        value = it.get("value") or it.get("val") or it.get("number")
+                        unit = it.get("unit")
+                        delta = it.get("delta") or it.get("change")
+                        item = {"label": as_str(label) or "指标", "value": as_str(value)}
+                        if isinstance(unit, str) and unit.strip():
+                            item["unit"] = unit.strip()
+                        if isinstance(delta, str) and delta.strip():
+                            item["delta"] = delta.strip()
+                        items_out.append(item)
+                        continue
+            return {**base, "items": items_out}
+
+        if intent == "comparison":
+            left = s.get("left") or wrapper.get("left") or {"title": "左", "bullets": []}
+            right = s.get("right") or wrapper.get("right") or {"title": "右", "bullets": []}
+            if isinstance(left, list):
+                left = {"title": "左", "bullets": as_str_list(left)}
+            if isinstance(right, list):
+                right = {"title": "右", "bullets": as_str_list(right)}
+            if isinstance(left, dict):
+                left = {"title": as_str(left.get("title") or left.get("name") or "左"), "bullets": as_str_list(left.get("bullets") or left.get("items"))}
+            else:
+                left = {"title": "左", "bullets": []}
+            if isinstance(right, dict):
+                right = {"title": as_str(right.get("title") or right.get("name") or "右"), "bullets": as_str_list(right.get("bullets") or right.get("items"))}
+            else:
+                right = {"title": "右", "bullets": []}
+            return {**base, "left": left, "right": right}
+
+        if intent == "swot":
+            swot = s.get("swot") or wrapper.get("swot") or {
+                "strengths": s.get("strengths") or [],
+                "weaknesses": s.get("weaknesses") or [],
+                "opportunities": s.get("opportunities") or [],
+                "threats": s.get("threats") or [],
+            }
+            if not isinstance(swot, dict):
+                swot = {"strengths": [], "weaknesses": [], "opportunities": [], "threats": []}
+            swot = {
+                "strengths": as_str_list(swot.get("strengths") or swot.get("s")),
+                "weaknesses": as_str_list(swot.get("weaknesses") or swot.get("w")),
+                "opportunities": as_str_list(swot.get("opportunities") or swot.get("o")),
+                "threats": as_str_list(swot.get("threats") or swot.get("t")),
+            }
+            return {**base, "swot": swot}
+
+        if intent == "roadmap":
+            phases_raw = s.get("phases") if s.get("phases") is not None else wrapper.get("phases")
+            phases_out = []
+            if isinstance(phases_raw, list):
+                for it in phases_raw:
+                    if it is None:
+                        continue
+                    if isinstance(it, str):
+                        txt = it.strip()
+                        if txt:
+                            phases_out.append({"name": txt, "deliverables": []})
+                        continue
+                    if isinstance(it, dict):
+                        name = it.get("name") or it.get("phase") or it.get("title") or it.get("label")
+                        timeframe = it.get("timeframe") or it.get("time") or it.get("when") or it.get("period")
+                        deliverables = it.get("deliverables") or it.get("tasks") or it.get("items") or it.get("outputs")
+                        phases_out.append(
+                            {
+                                "name": as_str(name) or "阶段",
+                                "timeframe": as_str(timeframe) or None,
+                                "deliverables": as_str_list(deliverables),
+                            }
+                        )
+                        continue
+            return {**base, "phases": phases_out}
+
+        if intent == "process_flow":
+            raw_steps = (s.get("steps") or wrapper.get("steps") or [])
+            steps = []
+            if isinstance(raw_steps, list):
+                for it in raw_steps:
+                    if isinstance(it, dict):
+                        name = it.get("name") or it.get("label") or it.get("title") or it.get("step")
+                        detail = it.get("detail") or it.get("desc") or it.get("description") or it.get("content")
+                        steps.append({"name": as_str(name) or "步骤", "detail": as_str(detail) or None})
+                        continue
+                    if isinstance(it, str):
+                        txt = it.strip()
+                        if "：" in txt:
+                            n, d = txt.split("：", 1)
+                            steps.append({"name": n.strip(), "detail": d.strip()})
+                        elif ":" in txt:
+                            n, d = txt.split(":", 1)
+                            steps.append({"name": n.strip(), "detail": d.strip()})
+                        else:
+                            steps.append({"name": txt, "detail": None})
+            return {**base, "steps": steps}
+
+        if intent == "chart":
+            chart = s.get("chart") or wrapper.get("chart") or wrapper
+            if not isinstance(chart, dict):
+                chart = {}
+            chart_type = chart.get("chartType") or chart.get("chart_type") or chart.get("type") or "bar"
+            if chart_type not in ("bar", "line", "pie"):
+                chart_type = "bar"
+            labels = as_str_list(chart.get("labels") or chart.get("x") or chart.get("categories"))
+            series_raw = chart.get("series") or chart.get("data") or []
+            series_out = []
+            if isinstance(series_raw, list):
+                for it in series_raw:
+                    if it is None:
+                        continue
+                    if isinstance(it, dict):
+                        name = it.get("name") or it.get("label") or it.get("title") or "Series"
+                        values_raw = it.get("values") or it.get("data") or []
+                        values_out = []
+                        if isinstance(values_raw, list):
+                            for vv in values_raw:
+                                if isinstance(vv, (int, float)):
+                                    values_out.append(float(vv))
+                                elif isinstance(vv, str):
+                                    try:
+                                        values_out.append(float(vv.strip()))
+                                    except Exception:
+                                        continue
+                        series_out.append({"name": as_str(name) or "Series", "values": values_out})
+                        continue
+            return {
+                **base,
+                "chart": {
+                    "chartType": chart_type,
+                    "labels": labels,
+                    "series": series_out,
+                },
+            }
+
+        if intent == "multi_column":
+            cols_raw = s.get("columns") if s.get("columns") is not None else wrapper.get("columns")
+            cols_out = []
+            if isinstance(cols_raw, list):
+                for it in cols_raw:
+                    if it is None:
+                        continue
+                    if isinstance(it, str):
+                        txt = it.strip()
+                        if txt:
+                            cols_out.append({"title": txt, "bullets": []})
+                        continue
+                    if isinstance(it, dict):
+                        col_title = it.get("title") or it.get("name") or it.get("label")
+                        bullets = it.get("bullets") or it.get("items") or it.get("points") or it.get("highlights")
+                        cols_out.append({"title": as_str(col_title) or "要点", "bullets": as_str_list(bullets)})
+                        continue
+            return {**base, "columns": cols_out}
+
+        if intent == "architecture":
+            layers_raw = s.get("layers") if s.get("layers") is not None else wrapper.get("layers")
+            layers_out = []
+            if isinstance(layers_raw, list):
+                for it in layers_raw:
+                    if it is None:
+                        continue
+                    if isinstance(it, str):
+                        txt = it.strip()
+                        if txt:
+                            layers_out.append({"name": txt, "items": []})
+                        continue
+                    if isinstance(it, dict):
+                        name = it.get("name") or it.get("layer") or it.get("title") or it.get("label")
+                        items = it.get("items") or it.get("bullets") or it.get("components") or it.get("modules")
+                        layers_out.append({"name": as_str(name) or "层", "items": as_str_list(items)})
+                        continue
+            return {**base, "layers": layers_out}
+
+        if intent == "quote":
+            quote = s.get("quote") or wrapper.get("quote") or s.get("text") or base["title"]
+            author = s.get("author") if s.get("author") is not None else wrapper.get("author")
+            return {**base, "quote": as_str(quote) or base["title"], "author": as_str(author) or None}
+
+        if intent == "divider":
+            subtitle = s.get("subtitle") if s.get("subtitle") is not None else wrapper.get("subtitle")
+            return {**base, "subtitle": as_str(subtitle) or None}
+
+        if intent == "team":
+            members_raw = s.get("members") if s.get("members") is not None else wrapper.get("members")
+            members_out = []
+            if isinstance(members_raw, list):
+                for it in members_raw:
+                    if it is None:
+                        continue
+                    if isinstance(it, str):
+                        txt = it.strip()
+                        if txt:
+                            members_out.append({"name": txt, "highlights": []})
+                        continue
+                    if isinstance(it, dict):
+                        name = it.get("name") or it.get("title") or it.get("label")
+                        role = it.get("role") or it.get("position")
+                        highlights = it.get("highlights") or it.get("bullets") or it.get("items") or it.get("points")
+                        members_out.append(
+                            {
+                                "name": as_str(name) or "成员",
+                                "role": as_str(role) or None,
+                                "highlights": as_str_list(highlights),
+                            }
+                        )
+                        continue
+            return {**base, "members": members_out}
+
+        return {**base, "intent": "text", "paragraphs": [], "bullets": [base["title"]]}
 
     def _fallback(self, topic: str, theme: Optional[str]) -> PresentationDSL:
         theme_name = theme or "modern_blue"

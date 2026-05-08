@@ -1,0 +1,1137 @@
+{
+  "meta": {
+    "id": "pres_35cca518b0d7",
+    "topic": "RAG介绍",
+    "createdAt": "2026-05-08T14:13:17.217216Z",
+    "updatedAt": "2026-05-08T14:14:49.585522Z",
+    "version": 2,
+    "extra": {
+      "ai": {
+        "llmConfigured": true,
+        "usedFallback": false,
+        "stage": "dsl_repair",
+        "error": "ValidationError: 12 validation errors for PresentationDSL\nslides.0\n  Unable to extract tag using discriminator 'intent' [type=union_tag_not_found, input_value={'id': 'cover', 'section'...全接入内部数据']}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/union_tag_not_found\nslides.1\n  Unable to extract tag using discriminator 'intent' [type=union_tag_not_found, input_value={'id': 'agenda', 'section...场景和发展趋势']}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/union_tag_not_found\nslides.2\n  Unable to extract tag using discriminator 'intent' [type=union_tag_not_found, input_value={'id': 'text', 'section':...无法直接访问。']}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/union_tag_not_found\nslides.3\n  Unable to extract tag using discriminator 'intent' [type=union_tag_not_found, input_value={'id': 'text', 'section':...生成最终回答。']}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/union_tag_not_found\nslides.4\n  Unable to extract tag using discriminator 'intent' [type=union_tag_not_found, input_value={'id': 'comparison', 'sec...新知识库即可']}}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/union_tag_not_found\nslides.5\n  Unable to extract tag using discriminator 'intent' [type=union_tag_not_found, input_value={'id': 'architecture', 's...', 'LLM生成回答']}]}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/union_tag_not_found\nslides.6\n  Unable to extract tag using discriminator 'intent' [type=union_tag_not_found, input_value={'id': 'process_flow', 's...输出最终答案'}]}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/union_tag_not_found\nslides.7\n  Unable to extract tag using discriminator 'intent' [type=union_tag_not_found, input_value={'id': 'text', 'section':...相关的Top-K结果']}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/union_tag_not_found\nslides.8\n  Unable to extract tag using discriminator 'intent' [type=union_tag_not_found, input_value={'id': 'text', 'section':...记或置信度评分']}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/union_tag_not_found\nslides.9\n  Unable to extract tag using discriminator 'intent' [type=union_tag_not_found, input_value={'id': 'chart', 'section'...alues': [92, 88, 95]}]}}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/union_tag_not_found\nslides.10\n  Unable to extract tag using discriminator 'intent' [type=union_tag_not_found, input_value={'id': 'roadmap', 'sectio...'实时知识更新']}]}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/union_tag_not_found\nslides.11\n  Unable to extract tag using discriminator 'intent' [type=union_tag_not_found, input_value={'id': 'quote', 'section'...author': '综述报告'}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/union_tag_not_found"
+      }
+    }
+  },
+  "dsl": {
+    "title": "RAG介绍",
+    "audience": "技术团队或对AI感兴趣的受众",
+    "tone": "专业、教育性、清晰",
+    "theme": "academic_gray",
+    "slides": [
+      {
+        "id": "cover",
+        "intent": "text",
+        "section": "Introduction",
+        "title": "RAG介绍：检索增强生成",
+        "notes": [
+          "封面页，展示主题、演讲者及受众定位"
+        ],
+        "paragraphs": [],
+        "bullets": [
+          "RAG介绍：检索增强生成"
+        ]
+      },
+      {
+        "id": "agenda",
+        "intent": "text",
+        "section": "Agenda",
+        "title": "内容提纲",
+        "notes": [
+          "列出本次分享的五个主要部分：背景、概念、原理、架构、应用与未来"
+        ],
+        "paragraphs": [],
+        "bullets": [
+          "内容提纲"
+        ]
+      },
+      {
+        "id": "text",
+        "intent": "text",
+        "section": "Background",
+        "title": "为什么需要RAG？",
+        "notes": [
+          "说明传统LLM的局限性（知识截止、幻觉、无法访问内部数据），引出RAG的动机"
+        ],
+        "paragraphs": [],
+        "bullets": [
+          "为什么需要RAG？"
+        ]
+      },
+      {
+        "id": "text",
+        "intent": "text",
+        "section": "Concept",
+        "title": "什么是RAG？",
+        "notes": [
+          "定义检索增强生成：结合外部知识库与LLM，在生成前进行检索以增强上下文"
+        ],
+        "paragraphs": [],
+        "bullets": [
+          "什么是RAG？"
+        ]
+      },
+      {
+        "id": "comparison",
+        "intent": "text",
+        "section": "Concept",
+        "title": "传统LLM vs RAG",
+        "notes": [
+          "通过对比表格展示两者在知识源、上下文长度、幻觉风险、可更新性等方面的差异"
+        ],
+        "paragraphs": [],
+        "bullets": [
+          "传统LLM vs RAG"
+        ]
+      },
+      {
+        "id": "architecture",
+        "intent": "text",
+        "section": "Architecture",
+        "title": "RAG系统架构",
+        "notes": [
+          "展示RAG的核心组件：文档索引、向量数据库、检索模块、LLM和提示生成器"
+        ],
+        "paragraphs": [],
+        "bullets": [
+          "RAG系统架构"
+        ]
+      },
+      {
+        "id": "process_flow",
+        "intent": "text",
+        "section": "Workflow",
+        "title": "RAG工作流程",
+        "notes": [
+          "用流程图展示从用户查询→嵌入→检索→拼接提示→LLM生成→返回结果的完整过程"
+        ],
+        "paragraphs": [],
+        "bullets": [
+          "RAG工作流程"
+        ]
+      },
+      {
+        "id": "text",
+        "intent": "text",
+        "section": "Components",
+        "title": "检索组件：嵌入与向量数据库",
+        "notes": [
+          "讲解如何将文档分块、转换为向量，并利用向量数据库（如FAISS）进行相似性搜索"
+        ],
+        "paragraphs": [],
+        "bullets": [
+          "检索组件：嵌入与向量数据库"
+        ]
+      },
+      {
+        "id": "text",
+        "intent": "text",
+        "section": "Components",
+        "title": "生成组件：提示增强与LLM",
+        "notes": [
+          "说明如何将检索到的上下文与原始查询拼接成增强提示，并送入LLM生成答案"
+        ],
+        "paragraphs": [],
+        "bullets": [
+          "生成组件：提示增强与LLM"
+        ]
+      },
+      {
+        "id": "chart",
+        "intent": "chart",
+        "section": "Performance",
+        "title": "RAG性能提升示例",
+        "notes": [
+          "用柱状图或折线图展示引入RAG后，在问答准确率、事实一致性等指标上的提升"
+        ],
+        "chart": {
+          "chartType": "bar",
+          "labels": [
+            "问答准确率",
+            "事实一致性",
+            "用户满意度"
+          ],
+          "series": [
+            {
+              "name": "传统LLM",
+              "values": [
+                65.0,
+                55.0,
+                70.0
+              ]
+            },
+            {
+              "name": "RAG",
+              "values": [
+                92.0,
+                88.0,
+                95.0
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": "roadmap",
+        "intent": "text",
+        "section": "Future",
+        "title": "RAG的未来与应用场景",
+        "notes": [
+          "以时间线或路线图形式展示RAG的发展趋势及在客服、知识管理、问答等领域的落地"
+        ],
+        "paragraphs": [],
+        "bullets": [
+          "RAG的未来与应用场景"
+        ]
+      },
+      {
+        "id": "quote",
+        "intent": "text",
+        "section": "Conclusion",
+        "title": "总结：让LLM掌握最新知识",
+        "notes": [
+          "用一句话概括RAG的价值：低成本、高时效、减少幻觉，作为结束页引发思考"
+        ],
+        "paragraphs": [],
+        "bullets": [
+          "总结：让LLM掌握最新知识"
+        ]
+      }
+    ]
+  },
+  "renderTree": {
+    "presentationId": "pres_35cca518b0d7",
+    "title": "RAG介绍",
+    "themeName": "academic_gray",
+    "themeTokens": {
+      "name": "Academic Gray",
+      "colors": {
+        "background": "#FFFFFF",
+        "surface": "#F3F4F6",
+        "text": "#111827",
+        "muted": "#4B5563",
+        "primary": "#374151",
+        "secondary": "#6B7280",
+        "border": "rgba(17,24,39,0.10)"
+      },
+      "typography": {
+        "fontFamily": "Times New Roman, Georgia, serif",
+        "titlePt": 34,
+        "subtitlePt": 18,
+        "bodyPt": 16,
+        "smallPt": 12
+      },
+      "spacing": {
+        "slidePaddingPx": 64,
+        "gapPx": 16
+      }
+    },
+    "slides": [
+      {
+        "id": "cover",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "cover__title",
+            "type": "Title",
+            "x": 64.0,
+            "y": 64.0,
+            "w": 1152.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 34,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "RAG介绍：检索增强生成"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "cover__text",
+            "type": "Text",
+            "x": 64.0,
+            "y": 176.0,
+            "w": 1152.0,
+            "h": 480.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "\n• RAG介绍：检索增强生成"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": [
+          "封面页，展示主题、演讲者及受众定位"
+        ]
+      },
+      {
+        "id": "agenda",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "agenda__title",
+            "type": "Title",
+            "x": 64.0,
+            "y": 64.0,
+            "w": 1152.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 34,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "内容提纲"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "agenda__text",
+            "type": "Text",
+            "x": 64.0,
+            "y": 176.0,
+            "w": 1152.0,
+            "h": 480.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "\n• 内容提纲"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": [
+          "列出本次分享的五个主要部分：背景、概念、原理、架构、应用与未来"
+        ]
+      },
+      {
+        "id": "text",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "text__title",
+            "type": "Title",
+            "x": 64.0,
+            "y": 64.0,
+            "w": 1152.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 34,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "为什么需要RAG？"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "text__text",
+            "type": "Text",
+            "x": 64.0,
+            "y": 176.0,
+            "w": 1152.0,
+            "h": 480.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "\n• 为什么需要RAG？"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": [
+          "说明传统LLM的局限性（知识截止、幻觉、无法访问内部数据），引出RAG的动机"
+        ]
+      },
+      {
+        "id": "text",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "text__title",
+            "type": "Title",
+            "x": 64.0,
+            "y": 64.0,
+            "w": 1152.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 34,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "什么是RAG？"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "text__text",
+            "type": "Text",
+            "x": 64.0,
+            "y": 176.0,
+            "w": 1152.0,
+            "h": 480.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "\n• 什么是RAG？"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": [
+          "定义检索增强生成：结合外部知识库与LLM，在生成前进行检索以增强上下文"
+        ]
+      },
+      {
+        "id": "comparison",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "comparison__title",
+            "type": "Title",
+            "x": 64.0,
+            "y": 64.0,
+            "w": 1152.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 34,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "传统LLM vs RAG"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "comparison__text",
+            "type": "Text",
+            "x": 64.0,
+            "y": 176.0,
+            "w": 1152.0,
+            "h": 480.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "\n• 传统LLM vs RAG"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": [
+          "通过对比表格展示两者在知识源、上下文长度、幻觉风险、可更新性等方面的差异"
+        ]
+      },
+      {
+        "id": "architecture",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "architecture__title",
+            "type": "Title",
+            "x": 64.0,
+            "y": 64.0,
+            "w": 1152.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 34,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "RAG系统架构"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "architecture__text",
+            "type": "Text",
+            "x": 64.0,
+            "y": 176.0,
+            "w": 1152.0,
+            "h": 480.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "\n• RAG系统架构"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": [
+          "展示RAG的核心组件：文档索引、向量数据库、检索模块、LLM和提示生成器"
+        ]
+      },
+      {
+        "id": "process_flow",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "process_flow__title",
+            "type": "Title",
+            "x": 64.0,
+            "y": 64.0,
+            "w": 1152.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 34,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "RAG工作流程"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "process_flow__text",
+            "type": "Text",
+            "x": 64.0,
+            "y": 176.0,
+            "w": 1152.0,
+            "h": 480.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "\n• RAG工作流程"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": [
+          "用流程图展示从用户查询→嵌入→检索→拼接提示→LLM生成→返回结果的完整过程"
+        ]
+      },
+      {
+        "id": "text",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "text__title",
+            "type": "Title",
+            "x": 64.0,
+            "y": 64.0,
+            "w": 1152.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 34,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "检索组件：嵌入与向量数据库"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "text__text",
+            "type": "Text",
+            "x": 64.0,
+            "y": 176.0,
+            "w": 1152.0,
+            "h": 480.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "\n• 检索组件：嵌入与向量数据库"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": [
+          "讲解如何将文档分块、转换为向量，并利用向量数据库（如FAISS）进行相似性搜索"
+        ]
+      },
+      {
+        "id": "text",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "text__title",
+            "type": "Title",
+            "x": 64.0,
+            "y": 64.0,
+            "w": 1152.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 34,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "生成组件：提示增强与LLM"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "text__text",
+            "type": "Text",
+            "x": 64.0,
+            "y": 176.0,
+            "w": 1152.0,
+            "h": 480.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "\n• 生成组件：提示增强与LLM"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": [
+          "说明如何将检索到的上下文与原始查询拼接成增强提示，并送入LLM生成答案"
+        ]
+      },
+      {
+        "id": "chart",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "chart__title",
+            "type": "Title",
+            "x": 64.0,
+            "y": 64.0,
+            "w": 1152.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 34,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "RAG性能提升示例"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "chart__chart",
+            "type": "Chart",
+            "x": 64.0,
+            "y": 176.0,
+            "w": 1152.0,
+            "h": 480.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": "#F3F4F6",
+              "borderColor": "rgba(17,24,39,0.10)",
+              "borderWidth": 1,
+              "radius": 12,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "chartType": "bar",
+              "labels": [
+                "问答准确率",
+                "事实一致性",
+                "用户满意度"
+              ],
+              "series": [
+                {
+                  "name": "传统LLM",
+                  "values": [
+                    65.0,
+                    55.0,
+                    70.0
+                  ]
+                },
+                {
+                  "name": "RAG",
+                  "values": [
+                    92.0,
+                    88.0,
+                    95.0
+                  ]
+                }
+              ]
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": [
+          "用柱状图或折线图展示引入RAG后，在问答准确率、事实一致性等指标上的提升"
+        ]
+      },
+      {
+        "id": "roadmap",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "roadmap__title",
+            "type": "Title",
+            "x": 64.0,
+            "y": 64.0,
+            "w": 1152.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 34,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "RAG的未来与应用场景"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "roadmap__text",
+            "type": "Text",
+            "x": 64.0,
+            "y": 176.0,
+            "w": 1152.0,
+            "h": 480.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "\n• RAG的未来与应用场景"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": [
+          "以时间线或路线图形式展示RAG的发展趋势及在客服、知识管理、问答等领域的落地"
+        ]
+      },
+      {
+        "id": "quote",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "quote__title",
+            "type": "Title",
+            "x": 64.0,
+            "y": 64.0,
+            "w": 1152.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 34,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "总结：让LLM掌握最新知识"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "quote__text",
+            "type": "Text",
+            "x": 64.0,
+            "y": 176.0,
+            "w": 1152.0,
+            "h": 480.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "\n• 总结：让LLM掌握最新知识"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": [
+          "用一句话概括RAG的价值：低成本、高时效、减少幻觉，作为结束页引发思考"
+        ]
+      }
+    ],
+    "meta": {
+      "audience": "技术团队或对AI感兴趣的受众",
+      "tone": "专业、教育性、清晰"
+    }
+  },
+  "lastExportPptx": "data\\exports\\pres_35cca518b0d7\\pres_35cca518b0d7.pptx"
+}

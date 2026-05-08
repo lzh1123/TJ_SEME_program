@@ -1,0 +1,748 @@
+{
+  "meta": {
+    "id": "pres_6fa943e0eeb1",
+    "topic": "软件工程介绍，面向新生",
+    "createdAt": "2026-05-08T14:39:55.690382Z",
+    "updatedAt": "2026-05-08T14:40:30.648672Z",
+    "version": 2,
+    "extra": {
+      "ai": {
+        "llmConfigured": true,
+        "usedFallback": false,
+        "stage": "dsl_repair",
+        "error": "ValidationError: 8 validation errors for PresentationDSL\nslides.0\n  Unable to extract tag using discriminator 'intent' [type=union_tag_not_found, input_value={'id': 'cover', 'section'...划你的学习路径']}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/union_tag_not_found\nslides.1\n  Unable to extract tag using discriminator 'intent' [type=union_tag_not_found, input_value={'id': 'agenda', 'section...线', '名言激励']}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/union_tag_not_found\nslides.2\n  Unable to extract tag using discriminator 'intent' [type=union_tag_not_found, input_value={'id': 'text', 'section':...靠的软件产品。']}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/union_tag_not_found\nslides.3\n  Unable to extract tag using discriminator 'intent' [type=union_tag_not_found, input_value={'id': 'process_flow', 's...并迭代新功能'}]}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/union_tag_not_found\nslides.4\n  Unable to extract tag using discriminator 'intent' [type=union_tag_not_found, input_value={'id': 'team', 'section':...踪', '风险评估']}]}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/union_tag_not_found\nslides.5\n  Unable to extract tag using discriminator 'intent' [type=union_tag_not_found, input_value={'id': 'timeline', 'secti...与DevOps工具链'}]}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/union_tag_not_found\nslides.6\n  Unable to extract tag using discriminator 'intent' [type=union_tag_not_found, input_value={'id': 'quote', 'section'...'author': 'Fred Brooks'}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/union_tag_not_found\nslides.7\n  Unable to extract tag using discriminator 'intent' [type=union_tag_not_found, input_value={'id': 'divider', 'sectio...subtitle': 'Q&A 环节'}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/union_tag_not_found"
+      }
+    }
+  },
+  "dsl": {
+    "title": "软件工程介绍，面向新生",
+    "audience": "freshmen",
+    "tone": "informative",
+    "theme": "Modern Blue",
+    "slides": [
+      {
+        "id": "cover",
+        "intent": "text",
+        "section": "Introduction",
+        "title": "软件工程导论",
+        "notes": [
+          "开场幻灯片，介绍主题和听众"
+        ],
+        "paragraphs": [],
+        "bullets": [
+          "软件工程导论"
+        ]
+      },
+      {
+        "id": "agenda",
+        "intent": "text",
+        "section": "Agenda",
+        "title": "议程",
+        "notes": [
+          "列出今天的介绍内容"
+        ],
+        "paragraphs": [],
+        "bullets": [
+          "议程"
+        ]
+      },
+      {
+        "id": "text",
+        "intent": "text",
+        "section": "什么是软件工程",
+        "title": "软件工程的定义",
+        "notes": [
+          "解释软件工程的基本概念"
+        ],
+        "paragraphs": [],
+        "bullets": [
+          "软件工程的定义"
+        ]
+      },
+      {
+        "id": "process_flow",
+        "intent": "text",
+        "section": "开发流程",
+        "title": "软件开发生命周期",
+        "notes": [
+          "展示从需求到维护的流程"
+        ],
+        "paragraphs": [],
+        "bullets": [
+          "软件开发生命周期"
+        ]
+      },
+      {
+        "id": "team",
+        "intent": "text",
+        "section": "团队协作",
+        "title": "软件团队角色",
+        "notes": [
+          "介绍开发团队中的不同角色及其职责"
+        ],
+        "paragraphs": [],
+        "bullets": [
+          "软件团队角色"
+        ]
+      },
+      {
+        "id": "timeline",
+        "intent": "text",
+        "section": "学习路径",
+        "title": "软件工程学习路线",
+        "notes": [
+          "给出新生如何入门软件工程的时间线建议"
+        ],
+        "paragraphs": [],
+        "bullets": [
+          "软件工程学习路线"
+        ]
+      },
+      {
+        "id": "quote",
+        "intent": "text",
+        "section": "名言激励",
+        "title": "软件工程名言",
+        "notes": [
+          "引用著名工程师的话激励新生"
+        ],
+        "paragraphs": [],
+        "bullets": [
+          "软件工程名言"
+        ]
+      },
+      {
+        "id": "divider",
+        "intent": "text",
+        "section": "结束",
+        "title": "感谢聆听",
+        "notes": [
+          "结束幻灯片，感谢观众"
+        ],
+        "paragraphs": [],
+        "bullets": [
+          "感谢聆听"
+        ]
+      }
+    ]
+  },
+  "renderTree": {
+    "presentationId": "pres_6fa943e0eeb1",
+    "title": "软件工程介绍，面向新生",
+    "themeName": "Modern Blue",
+    "themeTokens": {
+      "name": "Modern Blue",
+      "colors": {
+        "background": "#0B1220",
+        "surface": "#111B2E",
+        "text": "#E6EEF9",
+        "muted": "#A9B7D0",
+        "primary": "#0078D4",
+        "secondary": "#2B88D8",
+        "border": "rgba(255,255,255,0.12)"
+      },
+      "typography": {
+        "fontFamily": "ui-sans-serif, system-ui, Segoe UI, Arial",
+        "titlePt": 36,
+        "subtitlePt": 20,
+        "bodyPt": 16,
+        "smallPt": 12
+      },
+      "spacing": {
+        "slidePaddingPx": 56,
+        "gapPx": 18
+      }
+    },
+    "slides": [
+      {
+        "id": "cover",
+        "width": 1280,
+        "height": 720,
+        "background": "#0B1220",
+        "components": [
+          {
+            "id": "cover__title",
+            "type": "Title",
+            "x": 56.0,
+            "y": 56.0,
+            "w": 1168.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#E6EEF9",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "ui-sans-serif, system-ui, Segoe UI, Arial",
+              "fontSize": 36,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "软件工程导论"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "cover__text",
+            "type": "Text",
+            "x": 56.0,
+            "y": 170.0,
+            "w": 1168.0,
+            "h": 494.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#E6EEF9",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "ui-sans-serif, system-ui, Segoe UI, Arial",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "\n• 软件工程导论"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": [
+          "开场幻灯片，介绍主题和听众"
+        ]
+      },
+      {
+        "id": "agenda",
+        "width": 1280,
+        "height": 720,
+        "background": "#0B1220",
+        "components": [
+          {
+            "id": "agenda__title",
+            "type": "Title",
+            "x": 56.0,
+            "y": 56.0,
+            "w": 1168.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#E6EEF9",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "ui-sans-serif, system-ui, Segoe UI, Arial",
+              "fontSize": 36,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "议程"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "agenda__text",
+            "type": "Text",
+            "x": 56.0,
+            "y": 170.0,
+            "w": 1168.0,
+            "h": 494.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#E6EEF9",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "ui-sans-serif, system-ui, Segoe UI, Arial",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "\n• 议程"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": [
+          "列出今天的介绍内容"
+        ]
+      },
+      {
+        "id": "text",
+        "width": 1280,
+        "height": 720,
+        "background": "#0B1220",
+        "components": [
+          {
+            "id": "text__title",
+            "type": "Title",
+            "x": 56.0,
+            "y": 56.0,
+            "w": 1168.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#E6EEF9",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "ui-sans-serif, system-ui, Segoe UI, Arial",
+              "fontSize": 36,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "软件工程的定义"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "text__text",
+            "type": "Text",
+            "x": 56.0,
+            "y": 170.0,
+            "w": 1168.0,
+            "h": 494.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#E6EEF9",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "ui-sans-serif, system-ui, Segoe UI, Arial",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "\n• 软件工程的定义"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": [
+          "解释软件工程的基本概念"
+        ]
+      },
+      {
+        "id": "process_flow",
+        "width": 1280,
+        "height": 720,
+        "background": "#0B1220",
+        "components": [
+          {
+            "id": "process_flow__title",
+            "type": "Title",
+            "x": 56.0,
+            "y": 56.0,
+            "w": 1168.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#E6EEF9",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "ui-sans-serif, system-ui, Segoe UI, Arial",
+              "fontSize": 36,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "软件开发生命周期"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "process_flow__text",
+            "type": "Text",
+            "x": 56.0,
+            "y": 170.0,
+            "w": 1168.0,
+            "h": 494.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#E6EEF9",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "ui-sans-serif, system-ui, Segoe UI, Arial",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "\n• 软件开发生命周期"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": [
+          "展示从需求到维护的流程"
+        ]
+      },
+      {
+        "id": "team",
+        "width": 1280,
+        "height": 720,
+        "background": "#0B1220",
+        "components": [
+          {
+            "id": "team__title",
+            "type": "Title",
+            "x": 56.0,
+            "y": 56.0,
+            "w": 1168.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#E6EEF9",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "ui-sans-serif, system-ui, Segoe UI, Arial",
+              "fontSize": 36,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "软件团队角色"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "team__text",
+            "type": "Text",
+            "x": 56.0,
+            "y": 170.0,
+            "w": 1168.0,
+            "h": 494.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#E6EEF9",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "ui-sans-serif, system-ui, Segoe UI, Arial",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "\n• 软件团队角色"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": [
+          "介绍开发团队中的不同角色及其职责"
+        ]
+      },
+      {
+        "id": "timeline",
+        "width": 1280,
+        "height": 720,
+        "background": "#0B1220",
+        "components": [
+          {
+            "id": "timeline__title",
+            "type": "Title",
+            "x": 56.0,
+            "y": 56.0,
+            "w": 1168.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#E6EEF9",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "ui-sans-serif, system-ui, Segoe UI, Arial",
+              "fontSize": 36,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "软件工程学习路线"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "timeline__text",
+            "type": "Text",
+            "x": 56.0,
+            "y": 170.0,
+            "w": 1168.0,
+            "h": 494.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#E6EEF9",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "ui-sans-serif, system-ui, Segoe UI, Arial",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "\n• 软件工程学习路线"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": [
+          "给出新生如何入门软件工程的时间线建议"
+        ]
+      },
+      {
+        "id": "quote",
+        "width": 1280,
+        "height": 720,
+        "background": "#0B1220",
+        "components": [
+          {
+            "id": "quote__title",
+            "type": "Title",
+            "x": 56.0,
+            "y": 56.0,
+            "w": 1168.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#E6EEF9",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "ui-sans-serif, system-ui, Segoe UI, Arial",
+              "fontSize": 36,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "软件工程名言"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "quote__text",
+            "type": "Text",
+            "x": 56.0,
+            "y": 170.0,
+            "w": 1168.0,
+            "h": 494.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#E6EEF9",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "ui-sans-serif, system-ui, Segoe UI, Arial",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "\n• 软件工程名言"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": [
+          "引用著名工程师的话激励新生"
+        ]
+      },
+      {
+        "id": "divider",
+        "width": 1280,
+        "height": 720,
+        "background": "#0B1220",
+        "components": [
+          {
+            "id": "divider__title",
+            "type": "Title",
+            "x": 56.0,
+            "y": 56.0,
+            "w": 1168.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#E6EEF9",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "ui-sans-serif, system-ui, Segoe UI, Arial",
+              "fontSize": 36,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "感谢聆听"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "divider__text",
+            "type": "Text",
+            "x": 56.0,
+            "y": 170.0,
+            "w": 1168.0,
+            "h": 494.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#E6EEF9",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "ui-sans-serif, system-ui, Segoe UI, Arial",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "\n• 感谢聆听"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": [
+          "结束幻灯片，感谢观众"
+        ]
+      }
+    ],
+    "meta": {
+      "audience": "freshmen",
+      "tone": "informative"
+    }
+  },
+  "lastExportPptx": "data\\exports\\pres_6fa943e0eeb1\\pres_6fa943e0eeb1.pptx"
+}

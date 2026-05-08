@@ -131,7 +131,37 @@ class AiPipeline:
                     "你是 PPT DSL Generator。你只输出 JSON，不要输出任何解释文字。\n"
                     "你必须输出 PresentationDSL：包含 title/audience/tone/theme/slides。\n"
                     "slides 是语义化页面 DSL，使用 intent 作为 discriminant。\n"
-                    "每页必须包含：id(intent)/section/title/notes。\n"
+                    '''
+                    所有 slide 必须严格包含：
+                    {{
+                    "id": "slide_xxx",
+                    "intent": "...",
+                    "section": "...",
+                    "title": "...",
+                    "notes": []
+                    }}
+
+                    注意：
+                    - id 必须存在且是 string
+                    - notes 必须是 string array
+                    - 即使只有一条 note，也必须：
+                    "notes": ["xxx"]
+                    - 禁止：
+                    "notes": "xxx"
+
+                    ## 例子：
+                    {{
+                        "id": "slide_cover",
+                        "intent": "cover",
+                        "section": "封面",
+                        "title": "软件工程导论",
+                        "notes": [
+                            "建立主题认知",
+                            "展示课程目标"
+                        ],
+                        "subtitle": "Software Engineering"
+                    }}\n
+                    '''
                     "字段类型必须严格匹配：\n"
                     "- cover: subtitle/tagline/highlights(list[str])\n"
                     "- agenda: items(list[str])，不要输出对象数组\n"

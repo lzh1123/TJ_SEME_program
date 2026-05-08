@@ -300,61 +300,97 @@ const userAvatar = 'https://api.dicebear.com/7.x/avataaars/svg?seed=user'
 const activeTab = ref('outline')
 
 // 大纲数据
-const outlineItems = ref([
-  {
-    number: 1,
-    title: '封面',
-    expanded: true,
-    children: [{ pageNumber: 1, title: '产品发布会' }]
-  },
-  {
-    number: 2,
-    title: '目录',
-    expanded: false
-  },
-  {
-    number: 3,
-    title: '第一章：产品介绍',
-    expanded: true,
-    children: [
-      { pageNumber: 3, title: '产品概述' },
-      { pageNumber: 4, title: '核心功能' },
-      { pageNumber: 5, title: '技术优势' }
-    ]
-  },
-  {
-    number: 4,
-    title: '第二章：市场分析',
-    expanded: true,
-    children: [
-      { pageNumber: 6, title: '市场现状' },
-      { pageNumber: 7, title: '竞争分析' }
-    ]
-  },
-  {
-    number: 5,
-    title: '结束页',
-    expanded: false
-  }
-])
+const outlineItems = ref([])
 
 // 幻灯片数据
-const slides = ref([
-  { number: 1, title: '封面', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' },
-  { number: 2, title: '目录', background: 'white' },
-  { number: 3, title: '产品概述', background: 'white' },
-  { number: 4, title: '核心功能', background: 'white' },
-  { number: 5, title: '技术优势', background: 'white' }
-])
+const slides = ref([])
 
 const currentPage = ref(1)
 const totalPages = computed(() => slides.value.length)
 
-const currentSlide = computed(() => ({
-  title: currentPage.value === 1 ? '产品发布会' : '页面标题',
-  subtitle: currentPage.value === 1 ? '新一代AI芯片技术革新' : '副标题',
-  date: '2024年12月'
-}))
+const currentSlide = computed(() => {
+  const slide = slides.value[currentPage.value - 1]
+  return {
+    title: slide?.title || '页面标题',
+    subtitle: currentPage.value === 1 ? 'PPT内容展示' : '副标题',
+    date: new Date().getFullYear() + '年'
+  }
+})
+
+// 从大纲数据生成幻灯片
+const generateSlidesFromOutline = (outline) => {
+  const newSlides = []
+  let slideNum = 1
+  
+  outline.forEach((item) => {
+    if (item.children) {
+      item.children.forEach((child) => {
+        newSlides.push({
+          number: slideNum,
+          title: child.title,
+          background: slideNum === 1 ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : 'white'
+        })
+        slideNum++
+      })
+    }
+  })
+  
+  return newSlides
+}
+
+// 初始化数据
+const initData = () => {
+  // 检查路由状态中是否有数据
+  const pptData = history.state?.pptData
+  
+  if (pptData) {
+    // 使用传入的大纲数据
+    if (pptData.outline) {
+      outlineItems.value = pptData.outline.map((item, index) => ({
+        ...item,
+        number: index + 1
+      }))
+      
+      // 生成幻灯片
+      slides.value = generateSlidesFromOutline(outlineItems.value)
+    }
+    
+    // 设置标题
+    if (pptData.topic) {
+      projectTitle.value = pptData.topic
+    }
+    
+    console.log('接收到的PPT数据:', pptData)
+  } else {
+    // 使用默认数据
+    outlineItems.value = [
+      {
+        number: 1,
+        title: '封面',
+        expanded: true,
+        children: [{ pageNumber: 1, title: '产品发布会' }]
+      },
+      {
+        number: 2,
+        title: '目录',
+        expanded: false,
+        children: [{ pageNumber: 2, title: '目录' }]
+      },
+      {
+        number: 3,
+        title: '第一章：产品介绍',
+        expanded: true,
+        children: [
+          { pageNumber: 3, title: '产品概述' },
+          { pageNumber: 4, title: '核心功能' },
+          { pageNumber: 5, title: '技术优势' }
+        ]
+      }
+    ]
+    
+    slides.value = generateSlidesFromOutline(outlineItems.value)
+  }
+}
 
 // 画布缩放
 const zoom = ref(100)
@@ -389,11 +425,27 @@ const selectPage = (pageNumber) => {
 
 const addPage = () => {
   const newNumber = slides.value.length + 1
+  
+  // 添加到幻灯片
   slides.value.push({
     number: newNumber,
     title: '新页面',
     background: 'white'
   })
+  
+  // 添加到大纲（在最后一个章节中）
+  if (outlineItems.value.length > 0) {
+    const lastItem = outlineItems.value[outlineItems.value.length - 1]
+    if (!lastItem.children) {
+      lastItem.children = []
+    }
+    lastItem.children.push({
+      pageNumber: newNumber,
+      title: '新页面'
+    })
+    lastItem.expanded = true
+  }
+  
   showToast('已添加新页面')
 }
 
@@ -543,6 +595,9 @@ const handleKeydown = (e) => {
 let autoSaveInterval
 
 onMounted(() => {
+  // 初始化数据
+  initData()
+  
   document.addEventListener('keydown', handleKeydown)
   
   // 每30秒自动保存

@@ -352,7 +352,13 @@ const openModal = () => {
 
 const handleGenerate = (data) => {
   console.log('生成大纲:', data)
-  router.push('/editor')
+  // 通过路由状态传递数据
+  router.push({
+    path: '/editor',
+    state: {
+      pptData: data
+    }
+  })
 }
 
 const triggerFileUpload = () => {

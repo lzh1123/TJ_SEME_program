@@ -8,103 +8,10 @@
         <div class="hero-content">
           <h1 class="hero-title">智能PPT生成，让创作更高效</h1>
           <p class="hero-subtitle">输入主题，AI自动生成专业大纲和内容</p>
-          <div class="hero-search">
-            <div class="search-input-large">
-              <IconBase name="search" :size="18" />
-              <input 
-                type="text" 
-                v-model="searchInput"
-                placeholder="描述你的PPT主题，例如：产品发布会、年终总结..."
-                @keypress.enter="openModal"
-              >
-            </div>
-            <button class="btn btn-primary btn-lg" @click="openModal">
-              <IconBase name="magic" :size="18" />
-              开始生成
-            </button>
-          </div>
-          
-          <!-- 文件上传区域 -->
-          <div class="file-upload-section">
-            <div 
-              class="file-upload-area"
-              :class="{ dragover: isDragging }"
-              @click="triggerFileUpload"
-              @dragover.prevent="isDragging = true"
-              @dragleave.prevent="isDragging = false"
-              @drop.prevent="handleFileDrop"
-            >
-              <input 
-                ref="fileUploadInput"
-                type="file" 
-                class="file-input" 
-                multiple 
-                accept=".pdf,.docx,.txt,.md,.doc,.pptx"
-                @change="handleFileChange"
-              >
-              <div class="upload-content">
-                <IconBase name="cloudUpload" :size="48" class="upload-icon" />
-                <p class="upload-text">拖拽文件到此处，或点击上传</p>
-                <p class="upload-hint">支持 PDF, DOCX, TXT, MD, PPTX（最大 20MB）</p>
-              </div>
-            </div>
-            
-            <!-- 已上传文件列表 -->
-            <div v-if="uploadedFiles.length > 0" class="uploaded-files">
-              <div class="files-header">
-                <span class="files-title">
-                  <IconBase name="paperclip" :size="14" />
-                  已上传文件
-                </span>
-                <span class="files-count">{{ uploadedFiles.length }} 个文件</span>
-              </div>
-              <div class="files-list">
-                <div 
-                  v-for="file in uploadedFiles" 
-                  :key="file.id"
-                  class="file-item"
-                >
-                  <div class="file-icon" :class="file.type.replace('.', '')">
-                    <IconBase :name="getFileIcon(file.type)" :size="18" />
-                  </div>
-                  <div class="file-info">
-                    <div class="file-name">{{ file.name }}</div>
-                    <div class="file-meta">
-                      <span class="file-size">{{ formatFileSize(file.size) }}</span>
-                      <span class="file-status" :class="file.status">
-                        <IconBase v-if="file.status === 'uploading'" name="spinner" :size="12" class="animate-spin" />
-                        <IconBase v-else-if="file.status === 'success'" name="check" :size="12" />
-                        {{ getStatusText(file.status) }}
-                      </span>
-                    </div>
-                    <div v-if="file.status === 'uploading'" class="upload-progress">
-                      <div class="upload-progress-bar" :style="{ width: file.progress + '%' }"></div>
-                    </div>
-                  </div>
-                  <button class="file-remove" @click.stop="removeFile(file.id)">
-                    <IconBase name="times" :size="14" />
-                  </button>
-                </div>
-              </div>
-              <button class="clear-files-btn" @click="clearAllFiles">
-                <IconBase name="trash" :size="14" />
-                清空全部
-              </button>
-            </div>
-          </div>
-          
-          <div class="hero-tags">
-            <span class="tag-label">热门主题：</span>
-            <a 
-              v-for="tag in hotTags" 
-              :key="tag"
-              href="#" 
-              class="tag-link"
-              @click.prevent="selectTag(tag)"
-            >
-              {{ tag }}
-            </a>
-          </div>
+          <button class="btn btn-primary btn-xl" @click="openModal">
+            <IconBase name="magic" :size="24" />
+            开始生成
+          </button>
         </div>
       </div>
     </section>
@@ -254,7 +161,7 @@
     </footer>
 
     <!-- AI大纲生成对话框 -->
-    <OutlineModal v-model="showModal" @generate="handleGenerate" />
+    <OutlineModal v-model="showModal" />
   </div>
 </template>
 
@@ -267,13 +174,7 @@ import IconBase from '../components/icons/IconBase.vue'
 
 const router = useRouter()
 const showModal = ref(false)
-const searchInput = ref('')
-const isDragging = ref(false)
-const fileUploadInput = ref(null)
-const uploadedFiles = ref([])
 const activeTab = ref('全部')
-
-const hotTags = ['产品发布会', '年终总结', '商业计划书', '培训课程']
 
 const features = [
   {
@@ -350,126 +251,6 @@ const openModal = () => {
   showModal.value = true
 }
 
-const handleGenerate = (data) => {
-  console.log('生成大纲:', data)
-  // 通过路由状态传递数据
-  router.push({
-    path: '/editor',
-    state: {
-      pptData: data
-    }
-  })
-}
-
-const triggerFileUpload = () => {
-  fileUploadInput.value?.click()
-}
-
-const handleFileChange = (e) => {
-  handleFiles(e.target.files)
-}
-
-const handleFileDrop = (e) => {
-  isDragging.value = false
-  handleFiles(e.dataTransfer.files)
-}
-
-const handleFiles = (files) => {
-  const validTypes = ['.pdf', '.docx', '.txt', '.md', '.doc', '.pptx']
-  const maxSize = 20 * 1024 * 1024
-
-  Array.from(files).forEach(file => {
-    const extension = '.' + file.name.split('.').pop().toLowerCase()
-    
-    if (!validTypes.includes(extension)) {
-      alert(`不支持的文件格式: ${file.name}`)
-      return
-    }
-    
-    if (file.size > maxSize) {
-      alert(`文件过大: ${file.name} (最大20MB)`)
-      return
-    }
-    
-    if (uploadedFiles.value.some(f => f.name === file.name)) {
-      alert(`文件已存在: ${file.name}`)
-      return
-    }
-    
-    const fileData = {
-      id: Date.now() + Math.random(),
-      name: file.name,
-      size: file.size,
-      type: extension,
-      status: 'uploading',
-      progress: 0
-    }
-    
-    uploadedFiles.value.push(fileData)
-    simulateUpload(fileData)
-  })
-}
-
-const simulateUpload = (fileData) => {
-  const file = uploadedFiles.value.find(f => f.id === fileData.id)
-  if (!file) return
-  
-  let progress = 0
-  const interval = setInterval(() => {
-    progress += Math.random() * 30
-    if (progress >= 100) {
-      progress = 100
-      clearInterval(interval)
-      file.status = 'success'
-      file.progress = 100
-    } else {
-      file.progress = progress
-    }
-  }, 200)
-}
-
-const removeFile = (id) => {
-  uploadedFiles.value = uploadedFiles.value.filter(f => f.id !== id)
-}
-
-const clearAllFiles = () => {
-  uploadedFiles.value = []
-}
-
-const getFileIcon = (type) => {
-  const iconMap = {
-    '.pdf': 'filePdf',
-    '.docx': 'fileWord',
-    '.doc': 'fileWord',
-    '.txt': 'fileAlt',
-    '.md': 'fileCode',
-    '.pptx': 'filePowerpoint'
-  }
-  return iconMap[type] || 'file'
-}
-
-const formatFileSize = (bytes) => {
-  if (bytes === 0) return '0 B'
-  const k = 1024
-  const sizes = ['B', 'KB', 'MB', 'GB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i]
-}
-
-const getStatusText = (status) => {
-  const statusMap = {
-    uploading: '上传中...',
-    success: '上传成功',
-    error: '上传失败'
-  }
-  return statusMap[status] || status
-}
-
-const selectTag = (tag) => {
-  searchInput.value = tag
-  openModal()
-}
-
 const openProject = (project) => {
   console.log('打开项目:', project.title)
 }
@@ -516,325 +297,25 @@ const applyTemplate = (template) => {
 .hero-subtitle {
   font-size: 18px;
   color: var(--gray-500);
-  margin-bottom: var(--space-10);
+  margin-bottom: var(--space-8);
 }
 
-.hero-search {
-  display: flex;
-  gap: var(--space-3);
-  justify-content: center;
-  margin-bottom: var(--space-6);
-}
-
-.search-input-large {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  width: 520px;
-  height: 56px;
-  padding: 0 var(--space-5);
-  background: white;
-  border: 1px solid var(--gray-300);
-  border-radius: var(--radius-full);
-  box-shadow: var(--shadow-md);
-  transition: all 0.2s ease;
-}
-
-.search-input-large:hover {
-  border-color: var(--gray-400);
-}
-
-.search-input-large:focus-within {
-  border-color: var(--primary-500);
-  box-shadow: 0 0 0 4px var(--primary-100), var(--shadow-lg);
-}
-
-.search-input-large input {
-  flex: 1;
-  border: none;
-  font-size: 15px;
-  color: var(--gray-700);
-  background: transparent;
-}
-
-.search-input-large input::placeholder {
-  color: var(--gray-400);
-}
-
-.hero-tags {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-3);
-  font-size: 13px;
-}
-
-.tag-label {
-  color: var(--gray-500);
-}
-
-.tag-link {
-  color: var(--primary-600);
-  padding: var(--space-1) var(--space-3);
-  background: var(--primary-50);
-  border-radius: var(--radius-full);
-  transition: all 0.2s ease;
-}
-
-.tag-link:hover {
-  background: var(--primary-100);
-  color: var(--primary-700);
-}
-
-/* 文件上传区域 */
-.file-upload-section {
-  max-width: 640px;
-  margin: 0 auto var(--space-6);
-}
-
-.file-upload-area {
-  position: relative;
-  border: 2px dashed var(--gray-300);
-  border-radius: var(--radius-xl);
-  padding: var(--space-8) var(--space-6);
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  background: white;
-}
-
-.file-upload-area:hover {
-  border-color: var(--primary-400);
-  background: var(--primary-50);
-}
-
-.file-upload-area.dragover {
-  border-color: var(--primary-500);
-  background: var(--primary-100);
-  transform: scale(1.02);
-}
-
-.file-input {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  cursor: pointer;
-  width: 100%;
-  height: 100%;
-}
-
-.upload-content {
-  pointer-events: none;
-}
-
-.upload-icon {
-  color: var(--primary-400);
-  margin-bottom: var(--space-4);
-}
-
-.upload-text {
-  font-size: 16px;
-  font-weight: 500;
-  color: var(--gray-700);
-  margin-bottom: var(--space-2);
-}
-
-.upload-hint {
-  font-size: 13px;
-  color: var(--gray-500);
-}
-
-/* 已上传文件列表 */
-.uploaded-files {
-  margin-top: var(--space-6);
-  background: white;
-  border-radius: var(--radius-xl);
-  padding: var(--space-5);
-  box-shadow: var(--shadow-md);
-  border: 1px solid var(--gray-200);
-}
-
-.files-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: var(--space-4);
-  padding-bottom: var(--space-3);
-  border-bottom: 1px solid var(--gray-200);
-}
-
-.files-title {
-  font-size: 15px;
+.btn-xl {
+  height: 64px;
+  padding: 0 var(--space-10);
+  font-size: 18px;
   font-weight: 600;
-  color: var(--gray-700);
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-}
-
-.files-count {
-  font-size: 13px;
-  color: var(--gray-500);
-  background: var(--gray-100);
-  padding: var(--space-1) var(--space-3);
-  border-radius: var(--radius-full);
-}
-
-.files-list {
-  display: flex;
-  flex-direction: column;
   gap: var(--space-3);
-  max-height: 240px;
-  overflow-y: auto;
+  box-shadow: var(--shadow-lg);
+  transition: all 0.3s ease;
 }
 
-.file-item {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-3) var(--space-4);
-  background: var(--gray-50);
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--gray-200);
-  transition: all 0.2s ease;
+.btn-xl:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-xl);
 }
 
-.file-item:hover {
-  background: var(--primary-50);
-  border-color: var(--primary-200);
-}
 
-.file-icon {
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: white;
-  border-radius: var(--radius-md);
-  flex-shrink: 0;
-}
-
-.file-icon.pdf {
-  color: #EF4444;
-}
-
-.file-icon.docx,
-.file-icon.doc {
-  color: #3B82F6;
-}
-
-.file-icon.txt,
-.file-icon.md {
-  color: #6B7280;
-}
-
-.file-icon.pptx {
-  color: #F59E0B;
-}
-
-.file-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.file-name {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--gray-800);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  margin-bottom: 2px;
-}
-
-.file-meta {
-  font-size: 12px;
-  color: var(--gray-500);
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-}
-
-.file-size {
-  padding: 1px 6px;
-  background: var(--gray-200);
-  border-radius: var(--radius-sm);
-}
-
-.file-status {
-  display: flex;
-  align-items: center;
-  gap: var(--space-1);
-}
-
-.file-status.uploading {
-  color: var(--primary-500);
-}
-
-.file-status.success {
-  color: var(--success-500);
-}
-
-.upload-progress {
-  width: 100%;
-  height: 4px;
-  background: var(--gray-200);
-  border-radius: var(--radius-full);
-  overflow: hidden;
-  margin-top: var(--space-2);
-}
-
-.upload-progress-bar {
-  height: 100%;
-  background: linear-gradient(90deg, var(--primary-500), var(--primary-400));
-  border-radius: var(--radius-full);
-  transition: width 0.3s ease;
-}
-
-.file-remove {
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--gray-400);
-  background: transparent;
-  border: none;
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  flex-shrink: 0;
-}
-
-.file-remove:hover {
-  color: var(--error-500);
-  background: var(--error-50);
-}
-
-.clear-files-btn {
-  width: 100%;
-  margin-top: var(--space-4);
-  padding: var(--space-3);
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--gray-600);
-  background: transparent;
-  border: 1px dashed var(--gray-300);
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-2);
-  transition: all 0.2s ease;
-}
-
-.clear-files-btn:hover {
-  color: var(--error-600);
-  border-color: var(--error-400);
-  background: var(--error-50);
-}
 
 /* 功能特性 */
 .features {

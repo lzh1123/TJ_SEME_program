@@ -2,17 +2,16 @@
   <Teleport to="body">
     <div class="modal" :class="{ active: modelValue }" @click.self="close">
       <div class="modal-overlay" @click="close"></div>
-      <div class="modal-content" :class="{ expanded: currentStep === 2 }">
+      <div class="modal-content">
         <div class="modal-header">
-          <h2 class="modal-title">{{ currentStep === 2 ? '编辑PPT大纲' : '智能生成PPT大纲' }}</h2>
+          <h2 class="modal-title">智能生成PPT</h2>
           <button class="modal-close" @click="close">
             <IconBase name="times" :size="20" />
           </button>
         </div>
         
         <div class="modal-body">
-          <!-- Step 1: 输入设置 -->
-          <div v-if="currentStep === 1" class="step-content">
+          <div class="step-content">
             <div class="form-step">
               <label class="form-label">
                 <span class="step-number">1</span>
@@ -37,48 +36,15 @@
               <div 
                 class="upload-area"
                 :class="{ dragover: isDragging }"
-                @click="triggerFileInput"
+                @click="() => {}"
                 @dragover.prevent="isDragging = true"
                 @dragleave.prevent="isDragging = false"
-                @drop.prevent="handleDrop"
+                @drop.prevent="() => {}"
               >
                 <div class="upload-content">
                   <IconBase name="cloudUpload" :size="40" class="upload-icon" />
-                  <p class="upload-text">拖拽文件到此处，或点击上传</p>
-                  <p class="upload-hint">支持 PDF, DOCX, TXT, MD（最大 20MB）</p>
-                </div>
-                <input 
-                  ref="fileInput"
-                  type="file" 
-                  class="file-input" 
-                  multiple 
-                  accept=".pdf,.docx,.txt,.md"
-                  @change="handleFileChange"
-                >
-              </div>
-              
-              <div v-if="uploadedFiles.length > 0" class="uploaded-files-list">
-                <div v-for="file in uploadedFiles" :key="file.id" class="file-item">
-                  <div class="file-icon" :class="file.type">
-                    <IconBase :name="getFileIcon(file.type)" :size="18" />
-                  </div>
-                  <div class="file-info">
-                    <div class="file-name">{{ file.name }}</div>
-                    <div class="file-meta">
-                      <span class="file-size">{{ formatFileSize(file.size) }}</span>
-                      <span class="file-status" :class="file.status">
-                        <IconBase v-if="file.status === 'uploading'" name="spinner" :size="12" class="animate-spin" />
-                        <IconBase v-else-if="file.status === 'success'" name="check" :size="12" />
-                        {{ getStatusText(file.status) }}
-                      </span>
-                    </div>
-                    <div v-if="file.status === 'uploading'" class="upload-progress">
-                      <div class="upload-progress-bar" :style="{ width: file.progress + '%' }"></div>
-                    </div>
-                  </div>
-                  <button class="file-remove" @click.stop="removeFile(file.id)">
-                    <IconBase name="times" :size="14" />
-                  </button>
+                  <p class="upload-text">文件上传功能即将上线</p>
+                  <p class="upload-hint">敬请期待</p>
                 </div>
               </div>
             </div>
@@ -86,7 +52,7 @@
             <div class="form-step">
               <label class="form-label">
                 <span class="step-number">2</span>
-                选择风格
+                选择主题风格
               </label>
               <div class="style-options">
                 <div 
@@ -101,160 +67,20 @@
                 </div>
               </div>
             </div>
-
-            <div class="form-step">
-              <label class="form-label">
-                <span class="step-number">3</span>
-                设置页数
-              </label>
-              <div class="page-slider">
-                <input 
-                  type="range" 
-                  min="8" 
-                  max="20" 
-                  v-model="form.pageCount" 
-                  class="slider"
-                >
-                <div class="slider-info">
-                  <span class="page-count">{{ form.pageCount }} 页</span>
-                  <span class="page-hint">推荐 8-20 页</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Step 2: 编辑大纲 -->
-          <div v-if="currentStep === 2" class="step-content outline-editor">
-            <div class="outline-header">
-              <div class="outline-stats">
-                <span class="stat-item">
-                  <IconBase name="list" :size="14" />
-                  {{ outlineItems.length }} 个章节
-                </span>
-                <span class="stat-item">
-                  <IconBase name="file" :size="14" />
-                  {{ totalPages }} 页
-                </span>
-              </div>
-              <div class="outline-actions">
-                <button class="btn btn-secondary btn-sm" @click="regenerateOutline">
-                  <IconBase name="refresh" :size="14" />
-                  重新生成
-                </button>
-              </div>
-            </div>
-
-            <div class="outline-tree-container">
-              <div class="outline-tree">
-                <div 
-                  v-for="(item, index) in outlineItems" 
-                  :key="item.id"
-                  class="outline-item"
-                  :class="{ expanded: item.expanded }"
-                >
-                  <div class="outline-item-header">
-                    <button 
-                      class="toggle-btn"
-                      @click="toggleItem(item)"
-                      :class="{ hidden: !item.children || item.children.length === 0 }"
-                    >
-                      <IconBase name="chevronRight" :size="12" />
-                    </button>
-                    <span class="item-number">{{ index + 1 }}</span>
-                    <input 
-                      v-if="item.editing"
-                      v-model="item.title"
-                      class="item-input"
-                      @blur="item.editing = false"
-                      @keyup.enter="item.editing = false"
-                      ref="inputRef"
-                    >
-                    <span 
-                      v-else
-                      class="item-title"
-                      @dblclick="startEdit(item)"
-                    >
-                      {{ item.title }}
-                    </span>
-                    <div class="item-actions">
-                      <button class="action-btn" @click="addChildItem(item)" title="添加子章节">
-                        <IconBase name="plus" :size="12" />
-                      </button>
-                      <button class="action-btn" @click="startEdit(item)" title="编辑">
-                        <IconBase name="edit" :size="12" />
-                      </button>
-                      <button class="action-btn danger" @click="removeItem(item)" title="删除">
-                        <IconBase name="trash" :size="12" />
-                      </button>
-                    </div>
-                  </div>
-
-                  <div v-if="item.expanded && item.children" class="outline-children">
-                    <div 
-                      v-for="child in item.children" 
-                      :key="child.id"
-                      class="outline-child-item"
-                    >
-                      <span class="child-number">{{ child.pageNumber }}</span>
-                      <input 
-                        v-if="child.editing"
-                        v-model="child.title"
-                        class="item-input"
-                        @blur="child.editing = false"
-                        @keyup.enter="child.editing = false"
-                      >
-                      <span 
-                        v-else
-                        class="child-title"
-                        @dblclick="startEdit(child)"
-                      >
-                        {{ child.title }}
-                      </span>
-                      <div class="item-actions">
-                        <button class="action-btn" @click="startEdit(child)" title="编辑">
-                          <IconBase name="edit" :size="12" />
-                        </button>
-                        <button class="action-btn danger" @click="removeChildItem(item, child)" title="删除">
-                          <IconBase name="trash" :size="12" />
-                        </button>
-                      </div>
-                    </div>
-                    <button class="add-child-btn" @click="addChildItem(item)">
-                      <IconBase name="plus" :size="12" />
-                      添加页面
-                    </button>
-                  </div>
-                </div>
-              </div>
-              
-              <button class="add-section-btn" @click="addSection">
-                <IconBase name="plus" :size="14" />
-                添加章节
-              </button>
-            </div>
           </div>
         </div>
 
         <div class="modal-footer">
-          <template v-if="currentStep === 1">
-            <button class="btn btn-secondary" @click="close">取消</button>
-            <button 
-              class="btn btn-primary" 
-              :disabled="isGenerating || !form.topic.trim()"
-              @click="generateOutline"
-            >
-              <IconBase v-if="isGenerating" name="spinner" :size="14" class="animate-spin" />
-              <IconBase v-else name="magic" :size="14" />
-              {{ isGenerating ? '生成中...' : '开始生成' }}
-            </button>
-          </template>
-          <template v-else>
-            <button class="btn btn-secondary" @click="prevStep">返回修改</button>
-            <button class="btn btn-primary" @click="confirmOutline">
-              <IconBase name="check" :size="14" />
-              确认大纲并创建
-            </button>
-          </template>
+          <button class="btn btn-secondary" @click="close">取消</button>
+          <button 
+            class="btn btn-primary" 
+            :disabled="isGenerating || !form.topic.trim()"
+            @click="generatePresentation"
+          >
+            <IconBase v-if="isGenerating" name="spinner" :size="14" class="animate-spin" />
+            <IconBase v-else name="magic" :size="14" />
+            {{ isGenerating ? '生成中...' : '开始生成' }}
+          </button>
         </div>
       </div>
     </div>
@@ -262,8 +88,10 @@
 </template>
 
 <script setup>
-import { ref, computed, nextTick } from 'vue'
+import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import IconBase from '../icons/IconBase.vue'
+import { apiService } from '../../services/api.js'
 
 const props = defineProps({
   modelValue: {
@@ -272,47 +100,33 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['update:modelValue', 'generate'])
+const emit = defineEmits(['update:modelValue'])
 
-const fileInput = ref(null)
-const inputRef = ref(null)
+const router = useRouter()
+
 const isDragging = ref(false)
 const isGenerating = ref(false)
 const uploadedFiles = ref([])
-const currentStep = ref(1)
 
 const form = ref({
   topic: '',
-  style: 'modern',
-  pageCount: 12
+  style: 'modern'
 })
 
-const outlineItems = ref([])
+const themes = ref({})
 
 const charCount = computed(() => form.value.topic.length)
 
-const totalPages = computed(() => {
-  let count = 0
-  outlineItems.value.forEach(item => {
-    if (item.children) {
-      count += item.children.length
-    }
-  })
-  return count
-})
-
 const styleOptions = [
-  { value: 'business', name: '商务正式', icon: '💼' },
-  { value: 'creative', name: '创意活泼', icon: '🎨' },
-  { value: 'academic', name: '学术严谨', icon: '📖' },
-  { value: 'modern', name: '简约现代', icon: '✨' }
+  { value: 'modern_blue', name: '现代蓝', icon: '💼' },
+  { value: 'paper_light', name: '纸张白', icon: '📄' },
+  { value: 'academic_gray', name: '学术灰', icon: '📖' },
+  { value: 'minimal_black', name: '简约黑', icon: '🎨' }
 ]
 
 const generateId = () => Date.now() + Math.random()
 
 const close = () => {
-  currentStep.value = 1
-  outlineItems.value = []
   emit('update:modelValue', false)
 }
 
@@ -320,19 +134,6 @@ const updateCharCount = () => {
   if (charCount.value > 500) {
     form.value.topic = form.value.topic.slice(0, 500)
   }
-}
-
-const triggerFileInput = () => {
-  fileInput.value?.click()
-}
-
-const handleFileChange = (e) => {
-  handleFiles(e.target.files)
-}
-
-const handleDrop = (e) => {
-  isDragging.value = false
-  handleFiles(e.dataTransfer.files)
 }
 
 const handleFiles = (files) => {
@@ -420,161 +221,26 @@ const getStatusText = (status) => {
   return statusMap[status] || status
 }
 
-const generateOutline = () => {
+const generatePresentation = async () => {
+  if (!form.value.topic.trim()) {
+    alert('请输入主题')
+    return
+  }
+
   isGenerating.value = true
   
-  setTimeout(() => {
-    outlineItems.value = generateMockOutline(form.value.topic, form.value.pageCount)
+  try {
+    const result = await apiService.createPresentation(form.value.topic, form.value.style)
+    close()
+    router.push({
+      path: '/editor',
+      query: { id: result.id }
+    })
+  } catch (error) {
+    alert('创建演示文稿失败: ' + error.message)
+  } finally {
     isGenerating.value = false
-    currentStep.value = 2
-  }, 2000)
-}
-
-const generateMockOutline = (topic, pageCount) => {
-  const pagesPerSection = Math.floor(pageCount / 4)
-  let pageNumber = 1
-  
-  const outline = [
-    {
-      id: generateId(),
-      title: '封面',
-      expanded: true,
-      children: [
-        { id: generateId(), title: `${topic} - 封面`, pageNumber: pageNumber++ }
-      ]
-    },
-    {
-      id: generateId(),
-      title: '目录',
-      expanded: false,
-      children: [
-        { id: generateId(), title: '目录', pageNumber: pageNumber++ }
-      ]
-    },
-    {
-      id: generateId(),
-      title: '第一章：项目概述',
-      expanded: true,
-      children: [
-        { id: generateId(), title: '项目背景', pageNumber: pageNumber++ },
-        { id: generateId(), title: '目标与意义', pageNumber: pageNumber++ },
-        { id: generateId(), title: '核心概念', pageNumber: pageNumber++ }
-      ]
-    },
-    {
-      id: generateId(),
-      title: '第二章：详细内容',
-      expanded: true,
-      children: [
-        { id: generateId(), title: '关键要点一', pageNumber: pageNumber++ },
-        { id: generateId(), title: '关键要点二', pageNumber: pageNumber++ },
-        { id: generateId(), title: '数据与分析', pageNumber: pageNumber++ }
-      ]
-    },
-    {
-      id: generateId(),
-      title: '第三章：总结与展望',
-      expanded: false,
-      children: [
-        { id: generateId(), title: '成果总结', pageNumber: pageNumber++ },
-        { id: generateId(), title: '未来规划', pageNumber: pageNumber++ }
-      ]
-    },
-    {
-      id: generateId(),
-      title: '结束页',
-      expanded: false,
-      children: [
-        { id: generateId(), title: '谢谢观看', pageNumber: pageNumber++ }
-      ]
-    }
-  ]
-  
-  return outline
-}
-
-const regenerateOutline = () => {
-  if (confirm('确定要重新生成大纲吗？当前修改将丢失。')) {
-    generateOutline()
   }
-}
-
-const prevStep = () => {
-  currentStep.value = 1
-}
-
-const confirmOutline = () => {
-  emit('generate', { 
-    ...form.value, 
-    files: uploadedFiles.value,
-    outline: outlineItems.value 
-  })
-  close()
-}
-
-const toggleItem = (item) => {
-  item.expanded = !item.expanded
-}
-
-const startEdit = (item) => {
-  item.editing = true
-  nextTick(() => {
-    const inputs = document.querySelectorAll('.item-input')
-    inputs[inputs.length - 1]?.focus()
-  })
-}
-
-const addSection = () => {
-  const newSection = {
-    id: generateId(),
-    title: '新章节',
-    expanded: true,
-    children: []
-  }
-  outlineItems.value.push(newSection)
-  startEdit(newSection)
-}
-
-const removeItem = (item) => {
-  if (confirm(`确定要删除章节 "${item.title}" 吗？`)) {
-    outlineItems.value = outlineItems.value.filter(i => i.id !== item.id)
-    renumberPages()
-  }
-}
-
-const addChildItem = (parentItem) => {
-  if (!parentItem.children) {
-    parentItem.children = []
-  }
-  
-  const newChild = {
-    id: generateId(),
-    title: '新页面',
-    pageNumber: 0
-  }
-  
-  parentItem.children.push(newChild)
-  parentItem.expanded = true
-  renumberPages()
-  startEdit(newChild)
-}
-
-const removeChildItem = (parentItem, child) => {
-  if (confirm(`确定要删除页面 "${child.title}" 吗？`)) {
-    parentItem.children = parentItem.children.filter(c => c.id !== child.id)
-    renumberPages()
-  }
-}
-
-const renumberPages = () => {
-  let pageNumber = 1
-  outlineItems.value.forEach(item => {
-    if (item.children) {
-      item.children.forEach(child => {
-        child.pageNumber = pageNumber++
-      })
-    }
-  })
 }
 </script>
 

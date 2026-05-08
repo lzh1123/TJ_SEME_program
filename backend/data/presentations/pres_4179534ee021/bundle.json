@@ -1,0 +1,1702 @@
+{
+  "meta": {
+    "id": "pres_4179534ee021",
+    "topic": "PPT生成项目汇报",
+    "createdAt": "2026-05-08T17:42:18.861567Z",
+    "updatedAt": "2026-05-08T17:42:18.861567Z",
+    "version": 1,
+    "extra": {
+      "ai": {
+        "llmConfigured": false,
+        "usedFallback": true,
+        "stage": "init",
+        "error": "ValueError: missing LLM api key"
+      }
+    }
+  },
+  "dsl": {
+    "title": "PPT生成项目汇报",
+    "audience": "通用受众",
+    "tone": "清晰、教学",
+    "theme": "academic_gray",
+    "slides": [
+      {
+        "id": "slide_eee5bb246a8d",
+        "intent": "cover",
+        "section": "封面",
+        "title": "PPT生成项目汇报",
+        "notes": [],
+        "subtitle": "AI + DSL + Renderer 驱动的演示生成",
+        "tagline": null,
+        "highlights": [
+          "语义 DSL",
+          "组件化渲染",
+          "可编辑 RenderTree",
+          "python-pptx 导出"
+        ]
+      },
+      {
+        "id": "slide_4b64da250fe1",
+        "intent": "agenda",
+        "section": "目录",
+        "title": "内容导航",
+        "notes": [],
+        "items": [
+          "背景与目标",
+          "核心架构",
+          "DSL 设计",
+          "渲染与编辑",
+          "导出与扩展"
+        ]
+      },
+      {
+        "id": "slide_ddd29e5c83d6",
+        "intent": "text",
+        "section": "背景与目标",
+        "title": "为什么需要 DSL + Renderer",
+        "notes": [],
+        "paragraphs": [],
+        "bullets": [
+          "AI 只负责内容规划，不输出布局",
+          "Renderer 负责布局、样式、视觉结构",
+          "RenderTree JSON 用于实时预览与编辑"
+        ]
+      },
+      {
+        "id": "slide_5d2c2f8332e4",
+        "intent": "timeline",
+        "section": "渲染流程",
+        "title": "端到端 Pipeline",
+        "notes": [],
+        "events": [
+          {
+            "label": "User Input",
+            "date": null,
+            "detail": "主题/约束"
+          },
+          {
+            "label": "AI Pipeline",
+            "date": null,
+            "detail": "意图→结构→DSL"
+          },
+          {
+            "label": "Render Engine",
+            "date": null,
+            "detail": "组件规划→布局→主题"
+          },
+          {
+            "label": "Edit",
+            "date": null,
+            "detail": "组件拖拽/改文案/换主题"
+          },
+          {
+            "label": "Export",
+            "date": null,
+            "detail": "RenderTree→PPTX"
+          }
+        ]
+      },
+      {
+        "id": "slide_f1a147fbeb7a",
+        "intent": "kpi",
+        "section": "能力",
+        "title": "系统能力 KPI",
+        "notes": [],
+        "items": [
+          {
+            "label": "预览延迟",
+            "value": "< 1s",
+            "unit": null,
+            "delta": null
+          },
+          {
+            "label": "编辑粒度",
+            "value": "Component",
+            "unit": null,
+            "delta": null
+          },
+          {
+            "label": "导出链路",
+            "value": "RenderTree→PPTX",
+            "unit": null,
+            "delta": null
+          }
+        ]
+      },
+      {
+        "id": "slide_5e6fb081e334",
+        "intent": "swot",
+        "section": "分析",
+        "title": "SWOT：AI PPT Generator",
+        "notes": [],
+        "swot": {
+          "strengths": [
+            "语义与视觉解耦",
+            "可编辑",
+            "插件化扩展"
+          ],
+          "weaknesses": [
+            "初期组件有限",
+            "布局算法需迭代"
+          ],
+          "opportunities": [
+            "企业知识库",
+            "模板生态",
+            "多端预览"
+          ],
+          "threats": [
+            "数据安全",
+            "模型不稳定",
+            "格式兼容"
+          ]
+        }
+      },
+      {
+        "id": "slide_c210d1e23d9a",
+        "intent": "roadmap",
+        "section": "路线图",
+        "title": "Roadmap",
+        "notes": [],
+        "phases": [
+          {
+            "name": "MVP",
+            "timeframe": "本地可跑",
+            "deliverables": [
+              "DSL v2",
+              "RenderTree",
+              "导出 PPTX"
+            ]
+          },
+          {
+            "name": "Editor",
+            "timeframe": "前端接入",
+            "deliverables": [
+              "拖拽",
+              "组件替换",
+              "版本管理"
+            ]
+          },
+          {
+            "name": "Ecosystem",
+            "timeframe": "插件生态",
+            "deliverables": [
+              "主题市场",
+              "组件市场",
+              "资产服务"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "slide_165540f1cb44",
+        "intent": "process_flow",
+        "section": "流程",
+        "title": "Renderer Pipeline",
+        "notes": [],
+        "steps": [
+          {
+            "name": "Component Planner",
+            "detail": "语义→组件组合"
+          },
+          {
+            "name": "Layout Planner",
+            "detail": "布局模板→绝对位置"
+          },
+          {
+            "name": "Theme Engine",
+            "detail": "token→样式"
+          },
+          {
+            "name": "RenderTree",
+            "detail": "预览 JSON"
+          },
+          {
+            "name": "PPT Exporter",
+            "detail": "python-pptx"
+          }
+        ]
+      },
+      {
+        "id": "slide_96bab0b0332b",
+        "intent": "chart",
+        "section": "数据",
+        "title": "示例图表",
+        "notes": [],
+        "chart": {
+          "chartType": "bar",
+          "labels": [
+            "Q1",
+            "Q2",
+            "Q3",
+            "Q4"
+          ],
+          "series": [
+            {
+              "name": "收入",
+              "values": [
+                12.0,
+                18.0,
+                15.0,
+                22.0
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": "slide_5339cf9fd6c7",
+        "intent": "comparison",
+        "section": "对比",
+        "title": "AI vs Renderer 职责边界",
+        "notes": [],
+        "left": {
+          "title": "AI",
+          "bullets": [
+            "理解意图",
+            "规划结构",
+            "生成语义 DSL"
+          ]
+        },
+        "right": {
+          "title": "Renderer",
+          "bullets": [
+            "布局",
+            "样式",
+            "组件组合",
+            "导出"
+          ]
+        }
+      },
+      {
+        "id": "slide_547caca0b5f1",
+        "intent": "multi_column",
+        "section": "扩展",
+        "title": "未来扩展方向",
+        "notes": [],
+        "columns": [
+          {
+            "title": "模板",
+            "bullets": [
+              "商务/科技/学术/极简",
+              "token 化"
+            ]
+          },
+          {
+            "title": "组件",
+            "bullets": [
+              "SWOT/Roadmap/流程图",
+              "图表/架构图"
+            ]
+          },
+          {
+            "title": "服务",
+            "bullets": [
+              "资产服务",
+              "导出服务",
+              "AI 服务拆分"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "slide_8e53cf4c7540",
+        "intent": "architecture",
+        "section": "架构",
+        "title": "服务分层与拆分",
+        "notes": [],
+        "layers": [
+          {
+            "name": "API",
+            "items": [
+              "FastAPI",
+              "DTO/Schema"
+            ]
+          },
+          {
+            "name": "Service",
+            "items": [
+              "AI Pipeline",
+              "Render Engine",
+              "Export"
+            ]
+          },
+          {
+            "name": "Domain",
+            "items": [
+              "DSL",
+              "RenderTree",
+              "ThemeTokens"
+            ]
+          },
+          {
+            "name": "Infra",
+            "items": [
+              "Repo",
+              "Assets",
+              "MCP(可选)"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "slide_4dc91db1c3b3",
+        "intent": "quote",
+        "section": "结束",
+        "title": "结语",
+        "notes": [],
+        "quote": "LLM 负责语义，Renderer 负责视觉。",
+        "author": "Design Principle"
+      },
+      {
+        "id": "slide_26a43a948851",
+        "intent": "divider",
+        "section": "结束",
+        "title": "谢谢",
+        "notes": [],
+        "subtitle": "Q & A"
+      },
+      {
+        "id": "slide_4b61ff10afd1",
+        "intent": "team",
+        "section": "团队",
+        "title": "参与角色（示例）",
+        "notes": [],
+        "members": [
+          {
+            "name": "AI Agent",
+            "role": "Planner",
+            "highlights": [
+              "意图分析",
+              "DSL 生成"
+            ]
+          },
+          {
+            "name": "Renderer",
+            "role": "Engine",
+            "highlights": [
+              "布局",
+              "主题",
+              "组件"
+            ]
+          },
+          {
+            "name": "Exporter",
+            "role": "PPTX",
+            "highlights": [
+              "python-pptx",
+              "格式兼容"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "renderTree": {
+    "presentationId": "pres_4179534ee021",
+    "title": "PPT生成项目汇报",
+    "themeName": "academic_gray",
+    "themeTokens": {
+      "name": "Academic Gray",
+      "colors": {
+        "background": "#FFFFFF",
+        "surface": "#F3F4F6",
+        "text": "#111827",
+        "muted": "#4B5563",
+        "primary": "#374151",
+        "secondary": "#6B7280",
+        "border": "rgba(17,24,39,0.10)"
+      },
+      "typography": {
+        "fontFamily": "Times New Roman, Georgia, serif",
+        "titlePt": 34,
+        "subtitlePt": 18,
+        "bodyPt": 16,
+        "smallPt": 12
+      },
+      "spacing": {
+        "slidePaddingPx": 64,
+        "gapPx": 16
+      }
+    },
+    "slides": [
+      {
+        "id": "slide_eee5bb246a8d",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "slide_eee5bb246a8d__title",
+            "type": "Title",
+            "x": 64.0,
+            "y": 64.0,
+            "w": 1152.0,
+            "h": 120.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 34,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "PPT生成项目汇报"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "slide_eee5bb246a8d__subtitle",
+            "type": "Subtitle",
+            "x": 64.0,
+            "y": 200.0,
+            "w": 1152.0,
+            "h": 70.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#4B5563",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 18,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "AI + DSL + Renderer 驱动的演示生成"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "slide_eee5bb246a8d__highlights",
+            "type": "BulletList",
+            "x": 64.0,
+            "y": 362.0,
+            "w": 1152.0,
+            "h": 278.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "items": [
+                "语义 DSL",
+                "组件化渲染",
+                "可编辑 RenderTree",
+                "python-pptx 导出"
+              ]
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": []
+      },
+      {
+        "id": "slide_4b64da250fe1",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "slide_4b64da250fe1__title",
+            "type": "Title",
+            "x": 64.0,
+            "y": 64.0,
+            "w": 1152.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 34,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "内容导航"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "slide_4b64da250fe1__bullets",
+            "type": "BulletList",
+            "x": 64.0,
+            "y": 176.0,
+            "w": 1152.0,
+            "h": 480.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "items": [
+                "背景与目标",
+                "核心架构",
+                "DSL 设计",
+                "渲染与编辑",
+                "导出与扩展"
+              ]
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": []
+      },
+      {
+        "id": "slide_ddd29e5c83d6",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "slide_ddd29e5c83d6__title",
+            "type": "Title",
+            "x": 64.0,
+            "y": 64.0,
+            "w": 1152.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 34,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "为什么需要 DSL + Renderer"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "slide_ddd29e5c83d6__text",
+            "type": "Text",
+            "x": 64.0,
+            "y": 176.0,
+            "w": 1152.0,
+            "h": 480.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "\n• AI 只负责内容规划，不输出布局\n• Renderer 负责布局、样式、视觉结构\n• RenderTree JSON 用于实时预览与编辑"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": []
+      },
+      {
+        "id": "slide_5d2c2f8332e4",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "slide_5d2c2f8332e4__title",
+            "type": "Title",
+            "x": 64.0,
+            "y": 64.0,
+            "w": 1152.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 34,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "端到端 Pipeline"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "slide_5d2c2f8332e4__timeline",
+            "type": "Timeline",
+            "x": 64.0,
+            "y": 176.0,
+            "w": 1152.0,
+            "h": 480.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "events": [
+                {
+                  "label": "User Input",
+                  "date": null,
+                  "detail": "主题/约束"
+                },
+                {
+                  "label": "AI Pipeline",
+                  "date": null,
+                  "detail": "意图→结构→DSL"
+                },
+                {
+                  "label": "Render Engine",
+                  "date": null,
+                  "detail": "组件规划→布局→主题"
+                },
+                {
+                  "label": "Edit",
+                  "date": null,
+                  "detail": "组件拖拽/改文案/换主题"
+                },
+                {
+                  "label": "Export",
+                  "date": null,
+                  "detail": "RenderTree→PPTX"
+                }
+              ]
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": []
+      },
+      {
+        "id": "slide_f1a147fbeb7a",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "slide_f1a147fbeb7a__title",
+            "type": "Title",
+            "x": 64.0,
+            "y": 64.0,
+            "w": 1152.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 34,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "系统能力 KPI"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "slide_f1a147fbeb7a__kpi",
+            "type": "KpiCards",
+            "x": 64.0,
+            "y": 176.0,
+            "w": 1152.0,
+            "h": 480.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": "#F3F4F6",
+              "borderColor": "rgba(17,24,39,0.10)",
+              "borderWidth": 1,
+              "radius": 12,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "items": [
+                {
+                  "label": "预览延迟",
+                  "value": "< 1s",
+                  "unit": null,
+                  "delta": null
+                },
+                {
+                  "label": "编辑粒度",
+                  "value": "Component",
+                  "unit": null,
+                  "delta": null
+                },
+                {
+                  "label": "导出链路",
+                  "value": "RenderTree→PPTX",
+                  "unit": null,
+                  "delta": null
+                }
+              ]
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": []
+      },
+      {
+        "id": "slide_5e6fb081e334",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "slide_5e6fb081e334__title",
+            "type": "Title",
+            "x": 64.0,
+            "y": 64.0,
+            "w": 1152.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 34,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "SWOT：AI PPT Generator"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "slide_5e6fb081e334__swot",
+            "type": "Swot",
+            "x": 64.0,
+            "y": 176.0,
+            "w": 1152.0,
+            "h": 480.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": "#F3F4F6",
+              "borderColor": "rgba(17,24,39,0.10)",
+              "borderWidth": 1,
+              "radius": 12,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "strengths": [
+                "语义与视觉解耦",
+                "可编辑",
+                "插件化扩展"
+              ],
+              "weaknesses": [
+                "初期组件有限",
+                "布局算法需迭代"
+              ],
+              "opportunities": [
+                "企业知识库",
+                "模板生态",
+                "多端预览"
+              ],
+              "threats": [
+                "数据安全",
+                "模型不稳定",
+                "格式兼容"
+              ]
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": []
+      },
+      {
+        "id": "slide_c210d1e23d9a",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "slide_c210d1e23d9a__title",
+            "type": "Title",
+            "x": 64.0,
+            "y": 64.0,
+            "w": 1152.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 34,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "Roadmap"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "slide_c210d1e23d9a__roadmap",
+            "type": "Roadmap",
+            "x": 64.0,
+            "y": 176.0,
+            "w": 1152.0,
+            "h": 480.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "phases": [
+                {
+                  "name": "MVP",
+                  "timeframe": "本地可跑",
+                  "deliverables": [
+                    "DSL v2",
+                    "RenderTree",
+                    "导出 PPTX"
+                  ]
+                },
+                {
+                  "name": "Editor",
+                  "timeframe": "前端接入",
+                  "deliverables": [
+                    "拖拽",
+                    "组件替换",
+                    "版本管理"
+                  ]
+                },
+                {
+                  "name": "Ecosystem",
+                  "timeframe": "插件生态",
+                  "deliverables": [
+                    "主题市场",
+                    "组件市场",
+                    "资产服务"
+                  ]
+                }
+              ]
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": []
+      },
+      {
+        "id": "slide_165540f1cb44",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "slide_165540f1cb44__title",
+            "type": "Title",
+            "x": 64.0,
+            "y": 64.0,
+            "w": 1152.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 34,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "Renderer Pipeline"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "slide_165540f1cb44__process",
+            "type": "ProcessFlow",
+            "x": 64.0,
+            "y": 176.0,
+            "w": 1152.0,
+            "h": 480.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "steps": [
+                {
+                  "name": "Component Planner",
+                  "detail": "语义→组件组合"
+                },
+                {
+                  "name": "Layout Planner",
+                  "detail": "布局模板→绝对位置"
+                },
+                {
+                  "name": "Theme Engine",
+                  "detail": "token→样式"
+                },
+                {
+                  "name": "RenderTree",
+                  "detail": "预览 JSON"
+                },
+                {
+                  "name": "PPT Exporter",
+                  "detail": "python-pptx"
+                }
+              ]
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": []
+      },
+      {
+        "id": "slide_96bab0b0332b",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "slide_96bab0b0332b__title",
+            "type": "Title",
+            "x": 64.0,
+            "y": 64.0,
+            "w": 1152.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 34,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "示例图表"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "slide_96bab0b0332b__chart",
+            "type": "Chart",
+            "x": 64.0,
+            "y": 176.0,
+            "w": 1152.0,
+            "h": 480.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": "#F3F4F6",
+              "borderColor": "rgba(17,24,39,0.10)",
+              "borderWidth": 1,
+              "radius": 12,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "chartType": "bar",
+              "labels": [
+                "Q1",
+                "Q2",
+                "Q3",
+                "Q4"
+              ],
+              "series": [
+                {
+                  "name": "收入",
+                  "values": [
+                    12.0,
+                    18.0,
+                    15.0,
+                    22.0
+                  ]
+                }
+              ]
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": []
+      },
+      {
+        "id": "slide_5339cf9fd6c7",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "slide_5339cf9fd6c7__title",
+            "type": "Title",
+            "x": 64.0,
+            "y": 64.0,
+            "w": 1152.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 34,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "AI vs Renderer 职责边界"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "slide_5339cf9fd6c7__comparison",
+            "type": "ComparisonTable",
+            "x": 64.0,
+            "y": 176.0,
+            "w": 1152.0,
+            "h": 480.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": "#F3F4F6",
+              "borderColor": "rgba(17,24,39,0.10)",
+              "borderWidth": 1,
+              "radius": 12,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "left": {
+                "title": "AI",
+                "bullets": [
+                  "理解意图",
+                  "规划结构",
+                  "生成语义 DSL"
+                ]
+              },
+              "right": {
+                "title": "Renderer",
+                "bullets": [
+                  "布局",
+                  "样式",
+                  "组件组合",
+                  "导出"
+                ]
+              }
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": []
+      },
+      {
+        "id": "slide_547caca0b5f1",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "slide_547caca0b5f1__title",
+            "type": "Title",
+            "x": 64.0,
+            "y": 64.0,
+            "w": 1152.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 34,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "未来扩展方向"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "slide_547caca0b5f1__columns",
+            "type": "MultiColumn",
+            "x": 64.0,
+            "y": 176.0,
+            "w": 1152.0,
+            "h": 480.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": "#F3F4F6",
+              "borderColor": "rgba(17,24,39,0.10)",
+              "borderWidth": 1,
+              "radius": 12,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "columns": [
+                {
+                  "title": "模板",
+                  "bullets": [
+                    "商务/科技/学术/极简",
+                    "token 化"
+                  ]
+                },
+                {
+                  "title": "组件",
+                  "bullets": [
+                    "SWOT/Roadmap/流程图",
+                    "图表/架构图"
+                  ]
+                },
+                {
+                  "title": "服务",
+                  "bullets": [
+                    "资产服务",
+                    "导出服务",
+                    "AI 服务拆分"
+                  ]
+                }
+              ]
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": []
+      },
+      {
+        "id": "slide_8e53cf4c7540",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "slide_8e53cf4c7540__title",
+            "type": "Title",
+            "x": 64.0,
+            "y": 64.0,
+            "w": 1152.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 34,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "服务分层与拆分"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "slide_8e53cf4c7540__arch",
+            "type": "ArchitectureDiagram",
+            "x": 64.0,
+            "y": 176.0,
+            "w": 1152.0,
+            "h": 480.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "layers": [
+                {
+                  "name": "API",
+                  "items": [
+                    "FastAPI",
+                    "DTO/Schema"
+                  ]
+                },
+                {
+                  "name": "Service",
+                  "items": [
+                    "AI Pipeline",
+                    "Render Engine",
+                    "Export"
+                  ]
+                },
+                {
+                  "name": "Domain",
+                  "items": [
+                    "DSL",
+                    "RenderTree",
+                    "ThemeTokens"
+                  ]
+                },
+                {
+                  "name": "Infra",
+                  "items": [
+                    "Repo",
+                    "Assets",
+                    "MCP(可选)"
+                  ]
+                }
+              ]
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": []
+      },
+      {
+        "id": "slide_4dc91db1c3b3",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "slide_4dc91db1c3b3__quote",
+            "type": "Quote",
+            "x": 64.0,
+            "y": 176.0,
+            "w": 1152.0,
+            "h": 480.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": "#F3F4F6",
+              "borderColor": "#374151",
+              "borderWidth": 2,
+              "radius": 16,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 18,
+              "bold": null,
+              "italic": true,
+              "align": "center"
+            },
+            "props": {
+              "quote": "LLM 负责语义，Renderer 负责视觉。",
+              "author": "Design Principle"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": []
+      },
+      {
+        "id": "slide_26a43a948851",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "slide_26a43a948851__divider",
+            "type": "Divider",
+            "x": 64.0,
+            "y": 64.0,
+            "w": 1152.0,
+            "h": 592.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": "#FFFFFF",
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 34,
+              "bold": true,
+              "italic": null,
+              "align": "center"
+            },
+            "props": {
+              "title": "谢谢",
+              "subtitle": "Q & A"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": []
+      },
+      {
+        "id": "slide_4b61ff10afd1",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "slide_4b61ff10afd1__title",
+            "type": "Title",
+            "x": 64.0,
+            "y": 64.0,
+            "w": 1152.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 34,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "参与角色（示例）"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "slide_4b61ff10afd1__team",
+            "type": "TeamCards",
+            "x": 64.0,
+            "y": 176.0,
+            "w": 1152.0,
+            "h": 480.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": "#F3F4F6",
+              "borderColor": "rgba(17,24,39,0.10)",
+              "borderWidth": 1,
+              "radius": 12,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "members": [
+                {
+                  "name": "AI Agent",
+                  "role": "Planner",
+                  "highlights": [
+                    "意图分析",
+                    "DSL 生成"
+                  ]
+                },
+                {
+                  "name": "Renderer",
+                  "role": "Engine",
+                  "highlights": [
+                    "布局",
+                    "主题",
+                    "组件"
+                  ]
+                },
+                {
+                  "name": "Exporter",
+                  "role": "PPTX",
+                  "highlights": [
+                    "python-pptx",
+                    "格式兼容"
+                  ]
+                }
+              ]
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": []
+      }
+    ],
+    "meta": {
+      "audience": "通用受众",
+      "tone": "清晰、教学"
+    }
+  },
+  "lastExportPptx": null
+}

@@ -32,10 +32,9 @@
           分享
         </button>
         <div class="dropdown">
-          <button class="btn btn-primary btn-sm">
+          <button class="btn btn-primary btn-sm" @click="exportPresentation">
             <IconBase name="download" :size="14" />
             导出
-            <IconBase name="chevronDown" :size="10" />
           </button>
         </div>
         <div class="user-avatar">
@@ -124,7 +123,69 @@
       <main class="editor-canvas-area">
         <div class="canvas-wrapper">
           <div class="slide-canvas" :style="canvasStyle">
-            <div class="slide-content">
+            <div class="slide-content" v-if="currentSlide.components">
+              <div 
+                v-for="component in currentSlide.components" 
+                :key="component.id"
+                class="slide-component"
+                :style="{
+                  position: 'absolute',
+                  left: component.x + 'px',
+                  top: component.y + 'px',
+                  width: component.w + 'px',
+                  height: component.h + 'px',
+                  zIndex: component.z,
+                  color: component.style?.color,
+                  backgroundColor: component.style?.background,
+                  borderColor: component.style?.borderColor,
+                  borderWidth: component.style?.borderWidth ? component.style.borderWidth + 'px' : '0',
+                  borderRadius: component.style?.radius ? component.style.radius + 'px' : '0',
+                  fontFamily: component.style?.fontFamily,
+                  fontSize: component.style?.fontSize ? component.style.fontSize + 'px' : 'inherit',
+                  fontWeight: component.style?.bold ? 'bold' : 'normal',
+                  fontStyle: component.style?.italic ? 'italic' : 'normal',
+                  textAlign: component.style?.align
+                }"
+              >
+                <!-- 标题组件 -->
+                <div v-if="component.type === 'Title'" class="component-title">
+                  {{ component.props?.text || '' }}
+                </div>
+                <!-- 副标题组件 -->
+                <div v-else-if="component.type === 'Subtitle'" class="component-subtitle">
+                  {{ component.props?.text || '' }}
+                </div>
+                <!-- 文本组件 -->
+                <div v-else-if="component.type === 'Text'" class="component-text">
+                  {{ component.props?.text || '' }}
+                </div>
+                <!-- 项目符号列表 -->
+                <div v-else-if="component.type === 'BulletList'" class="component-bullet-list">
+                  <ul>
+                    <li v-for="(item, idx) in component.props?.items || []" :key="idx">{{ item }}</li>
+                  </ul>
+                </div>
+                <!-- 引用组件 -->
+                <div v-else-if="component.type === 'Quote'" class="component-quote">
+                  <blockquote>{{ component.props?.text || '' }}</blockquote>
+                </div>
+                <!-- 分隔线 -->
+                <div v-else-if="component.type === 'Divider'" class="component-divider">
+                  <hr />
+                </div>
+                <!-- 图片组件 -->
+                <div v-else-if="component.type === 'Image'" class="component-image">
+                  <img v-if="component.props?.url" :src="component.props.url" :alt="component.props?.alt || ''" />
+                  <div v-else style="display:flex;align-items:center;justify-content:center;height:100%;color:#888;">[图片]</div>
+                </div>
+                <!-- 其他组件 - 显示类型 -->
+                <div v-else class="component-other">
+                  [{{ component.type }}]
+                </div>
+              </div>
+            </div>
+            <!-- 默认渲染 -->
+            <div v-else class="slide-content">
               <div class="slide-layout-title">
                 <h1 class="slide-title">{{ currentSlide.title }}</h1>
                 <p class="slide-subtitle">{{ currentSlide.subtitle }}</p>
@@ -288,13 +349,15 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import IconBase from '../components/icons/IconBase.vue'
+import { apiService } from '../services/api.js'
 
 const route = useRoute()
 
 // 项目信息
-const projectTitle = ref('2024年度产品发布会')
+const projectTitle = ref('加载中...')
 const isSaved = ref(true)
 const userAvatar = 'https://api.dicebear.com/7.x/avataaars/svg?seed=user'
+const presentationId = ref(null)
 
 // 侧边栏
 const activeTab = ref('outline')
@@ -304,92 +367,145 @@ const outlineItems = ref([])
 
 // 幻灯片数据
 const slides = ref([])
+const renderTree = ref(null)
 
 const currentPage = ref(1)
 const totalPages = computed(() => slides.value.length)
 
 const currentSlide = computed(() => {
   const slide = slides.value[currentPage.value - 1]
-  return {
-    title: slide?.title || '页面标题',
+  return slide || {
+    title: '页面标题',
     subtitle: currentPage.value === 1 ? 'PPT内容展示' : '副标题',
     date: new Date().getFullYear() + '年'
   }
 })
 
-// 从大纲数据生成幻灯片
-const generateSlidesFromOutline = (outline) => {
+// 从渲染树生成大纲和幻灯片
+const generateFromRenderTree = (tree) => {
+  const newOutlineItems = []
   const newSlides = []
   let slideNum = 1
+  let sectionNum = 1
   
-  outline.forEach((item) => {
-    if (item.children) {
-      item.children.forEach((child) => {
-        newSlides.push({
-          number: slideNum,
-          title: child.title,
-          background: slideNum === 1 ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : 'white'
-        })
-        slideNum++
-      })
+  console.log('解析渲染树:', tree)
+  
+  if (tree?.slides) {
+    // 创建一个默认的大纲章节
+    const outlineItem = {
+      number: sectionNum++,
+      title: tree.title || '演示文稿',
+      expanded: true,
+      children: []
     }
-  })
+    
+    tree.slides.forEach(slide => {
+      // 从第一个Title组件中提取标题
+      let slideTitle = `页面${slideNum}`
+      if (slide?.components) {
+        const titleComponent = slide.components.find(c => c.type === 'Title')
+        if (titleComponent?.props?.text) {
+          slideTitle = titleComponent.props.text
+        }
+      }
+      
+      // 添加到大纲
+      outlineItem.children.push({
+        pageNumber: slideNum,
+        title: slideTitle
+      })
+      
+      // 添加到幻灯片
+      newSlides.push({
+        number: slideNum,
+        title: slideTitle,
+        components: slide.components,
+        background: slide.background || (slideNum === 1 ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : 'white'),
+        width: slide.width || 1280,
+        height: slide.height || 720
+      })
+      
+      slideNum++
+    })
+    
+    newOutlineItems.push(outlineItem)
+  }
   
-  return newSlides
+  console.log('生成的幻灯片:', newSlides)
+  return { outlineItems: newOutlineItems, slides: newSlides }
 }
 
 // 初始化数据
-const initData = () => {
-  // 检查路由状态中是否有数据
-  const pptData = history.state?.pptData
+const initData = async () => {
+  // 检查路由查询参数中是否有id
+  const id = route.query.id
   
-  if (pptData) {
-    // 使用传入的大纲数据
-    if (pptData.outline) {
-      outlineItems.value = pptData.outline.map((item, index) => ({
-        ...item,
-        number: index + 1
-      }))
+  if (id) {
+    presentationId.value = id
+    
+    try {
+      // 获取渲染树
+      const tree = await apiService.getRenderTree(id)
+      renderTree.value = tree
       
-      // 生成幻灯片
-      slides.value = generateSlidesFromOutline(outlineItems.value)
+      // 从渲染树生成数据
+      const { outlineItems: newOutline, slides: newSlides } = generateFromRenderTree(tree)
+      outlineItems.value = newOutline
+      slides.value = newSlides
+      
+      // 设置标题
+      if (tree?.meta?.title) {
+        projectTitle.value = tree.meta.title
+      }
+      
+      console.log('接收到的渲染树:', tree)
+    } catch (error) {
+      console.error('加载演示文稿失败:', error)
+      showToast('加载演示文稿失败，请稍后重试')
+      // 使用默认数据
+      useDefaultData()
     }
-    
-    // 设置标题
-    if (pptData.topic) {
-      projectTitle.value = pptData.topic
-    }
-    
-    console.log('接收到的PPT数据:', pptData)
   } else {
     // 使用默认数据
-    outlineItems.value = [
-      {
-        number: 1,
-        title: '封面',
-        expanded: true,
-        children: [{ pageNumber: 1, title: '产品发布会' }]
-      },
-      {
-        number: 2,
-        title: '目录',
-        expanded: false,
-        children: [{ pageNumber: 2, title: '目录' }]
-      },
-      {
-        number: 3,
-        title: '第一章：产品介绍',
-        expanded: true,
-        children: [
-          { pageNumber: 3, title: '产品概述' },
-          { pageNumber: 4, title: '核心功能' },
-          { pageNumber: 5, title: '技术优势' }
-        ]
-      }
-    ]
-    
-    slides.value = generateSlidesFromOutline(outlineItems.value)
+    useDefaultData()
   }
+}
+
+const useDefaultData = () => {
+  outlineItems.value = [
+    {
+      number: 1,
+      title: '封面',
+      expanded: true,
+      children: [{ pageNumber: 1, title: '产品发布会' }]
+    },
+    {
+      number: 2,
+      title: '目录',
+      expanded: false,
+      children: [{ pageNumber: 2, title: '目录' }]
+    },
+    {
+      number: 3,
+      title: '第一章：产品介绍',
+      expanded: true,
+      children: [
+        { pageNumber: 3, title: '产品概述' },
+        { pageNumber: 4, title: '核心功能' },
+        { pageNumber: 5, title: '技术优势' }
+      ]
+    }
+  ]
+  
+  slides.value = [
+    { number: 1, title: '产品发布会', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' },
+    { number: 2, title: '目录', background: 'white' },
+    { number: 3, title: '产品概述', background: 'white' },
+    { number: 4, title: '核心功能', background: 'white' },
+    { number: 5, title: '技术优势', background: 'white' }
+  ]
+  
+  projectTitle.value = '2024年度产品发布会'
 }
 
 // 画布缩放
@@ -457,13 +573,28 @@ const zoomIn = () => {
   if (zoom.value < 200) zoom.value += 10
 }
 
-const saveProject = () => {
+const saveProject = async () => {
   isSaved.value = false
-  setTimeout(() => {
-    isSaved.value = true
-    lastSaved.value = '刚刚'
-    showToast('保存成功')
-  }, 1000)
+  
+  if (presentationId.value) {
+    try {
+      // 这里可以调用后端的更新API
+      showToast('保存成功')
+      isSaved.value = true
+      lastSaved.value = '刚刚'
+    } catch (error) {
+      console.error('保存失败:', error)
+      showToast('保存失败，请稍后重试')
+      isSaved.value = true
+    }
+  } else {
+    // 没有ID，模拟保存
+    setTimeout(() => {
+      isSaved.value = true
+      lastSaved.value = '刚刚'
+      showToast('保存成功')
+    }, 1000)
+  }
 }
 
 const shareProject = () => {
@@ -472,6 +603,22 @@ const shareProject = () => {
 
 const playPresentation = () => {
   showToast('开始演示模式')
+}
+
+const exportPresentation = async () => {
+  if (!presentationId.value) {
+    showToast('请先创建演示文稿')
+    return
+  }
+  
+  try {
+    showToast('正在导出...')
+    await apiService.exportPptx(presentationId.value)
+    showToast('导出成功！文件已下载')
+  } catch (error) {
+    console.error('导出失败:', error)
+    showToast('导出失败，请稍后重试')
+  }
 }
 
 const undo = () => showToast('已撤销')
@@ -948,6 +1095,97 @@ onUnmounted(() => {
   width: 100%;
   height: 100%;
   padding: 60px;
+  position: relative;
+}
+
+/* 组件通用样式 */
+.slide-component {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.component-title {
+  width: 100%;
+  font-size: 48px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: inherit;
+}
+
+.component-subtitle {
+  width: 100%;
+  font-size: 24px;
+  line-height: 1.4;
+  color: inherit;
+}
+
+.component-text {
+  width: 100%;
+  font-size: 18px;
+  line-height: 1.6;
+  color: inherit;
+}
+
+.component-bullet-list {
+  width: 100%;
+}
+
+.component-bullet-list ul {
+  margin: 0;
+  padding-left: 24px;
+  font-size: 18px;
+  line-height: 1.8;
+}
+
+.component-quote {
+  width: 100%;
+  border-left: 4px solid var(--primary-400);
+  padding-left: 20px;
+  font-size: 20px;
+  font-style: italic;
+  color: var(--gray-600);
+}
+
+.component-divider {
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.component-divider hr {
+  width: 100%;
+  border: none;
+  border-top: 2px solid var(--gray-300);
+}
+
+.component-image {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.component-image img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.component-other {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--gray-100);
+  color: var(--gray-500);
+  font-size: 14px;
+  border: 2px dashed var(--gray-300);
+  border-radius: 8px;
 }
 
 .slide-layout-title {

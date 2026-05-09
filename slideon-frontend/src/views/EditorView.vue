@@ -297,6 +297,25 @@
                       </div>
                     </div>
                   </div>
+                  <!-- TeamCards组件 -->
+                  <div v-else-if="component.type === 'TeamCards'" class="component-team-cards" :style="getComponentInnerStyle(component)">
+                    <div class="team-cards-grid">
+                      <div 
+                        v-for="(member, idx) in component.props?.members || []" 
+                        :key="idx" 
+                        class="team-card"
+                      >
+                        <div class="team-avatar">
+                          <IconBase name="user" :size="32" />
+                        </div>
+                        <div class="team-info">
+                          <h5 class="team-name">{{ member.name || '成员' }}</h5>
+                          <p class="team-role" v-if="member.role">{{ member.role }}</p>
+                          <p class="team-bio" v-if="member.bio">{{ member.bio }}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                   <!-- Divider组件 -->
                   <div v-else-if="component.type === 'Divider'" class="component-divider" :style="getComponentInnerStyle(component)">
                     <div class="divider-container">
@@ -523,6 +542,31 @@ const generateFromRenderTree = (tree) => {
 // 初始化数据
 const initData = async () => {
   const id = route.query.id
+  
+  // 先检查window.__presentationBundle是否存在
+  if (window.__presentationBundle) {
+    console.log('从window.__presentationBundle加载数据:', window.__presentationBundle)
+    const bundle = window.__presentationBundle
+    presentationId.value = id || bundle.meta?.id
+    
+    if (bundle.renderTree) {
+      renderTree.value = bundle.renderTree
+      const { outlineItems: newOutline, slides: newSlides } = generateFromRenderTree(bundle.renderTree)
+      outlineItems.value = newOutline
+      slides.value = newSlides
+      if (bundle.renderTree?.title) projectTitle.value = bundle.renderTree.title
+      else if (bundle.dsl?.title) projectTitle.value = bundle.dsl.title
+      else if (bundle.meta?.topic) projectTitle.value = bundle.meta.topic
+    } else if (bundle.dsl) {
+      console.error('只有DSL没有renderTree，需要调用API生成')
+      useDefaultData()
+    }
+    
+    // 清除window上的数据
+    delete window.__presentationBundle
+    return
+  }
+  
   if (id) {
     presentationId.value = id
     try {
@@ -1538,6 +1582,71 @@ watch(currentPage, async () => {
 .arch-item:hover {
   background: #e5e7eb;
   border-color: #9ca3af;
+}
+
+/* TeamCards组件 */
+.component-team-cards {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  padding: 16px;
+}
+
+.team-cards-grid {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.team-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: #f9fafb;
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+}
+
+.team-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  flex-shrink: 0;
+}
+
+.team-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.team-name {
+  margin: 0;
+  font-size: 1.1em;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.team-role {
+  margin: 4px 0 0 0;
+  font-size: 0.9em;
+  color: #3b82f6;
+  font-weight: 500;
+}
+
+.team-bio {
+  margin: 6px 0 0 0;
+  font-size: 0.85em;
+  color: #6b7280;
+  line-height: 1.4;
 }
 
 /* Divider组件 */

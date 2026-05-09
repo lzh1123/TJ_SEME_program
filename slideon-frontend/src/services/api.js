@@ -141,6 +141,25 @@ class ApiService {
     const blob = await response.blob()
     return blob
   }
+
+  // 生成大纲
+  async generateOutline(topic, theme = null) {
+    const response = await this.post(API_ENDPOINTS.dsl, {
+      topic,
+      theme
+    })
+    return response.json()
+  }
+
+  // 根据大纲生成渲染树
+  async compileOutline(topic, outline, theme = null) {
+    const response = await this.post(API_ENDPOINTS.renderTree, {
+      topic,
+      outline,
+      theme
+    })
+    return response.json()
+  }
 }
 
 export const apiService = new ApiService()

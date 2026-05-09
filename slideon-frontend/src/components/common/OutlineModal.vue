@@ -230,13 +230,30 @@ const generatePresentation = async () => {
   isGenerating.value = true
   
   try {
-    const result = await apiService.createPresentation(form.value.topic, form.value.style)
+    const result = await apiService.createPresentation(form.value.topic)
+    
+    console.log('✅ 创建演示文稿成功，完整响应:', result)
+    console.log('📊 AI Debug 信息:', result.bundle?.meta?.extra?.ai)
+    
+    // 检查是否使用了 Fallback
+    const aiDebug = result.bundle?.meta?.extra?.ai
+    if (aiDebug) {
+      if (aiDebug.usedFallback) {
+        console.warn('⚠️ 使用了 Fallback 模拟数据！')
+        console.warn('  - Stage:', aiDebug.stage)
+        console.warn('  - Error:', aiDebug.error)
+      } else {
+        console.log('✅ 成功！使用了真实 API 生成内容！')
+      }
+    }
+    
     close()
     router.push({
       path: '/editor',
       query: { id: result.id }
     })
   } catch (error) {
+    console.error('❌ 创建演示文稿失败:', error)
     alert('创建演示文稿失败: ' + error.message)
   } finally {
     isGenerating.value = false

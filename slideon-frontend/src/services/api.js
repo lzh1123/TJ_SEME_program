@@ -75,10 +75,9 @@ class ApiService {
   }
 
   // 创建演示文稿
-  async createPresentation(topic, theme = null) {
+  async createPresentation(topic) {
     const response = await this.post(API_ENDPOINTS.presentations.create, {
-      topic,
-      theme
+      topic
     })
     return response.json()
   }

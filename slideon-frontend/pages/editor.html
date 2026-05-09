@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>编辑器 - Slideon</title>
+    <link rel="stylesheet" href="../css/common.css">
+    <link rel="stylesheet" href="../css/editor.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="editor-page">
+    <!-- 顶部工具栏 -->
+    <header class="editor-header">
+        <div class="header-left">
+            <a href="../index.html" class="btn btn-ghost btn-icon">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <div class="project-info">
+                <input type="text" class="project-title-input" value="2024年度产品发布会" placeholder="输入PPT标题">
+                <span class="project-status saved">
+                    <i class="fas fa-check"></i> 已保存
+                </span>
+            </div>
+        </div>
+        <div class="header-right">
+            <button class="btn btn-secondary btn-sm">
+                <i class="fas fa-save"></i>
+                保存
+            </button>
+            <button class="btn btn-secondary btn-sm">
+                <i class="fas fa-share-alt"></i>
+                分享
+            </button>
+            <div class="dropdown">
+                <button class="btn btn-primary btn-sm">
+                    <i class="fas fa-download"></i>
+                    导出
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+            </div>
+            <div class="user-avatar">
+                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=user" alt="用户头像">
+            </div>
+        </div>
+    </header>
+
+    <!-- 编辑器主体 -->
+    <div class="editor-container">
+        <!-- 左侧边栏 - 大纲 -->
+        <aside class="editor-sidebar">
+            <div class="sidebar-tabs">
+                <button class="sidebar-tab active" data-tab="outline">
+                    <i class="fas fa-list"></i>
+                    大纲
+                </button>
+                <button class="sidebar-tab" data-tab="slides">
+                    <i class="fas fa-images"></i>
+                    页面
+                </button>
+            </div>
+            
+            <!-- 大纲视图 -->
+            <div class="sidebar-content active" id="outlinePanel">
+                <div class="outline-tree">
+                    <div class="outline-item expanded">
+                        <div class="outline-header">
+                            <i class="fas fa-chevron-down toggle-icon"></i>
+                            <span class="outline-number">1</span>
+                            <span class="outline-title">封面</span>
+                        </div>
+                        <div class="outline-children">
+                            <div class="outline-item-page active">
+                                <span class="page-number">1</span>
+                                <span class="page-title">产品发布会</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="outline-item">
+                        <div class="outline-header">
+                            <i class="fas fa-chevron-right toggle-icon"></i>
+                            <span class="outline-number">2</span>
+                            <span class="outline-title">目录</span>
+                        </div>
+                    </div>
+                    
+                    <div class="outline-item expanded">
+                        <div class="outline-header">
+                            <i class="fas fa-chevron-down toggle-icon"></i>
+                            <span class="outline-number">3</span>
+                            <span class="outline-title">第一章：产品介绍</span>
+                        </div>
+                        <div class="outline-children">
+                            <div class="outline-item-page">
+                                <span class="page-number">3</span>
+                                <span class="page-title">产品概述</span>
+                            </div>
+                            <div class="outline-item-page">
+                                <span class="page-number">4</span>
+                                <span class="page-title">核心功能</span>
+                            </div>
+                            <div class="outline-item-page">
+                                <span class="page-number">5</span>
+                                <span class="page-title">技术优势</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="outline-item expanded">
+                        <div class="outline-header">
+                            <i class="fas fa-chevron-down toggle-icon"></i>
+                            <span class="outline-number">4</span>
+                            <span class="outline-title">第二章：市场分析</span>
+                        </div>
+                        <div class="outline-children">
+                            <div class="outline-item-page">
+                                <span class="page-number">6</span>
+                                <span class="page-title">市场现状</span>
+                            </div>
+                            <div class="outline-item-page">
+                                <span class="page-number">7</span>
+                                <span class="page-title">竞争分析</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="outline-item">
+                        <div class="outline-header">
+                            <i class="fas fa-chevron-right toggle-icon"></i>
+                            <span class="outline-number">5</span>
+                            <span class="outline-title">结束页</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <button class="add-page-btn">
+                    <i class="fas fa-plus"></i>
+                    添加页面
+                </button>
+            </div>
+            
+            <!-- 页面缩略图视图 -->
+            <div class="sidebar-content" id="slidesPanel">
+                <div class="slides-grid">
+                    <div class="slide-thumb active">
+                        <div class="slide-thumb-preview" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                            <span class="slide-number">1</span>
+                        </div>
+                        <span class="slide-thumb-title">封面</span>
+                    </div>
+                    <div class="slide-thumb">
+                        <div class="slide-thumb-preview" style="background: white;">
+                            <span class="slide-number">2</span>
+                        </div>
+                        <span class="slide-thumb-title">目录</span>
+                    </div>
+                    <div class="slide-thumb">
+                        <div class="slide-thumb-preview" style="background: white;">
+                            <span class="slide-number">3</span>
+                        </div>
+                        <span class="slide-thumb-title">产品概述</span>
+                    </div>
+                    <div class="slide-thumb">
+                        <div class="slide-thumb-preview" style="background: white;">
+                            <span class="slide-number">4</span>
+                        </div>
+                        <span class="slide-thumb-title">核心功能</span>
+                    </div>
+                    <div class="slide-thumb">
+                        <div class="slide-thumb-preview" style="background: white;">
+                            <span class="slide-number">5</span>
+                        </div>
+                        <span class="slide-thumb-title">技术优势</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- 中间画布区域 -->
+        <main class="editor-canvas-area">
+            <div class="canvas-wrapper">
+                <div class="slide-canvas">
+                    <div class="slide-content">
+                        <div class="slide-layout-title">
+                            <h1 class="slide-title">产品发布会</h1>
+                            <p class="slide-subtitle">新一代AI芯片技术革新</p>
+                            <div class="slide-date">2024年12月</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 画布工具栏 -->
+            <div class="canvas-toolbar">
+                <div class="toolbar-group">
+                    <button class="toolbar-btn" title="撤销">
+                        <i class="fas fa-undo"></i>
+                    </button>
+                    <button class="toolbar-btn" title="重做">
+                        <i class="fas fa-redo"></i>
+                    </button>
+                </div>
+                <div class="toolbar-divider"></div>
+                <div class="toolbar-group">
+                    <button class="toolbar-btn" title="插入">
+                        <i class="fas fa-plus"></i>
+                        <i class="fas fa-chevron-down" style="font-size: 10px;"></i>
+                    </button>
+                    <button class="toolbar-btn" title="布局">
+                        <i class="fas fa-th-large"></i>
+                        <i class="fas fa-chevron-down" style="font-size: 10px;"></i>
+                    </button>
+                    <button class="toolbar-btn" title="主题">
+                        <i class="fas fa-palette"></i>
+                        <i class="fas fa-chevron-down" style="font-size: 10px;"></i>
+                    </button>
+                </div>
+                <div class="toolbar-divider"></div>
+                <div class="toolbar-group">
+                    <button class="toolbar-btn" title="缩小">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                    <span class="zoom-level">100%</span>
+                    <button class="toolbar-btn" title="放大">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </div>
+                <div class="toolbar-divider"></div>
+                <div class="toolbar-group">
+                    <span class="page-indicator">3 / 10</span>
+                    <button class="toolbar-btn" title="播放">
+                        <i class="fas fa-play"></i>
+                    </button>
+                </div>
+            </div>
+        </main>
+
+        <!-- 右侧AI助手面板 -->
+        <aside class="editor-ai-panel">
+            <div class="ai-panel-header">
+                <div class="ai-avatar">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div class="ai-info">
+                    <h3 class="ai-name">AI助手</h3>
+                    <span class="ai-status">
+                        <span class="status-dot"></span>
+                        在线
+                    </span>
+                </div>
+                <button class="btn btn-ghost btn-icon" title="设置">
+                    <i class="fas fa-cog"></i>
+                </button>
+            </div>
+            
+            <div class="ai-chat-container">
+                <div class="ai-welcome">
+                    <div class="ai-message">
+                        <div class="ai-avatar-small">
+                            <i class="fas fa-robot"></i>
+                        </div>
+                        <div class="message-content">
+                            <p>你好！我是你的AI助手，可以帮你：</p>
+                            <ul>
+                                <li>优化幻灯片内容</li>
+                                <li>生成配图建议</li>
+                                <li>调整页面风格</li>
+                                <li>补充数据案例</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="chat-messages" id="chatMessages">
+                    <!-- 消息会动态添加到这里 -->
+                </div>
+            </div>
+            
+            <div class="ai-quick-actions">
+                <span class="quick-actions-label">快捷操作：</span>
+                <div class="quick-actions-list">
+                    <button class="quick-action-btn" onclick="sendQuickMessage('优化当前页面内容')">
+                        <i class="fas fa-magic"></i>
+                        优化内容
+                    </button>
+                    <button class="quick-action-btn" onclick="sendQuickMessage('生成配图建议')">
+                        <i class="fas fa-image"></i>
+                        生成图片
+                    </button>
+                    <button class="quick-action-btn" onclick="sendQuickMessage('调整页面风格')">
+                        <i class="fas fa-palette"></i>
+                        调整风格
+                    </button>
+                    <button class="quick-action-btn" onclick="sendQuickMessage('补充数据案例')">
+                        <i class="fas fa-chart-bar"></i>
+                        补充数据
+                    </button>
+                </div>
+            </div>
+            
+            <div class="ai-input-area">
+                <div class="input-wrapper">
+                    <textarea class="ai-input" placeholder="输入你的问题或需求..." rows="1"></textarea>
+                    <button class="ai-send-btn" onclick="sendMessage()">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- 底部状态栏 -->
+    <footer class="editor-footer">
+        <div class="footer-left">
+            <span class="footer-info">正在编辑：第3页</span>
+        </div>
+        <div class="footer-right">
+            <span class="footer-info">最后保存：刚刚</span>
+        </div>
+    </footer>
+
+    <!-- 生成中提示 -->
+    <div id="generatingToast" class="toast">
+        <div class="toast-content">
+            <div class="spinner"></div>
+            <span>AI正在生成内容...</span>
+        </div>
+    </div>
+
+    <script src="../js/editor.js"></script>
+</body>
+</html>

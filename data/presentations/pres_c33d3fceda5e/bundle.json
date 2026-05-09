@@ -1,0 +1,353 @@
+{
+  "meta": {
+    "id": "pres_c33d3fceda5e",
+    "topic": "软件工程介绍",
+    "createdAt": "2026-05-08T14:36:22.023377Z",
+    "updatedAt": "2026-05-08T14:36:22.023384Z",
+    "version": 1,
+    "extra": {
+      "ai": {
+        "llmConfigured": true,
+        "usedFallback": true,
+        "stage": "plan",
+        "error": "JSONDecodeError: Extra data: line 7 column 4 (char 137)"
+      }
+    }
+  },
+  "dsl": {
+    "title": "软件工程介绍",
+    "audience": "通用受众",
+    "tone": "清晰、教学",
+    "theme": "modern_blue",
+    "slides": [
+      {
+        "id": "slide_5eb52869e49f",
+        "section": "封面",
+        "title": "软件工程介绍",
+        "notes": [],
+        "intent": "cover",
+        "subtitle": "AI Presentation Generator",
+        "tagline": null,
+        "highlights": [
+          "DSL",
+          "Renderer",
+          "PPTX Export"
+        ]
+      },
+      {
+        "id": "slide_653c995422b7",
+        "section": "目录",
+        "title": "内容导航",
+        "notes": [],
+        "intent": "agenda",
+        "items": [
+          "背景",
+          "核心方案",
+          "系统架构",
+          "实施路径"
+        ]
+      },
+      {
+        "id": "slide_64ec4077b38f",
+        "section": "背景",
+        "title": "项目背景",
+        "notes": [],
+        "intent": "text",
+        "paragraphs": [],
+        "bullets": [
+          "提升内容生产效率",
+          "实现语义化演示生成",
+          "支持自动化导出"
+        ]
+      }
+    ]
+  },
+  "renderTree": {
+    "presentationId": "pres_c33d3fceda5e",
+    "title": "软件工程介绍",
+    "themeName": "modern_blue",
+    "themeTokens": {
+      "name": "Modern Blue",
+      "colors": {
+        "background": "#0B1220",
+        "surface": "#111B2E",
+        "text": "#E6EEF9",
+        "muted": "#A9B7D0",
+        "primary": "#0078D4",
+        "secondary": "#2B88D8",
+        "border": "rgba(255,255,255,0.12)"
+      },
+      "typography": {
+        "fontFamily": "ui-sans-serif, system-ui, Segoe UI, Arial",
+        "titlePt": 36,
+        "subtitlePt": 20,
+        "bodyPt": 16,
+        "smallPt": 12
+      },
+      "spacing": {
+        "slidePaddingPx": 56,
+        "gapPx": 18
+      }
+    },
+    "slides": [
+      {
+        "id": "slide_5eb52869e49f",
+        "width": 1280,
+        "height": 720,
+        "background": "#0B1220",
+        "components": [
+          {
+            "id": "slide_5eb52869e49f__title",
+            "type": "Title",
+            "x": 56.0,
+            "y": 56.0,
+            "w": 1168.0,
+            "h": 120.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#E6EEF9",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "ui-sans-serif, system-ui, Segoe UI, Arial",
+              "fontSize": 36,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "软件工程介绍"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "slide_5eb52869e49f__subtitle",
+            "type": "Subtitle",
+            "x": 56.0,
+            "y": 194.0,
+            "w": 1168.0,
+            "h": 70.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#A9B7D0",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "ui-sans-serif, system-ui, Segoe UI, Arial",
+              "fontSize": 20,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "AI Presentation Generator"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "slide_5eb52869e49f__highlights",
+            "type": "BulletList",
+            "x": 56.0,
+            "y": 360.0,
+            "w": 1168.0,
+            "h": 286.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#E6EEF9",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "ui-sans-serif, system-ui, Segoe UI, Arial",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "items": [
+                "DSL",
+                "Renderer",
+                "PPTX Export"
+              ]
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": []
+      },
+      {
+        "id": "slide_653c995422b7",
+        "width": 1280,
+        "height": 720,
+        "background": "#0B1220",
+        "components": [
+          {
+            "id": "slide_653c995422b7__title",
+            "type": "Title",
+            "x": 56.0,
+            "y": 56.0,
+            "w": 1168.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#E6EEF9",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "ui-sans-serif, system-ui, Segoe UI, Arial",
+              "fontSize": 36,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "内容导航"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "slide_653c995422b7__bullets",
+            "type": "BulletList",
+            "x": 56.0,
+            "y": 170.0,
+            "w": 1168.0,
+            "h": 494.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#E6EEF9",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "ui-sans-serif, system-ui, Segoe UI, Arial",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "items": [
+                "背景",
+                "核心方案",
+                "系统架构",
+                "实施路径"
+              ]
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": []
+      },
+      {
+        "id": "slide_64ec4077b38f",
+        "width": 1280,
+        "height": 720,
+        "background": "#0B1220",
+        "components": [
+          {
+            "id": "slide_64ec4077b38f__title",
+            "type": "Title",
+            "x": 56.0,
+            "y": 56.0,
+            "w": 1168.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#E6EEF9",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "ui-sans-serif, system-ui, Segoe UI, Arial",
+              "fontSize": 36,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "项目背景"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "slide_64ec4077b38f__text",
+            "type": "Text",
+            "x": 56.0,
+            "y": 170.0,
+            "w": 1168.0,
+            "h": 494.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#E6EEF9",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "ui-sans-serif, system-ui, Segoe UI, Arial",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "\n• 提升内容生产效率\n• 实现语义化演示生成\n• 支持自动化导出"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": []
+      }
+    ],
+    "meta": {
+      "audience": "通用受众",
+      "tone": "清晰、教学"
+    }
+  },
+  "lastExportPptx": null
+}

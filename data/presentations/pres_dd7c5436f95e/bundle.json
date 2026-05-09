@@ -1,0 +1,1137 @@
+{
+  "meta": {
+    "id": "pres_dd7c5436f95e",
+    "topic": "RAG介绍",
+    "createdAt": "2026-05-08T13:43:25.615133Z",
+    "updatedAt": "2026-05-08T13:43:25.615141Z",
+    "version": 1,
+    "extra": {
+      "ai": {
+        "llmConfigured": true,
+        "usedFallback": false,
+        "stage": "dsl_repair",
+        "error": "ValidationError: 42 validation errors for PresentationDSL\nslides.0.cover.id\n  Field required [type=missing, input_value={'intent': 'cover', 'title': 'RAG介绍'}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/missing\nslides.1.agenda.id\n  Field required [type=missing, input_value={'intent': 'agenda', 'ite...', '挑战与未来']}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/missing\nslides.1.agenda.title\n  Field required [type=missing, input_value={'intent': 'agenda', 'ite...', '挑战与未来']}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/missing\nslides.2.text.id\n  Field required [type=missing, input_value={'intent': 'text', 'headi...、更新的内容。']}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/missing\nslides.2.text.title\n  Field required [type=missing, input_value={'intent': 'text', 'headi...、更新的内容。']}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/missing\nslides.2.text.heading\n  Extra inputs are not permitted [type=extra_forbidden, input_value='什么是RAG?', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.12/v/extra_forbidden\nslides.3.architecture.id\n  Field required [type=missing, input_value={'intent': 'architecture'...ator', 'to': 'answer'}]}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/missing\nslides.3.architecture.title\n  Field required [type=missing, input_value={'intent': 'architecture'...ator', 'to': 'answer'}]}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/missing\nslides.3.architecture.nodes\n  Extra inputs are not permitted [type=extra_forbidden, input_value=[{'id': 'query', 'label':...label': '最终回答'}], input_type=list]\n    For further information visit https://errors.pydantic.dev/2.12/v/extra_forbidden\nslides.3.architecture.edges\n  Extra inputs are not permitted [type=extra_forbidden, input_value=[{'from': 'query', 'to': ...rator', 'to': 'answer'}], input_type=list]\n    For further information visit https://errors.pydantic.dev/2.12/v/extra_forbidden\nslides.4.process_flow.id\n  Field required [type=missing, input_value={'intent': 'process_flow'...提示生成回答'}]}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/missing\nslides.4.process_flow.title\n  Field required [type=missing, input_value={'intent': 'process_flow'...提示生成回答'}]}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/missing\nslides.4.process_flow.steps.0.description\n  Extra inputs are not permitted [type=extra_forbidden, input_value='用户提出问题', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.12/v/extra_forbidden\nslides.4.process_flow.steps.1.description\n  Extra inputs are not permitted [type=extra_forbidden, input_value='从知识库中检索相关文档片段', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.12/v/extra_forbidden\nslides.4.process_flow.steps.2.description\n  Extra inputs are not permitted [type=extra_forbidden, input_value='将检索结果与原始查询拼接', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.12/v/extra_forbidden\nslides.4.process_flow.steps.3.description\n  Extra inputs are not permitted [type=extra_forbidden, input_value='大语言模型基于增强提示生成回答', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.12/v/extra_forbidden\nslides.5.multi_column.id\n  Field required [type=missing, input_value={'intent': 'multi_column'...储', '图数据库']}]}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/missing\nslides.5.multi_column.title\n  Field required [type=missing, input_value={'intent': 'multi_column'...储', '图数据库']}]}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/missing\nslides.5.multi_column.columns.0.items\n  Extra inputs are not permitted [type=extra_forbidden, input_value=['BM25', 'Dense Passage Retriever', 'ColBERT'], input_type=list]\n    For further information visit https://errors.pydantic.dev/2.12/v/extra_forbidden\nslides.5.multi_column.columns.1.items\n  Extra inputs are not permitted [type=extra_forbidden, input_value=['GPT-4', 'Llama 3', 'Claude'], input_type=list]\n    For further information visit https://errors.pydantic.dev/2.12/v/extra_forbidden\nslides.5.multi_column.columns.2.items\n  Extra inputs are not permitted [type=extra_forbidden, input_value=['向量数据库', '文...存储', '图数据库'], input_type=list]\n    For further information visit https://errors.pydantic.dev/2.12/v/extra_forbidden\nslides.6.comparison.id\n  Field required [type=missing, input_value={'intent': 'comparison', ...档', '黑盒生成']]}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/missing\nslides.6.comparison.title\n  Field required [type=missing, input_value={'intent': 'comparison', ...档', '黑盒生成']]}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/missing\nslides.6.comparison.left\n  Field required [type=missing, input_value={'intent': 'comparison', ...档', '黑盒生成']]}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/missing\nslides.6.comparison.right\n  Field required [type=missing, input_value={'intent': 'comparison', ...档', '黑盒生成']]}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/missing\nslides.6.comparison.headers\n  Extra inputs are not permitted [type=extra_forbidden, input_value=['维度', 'RAG', '传统纯生成'], input_type=list]\n    For further information visit https://errors.pydantic.dev/2.12/v/extra_forbidden\nslides.6.comparison.rows\n  Extra inputs are not permitted [type=extra_forbidden, input_value=[['准确性', '高（基...档', '黑盒生成']], input_type=list]\n    For further information visit https://errors.pydantic.dev/2.12/v/extra_forbidden\nslides.7.text.id\n  Field required [type=missing, input_value={'intent': 'text', 'headi..., '多轮对话系统']}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/missing\nslides.7.text.title\n  Field required [type=missing, input_value={'intent': 'text', 'headi..., '多轮对话系统']}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/missing\nslides.7.text.heading\n  Extra inputs are not permitted [type=extra_forbidden, input_value='典型应用场景', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.12/v/extra_forbidden\nslides.8.chart.id\n  Field required [type=missing, input_value={'intent': 'chart', 'type...AG', 'data': [65, 75]}]}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/missing\nslides.8.chart.chart\n  Field required [type=missing, input_value={'intent': 'chart', 'type...AG', 'data': [65, 75]}]}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/missing\nslides.8.chart.type\n  Extra inputs are not permitted [type=extra_forbidden, input_value='bar', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.12/v/extra_forbidden\nslides.8.chart.xAxis\n  Extra inputs are not permitted [type=extra_forbidden, input_value=['EM', 'F1'], input_type=list]\n    For further information visit https://errors.pydantic.dev/2.12/v/extra_forbidden\nslides.8.chart.series\n  Extra inputs are not permitted [type=extra_forbidden, input_value=[{'name': '传统方法',...RAG', 'data': [65, 75]}], input_type=list]\n    For further information visit https://errors.pydantic.dev/2.12/v/extra_forbidden\nslides.9.kpi.id\n  Field required [type=missing, input_value={'intent': 'kpi', 'items'...迟', 'value': '< 2s'}]}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/missing\nslides.9.kpi.title\n  Field required [type=missing, input_value={'intent': 'kpi', 'items'...迟', 'value': '< 2s'}]}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/missing\nslides.10.text.id\n  Field required [type=missing, input_value={'intent': 'text', 'headi...生成协同训练。']}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/missing\nslides.10.text.title\n  Field required [type=missing, input_value={'intent': 'text', 'headi...生成协同训练。']}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/missing\nslides.10.text.heading\n  Extra inputs are not permitted [type=extra_forbidden, input_value='挑战与未来方向', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.12/v/extra_forbidden\nslides.11.quote.id\n  Field required [type=missing, input_value={'intent': 'quote', 'quot...联网上的一句话'}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/missing\nslides.11.quote.title\n  Field required [type=missing, input_value={'intent': 'quote', 'quot...联网上的一句话'}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/missing"
+      }
+    }
+  },
+  "dsl": {
+    "title": "RAG介绍",
+    "audience": "技术初学者或对RAG感兴趣的研究人员",
+    "tone": "教育性、专业且易于理解",
+    "theme": "academic_gray",
+    "slides": [
+      {
+        "id": "slide_9d84cbdc1c9e",
+        "intent": "cover",
+        "section": "",
+        "title": "RAG介绍",
+        "notes": [],
+        "subtitle": null,
+        "tagline": null,
+        "highlights": []
+      },
+      {
+        "id": "slide_457a21e175e6",
+        "intent": "agenda",
+        "section": "",
+        "title": "RAG介绍",
+        "notes": [],
+        "items": [
+          "概念",
+          "原理",
+          "工作流程",
+          "技术要点",
+          "优势",
+          "应用",
+          "效果展示",
+          "评估指标",
+          "挑战与未来"
+        ]
+      },
+      {
+        "id": "slide_07386bca376c",
+        "intent": "text",
+        "section": "",
+        "title": "RAG介绍",
+        "notes": [],
+        "paragraphs": [
+          "RAG（Retrieval-Augmented Generation）是一种结合检索与生成的AI框架。核心思想是在生成回答前，先从外部知识库中检索相关文档，然后基于检索结果生成准确、更新的内容。"
+        ],
+        "bullets": []
+      },
+      {
+        "id": "slide_4698c310f239",
+        "intent": "architecture",
+        "section": "",
+        "title": "RAG介绍",
+        "notes": [],
+        "layers": []
+      },
+      {
+        "id": "slide_bbc911627234",
+        "intent": "process_flow",
+        "section": "",
+        "title": "RAG介绍",
+        "notes": [],
+        "steps": [
+          {
+            "name": "1. 输入查询",
+            "detail": "用户提出问题"
+          },
+          {
+            "name": "2. 检索",
+            "detail": "从知识库中检索相关文档片段"
+          },
+          {
+            "name": "3. 增强",
+            "detail": "将检索结果与原始查询拼接"
+          },
+          {
+            "name": "4. 生成",
+            "detail": "大语言模型基于增强提示生成回答"
+          }
+        ]
+      },
+      {
+        "id": "slide_ba63e05a7194",
+        "intent": "multi_column",
+        "section": "",
+        "title": "RAG介绍",
+        "notes": [],
+        "columns": [
+          {
+            "title": "检索模型",
+            "bullets": [
+              "BM25",
+              "Dense Passage Retriever",
+              "ColBERT"
+            ]
+          },
+          {
+            "title": "生成模型",
+            "bullets": [
+              "GPT-4",
+              "Llama 3",
+              "Claude"
+            ]
+          },
+          {
+            "title": "知识库",
+            "bullets": [
+              "向量数据库",
+              "文档存储",
+              "图数据库"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "slide_573473363fc8",
+        "intent": "comparison",
+        "section": "",
+        "title": "RAG介绍",
+        "notes": [],
+        "left": {
+          "title": "左",
+          "bullets": []
+        },
+        "right": {
+          "title": "右",
+          "bullets": []
+        }
+      },
+      {
+        "id": "slide_f4e0f603269f",
+        "intent": "text",
+        "section": "",
+        "title": "RAG介绍",
+        "notes": [],
+        "paragraphs": [],
+        "bullets": [
+          "智能问答系统",
+          "文档摘要与信息提取",
+          "知识库辅助客服",
+          "代码补全与文档生成",
+          "多轮对话系统"
+        ]
+      },
+      {
+        "id": "slide_089ecc2e0795",
+        "intent": "chart",
+        "section": "",
+        "title": "RAG在HotpotQA上的性能提升",
+        "notes": [],
+        "chart": {
+          "chartType": "bar",
+          "labels": [],
+          "series": []
+        }
+      },
+      {
+        "id": "slide_7db5d5d215f7",
+        "intent": "kpi",
+        "section": "",
+        "title": "RAG介绍",
+        "notes": [],
+        "items": [
+          {
+            "label": "精确率",
+            "value": "85%",
+            "unit": null,
+            "delta": null
+          },
+          {
+            "label": "召回率",
+            "value": "78%",
+            "unit": null,
+            "delta": null
+          },
+          {
+            "label": "F1分数",
+            "value": "81%",
+            "unit": null,
+            "delta": null
+          },
+          {
+            "label": "问答延迟",
+            "value": "< 2s",
+            "unit": null,
+            "delta": null
+          }
+        ]
+      },
+      {
+        "id": "slide_bb6cca7c9d7a",
+        "intent": "text",
+        "section": "",
+        "title": "RAG介绍",
+        "notes": [],
+        "paragraphs": [
+          "当前RAG面临检索质量不稳定、长文档处理困难、延迟敏感应用等挑战。未来方向包括多模态RAG（结合图像、表格）、自检知识库、以及更高效的检索生成协同训练。"
+        ],
+        "bullets": []
+      },
+      {
+        "id": "slide_e3d86f4d551f",
+        "intent": "quote",
+        "section": "",
+        "title": "RAG介绍",
+        "notes": [],
+        "quote": "RAG是让大语言模型拥有‘查资料’能力的关键技术。",
+        "author": "互联网上的一句话"
+      }
+    ]
+  },
+  "renderTree": {
+    "presentationId": "pres_dd7c5436f95e",
+    "title": "RAG介绍",
+    "themeName": "academic_gray",
+    "themeTokens": {
+      "name": "Academic Gray",
+      "colors": {
+        "background": "#FFFFFF",
+        "surface": "#F3F4F6",
+        "text": "#111827",
+        "muted": "#4B5563",
+        "primary": "#374151",
+        "secondary": "#6B7280",
+        "border": "rgba(17,24,39,0.10)"
+      },
+      "typography": {
+        "fontFamily": "Times New Roman, Georgia, serif",
+        "titlePt": 34,
+        "subtitlePt": 18,
+        "bodyPt": 16,
+        "smallPt": 12
+      },
+      "spacing": {
+        "slidePaddingPx": 64,
+        "gapPx": 16
+      }
+    },
+    "slides": [
+      {
+        "id": "slide_9d84cbdc1c9e",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "slide_9d84cbdc1c9e__title",
+            "type": "Title",
+            "x": 64.0,
+            "y": 64.0,
+            "w": 1152.0,
+            "h": 120.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 34,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "RAG介绍"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": []
+      },
+      {
+        "id": "slide_457a21e175e6",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "slide_457a21e175e6__title",
+            "type": "Title",
+            "x": 64.0,
+            "y": 64.0,
+            "w": 1152.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 34,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "RAG介绍"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "slide_457a21e175e6__bullets",
+            "type": "BulletList",
+            "x": 64.0,
+            "y": 176.0,
+            "w": 1152.0,
+            "h": 480.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "items": [
+                "概念",
+                "原理",
+                "工作流程",
+                "技术要点",
+                "优势",
+                "应用",
+                "效果展示",
+                "评估指标",
+                "挑战与未来"
+              ]
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": []
+      },
+      {
+        "id": "slide_07386bca376c",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "slide_07386bca376c__title",
+            "type": "Title",
+            "x": 64.0,
+            "y": 64.0,
+            "w": 1152.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 34,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "RAG介绍"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "slide_07386bca376c__text",
+            "type": "Text",
+            "x": 64.0,
+            "y": 176.0,
+            "w": 1152.0,
+            "h": 480.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "RAG（Retrieval-Augmented Generation）是一种结合检索与生成的AI框架。核心思想是在生成回答前，先从外部知识库中检索相关文档，然后基于检索结果生成准确、更新的内容。"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": []
+      },
+      {
+        "id": "slide_4698c310f239",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "slide_4698c310f239__title",
+            "type": "Title",
+            "x": 64.0,
+            "y": 64.0,
+            "w": 1152.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 34,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "RAG介绍"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "slide_4698c310f239__arch",
+            "type": "ArchitectureDiagram",
+            "x": 64.0,
+            "y": 176.0,
+            "w": 1152.0,
+            "h": 480.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "layers": []
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": []
+      },
+      {
+        "id": "slide_bbc911627234",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "slide_bbc911627234__title",
+            "type": "Title",
+            "x": 64.0,
+            "y": 64.0,
+            "w": 1152.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 34,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "RAG介绍"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "slide_bbc911627234__process",
+            "type": "ProcessFlow",
+            "x": 64.0,
+            "y": 176.0,
+            "w": 1152.0,
+            "h": 480.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "steps": [
+                {
+                  "name": "1. 输入查询",
+                  "detail": "用户提出问题"
+                },
+                {
+                  "name": "2. 检索",
+                  "detail": "从知识库中检索相关文档片段"
+                },
+                {
+                  "name": "3. 增强",
+                  "detail": "将检索结果与原始查询拼接"
+                },
+                {
+                  "name": "4. 生成",
+                  "detail": "大语言模型基于增强提示生成回答"
+                }
+              ]
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": []
+      },
+      {
+        "id": "slide_ba63e05a7194",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "slide_ba63e05a7194__title",
+            "type": "Title",
+            "x": 64.0,
+            "y": 64.0,
+            "w": 1152.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 34,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "RAG介绍"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "slide_ba63e05a7194__columns",
+            "type": "MultiColumn",
+            "x": 64.0,
+            "y": 176.0,
+            "w": 1152.0,
+            "h": 480.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": "#F3F4F6",
+              "borderColor": "rgba(17,24,39,0.10)",
+              "borderWidth": 1,
+              "radius": 12,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "columns": [
+                {
+                  "title": "检索模型",
+                  "bullets": [
+                    "BM25",
+                    "Dense Passage Retriever",
+                    "ColBERT"
+                  ]
+                },
+                {
+                  "title": "生成模型",
+                  "bullets": [
+                    "GPT-4",
+                    "Llama 3",
+                    "Claude"
+                  ]
+                },
+                {
+                  "title": "知识库",
+                  "bullets": [
+                    "向量数据库",
+                    "文档存储",
+                    "图数据库"
+                  ]
+                }
+              ]
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": []
+      },
+      {
+        "id": "slide_573473363fc8",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "slide_573473363fc8__title",
+            "type": "Title",
+            "x": 64.0,
+            "y": 64.0,
+            "w": 1152.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 34,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "RAG介绍"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "slide_573473363fc8__comparison",
+            "type": "ComparisonTable",
+            "x": 64.0,
+            "y": 176.0,
+            "w": 1152.0,
+            "h": 480.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": "#F3F4F6",
+              "borderColor": "rgba(17,24,39,0.10)",
+              "borderWidth": 1,
+              "radius": 12,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "left": {
+                "title": "左",
+                "bullets": []
+              },
+              "right": {
+                "title": "右",
+                "bullets": []
+              }
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": []
+      },
+      {
+        "id": "slide_f4e0f603269f",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "slide_f4e0f603269f__title",
+            "type": "Title",
+            "x": 64.0,
+            "y": 64.0,
+            "w": 1152.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 34,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "RAG介绍"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "slide_f4e0f603269f__text",
+            "type": "Text",
+            "x": 64.0,
+            "y": 176.0,
+            "w": 1152.0,
+            "h": 480.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "\n• 智能问答系统\n• 文档摘要与信息提取\n• 知识库辅助客服\n• 代码补全与文档生成\n• 多轮对话系统"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": []
+      },
+      {
+        "id": "slide_089ecc2e0795",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "slide_089ecc2e0795__title",
+            "type": "Title",
+            "x": 64.0,
+            "y": 64.0,
+            "w": 1152.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 34,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "RAG在HotpotQA上的性能提升"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "slide_089ecc2e0795__chart",
+            "type": "Chart",
+            "x": 64.0,
+            "y": 176.0,
+            "w": 1152.0,
+            "h": 480.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": "#F3F4F6",
+              "borderColor": "rgba(17,24,39,0.10)",
+              "borderWidth": 1,
+              "radius": 12,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "chartType": "bar",
+              "labels": [],
+              "series": []
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": []
+      },
+      {
+        "id": "slide_7db5d5d215f7",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "slide_7db5d5d215f7__title",
+            "type": "Title",
+            "x": 64.0,
+            "y": 64.0,
+            "w": 1152.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 34,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "RAG介绍"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "slide_7db5d5d215f7__kpi",
+            "type": "KpiCards",
+            "x": 64.0,
+            "y": 176.0,
+            "w": 1152.0,
+            "h": 480.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": "#F3F4F6",
+              "borderColor": "rgba(17,24,39,0.10)",
+              "borderWidth": 1,
+              "radius": 12,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "items": [
+                {
+                  "label": "精确率",
+                  "value": "85%",
+                  "unit": null,
+                  "delta": null
+                },
+                {
+                  "label": "召回率",
+                  "value": "78%",
+                  "unit": null,
+                  "delta": null
+                },
+                {
+                  "label": "F1分数",
+                  "value": "81%",
+                  "unit": null,
+                  "delta": null
+                },
+                {
+                  "label": "问答延迟",
+                  "value": "< 2s",
+                  "unit": null,
+                  "delta": null
+                }
+              ]
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": []
+      },
+      {
+        "id": "slide_bb6cca7c9d7a",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "slide_bb6cca7c9d7a__title",
+            "type": "Title",
+            "x": 64.0,
+            "y": 64.0,
+            "w": 1152.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 34,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "RAG介绍"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "slide_bb6cca7c9d7a__text",
+            "type": "Text",
+            "x": 64.0,
+            "y": 176.0,
+            "w": 1152.0,
+            "h": 480.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "当前RAG面临检索质量不稳定、长文档处理困难、延迟敏感应用等挑战。未来方向包括多模态RAG（结合图像、表格）、自检知识库、以及更高效的检索生成协同训练。"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": []
+      },
+      {
+        "id": "slide_e3d86f4d551f",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "slide_e3d86f4d551f__quote",
+            "type": "Quote",
+            "x": 64.0,
+            "y": 176.0,
+            "w": 1152.0,
+            "h": 480.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": "#F3F4F6",
+              "borderColor": "#374151",
+              "borderWidth": 2,
+              "radius": 16,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 18,
+              "bold": null,
+              "italic": true,
+              "align": "center"
+            },
+            "props": {
+              "quote": "RAG是让大语言模型拥有‘查资料’能力的关键技术。",
+              "author": "互联网上的一句话"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": []
+      }
+    ],
+    "meta": {
+      "audience": "技术初学者或对RAG感兴趣的研究人员",
+      "tone": "教育性、专业且易于理解"
+    }
+  },
+  "lastExportPptx": null
+}

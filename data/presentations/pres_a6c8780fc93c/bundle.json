@@ -1,0 +1,1320 @@
+{
+  "meta": {
+    "id": "pres_a6c8780fc93c",
+    "topic": "软件工程介绍",
+    "createdAt": "2026-05-09T07:11:04.158661Z",
+    "updatedAt": "2026-05-09T07:11:04.158661Z",
+    "version": 1,
+    "extra": {}
+  },
+  "dsl": {
+    "title": "软件工程介绍",
+    "audience": "学生或初级从业者",
+    "tone": "教育性、专业",
+    "theme": "academic_gray",
+    "slides": [
+      {
+        "id": "slide_78251a960b54",
+        "intent": "cover",
+        "section": "封面",
+        "title": "软件工程介绍",
+        "notes": [
+          "建立基础认知",
+          "引导课程目标"
+        ],
+        "subtitle": "基础概念、过程与方法",
+        "tagline": "构建高质量软件的工程化方法",
+        "highlights": [
+          "系统性",
+          "规范性",
+          "协作性"
+        ]
+      },
+      {
+        "id": "slide_cff6a52909ac",
+        "intent": "agenda",
+        "section": "议程",
+        "title": "课程大纲",
+        "notes": [
+          "明确课程结构",
+          "激发学习兴趣"
+        ],
+        "items": [
+          "什么是软件工程",
+          "软件工程 vs 编程",
+          "经典过程模型",
+          "需求工程",
+          "软件设计",
+          "编码与测试",
+          "项目管理基础",
+          "团队合作"
+        ]
+      },
+      {
+        "id": "slide_5495f0734eac",
+        "intent": "text",
+        "section": "定义",
+        "title": "什么是软件工程",
+        "notes": [
+          "解释工程化思想",
+          "强调系统性和纪律性"
+        ],
+        "paragraphs": [],
+        "bullets": [
+          "应用系统化、规范化、可量化的方法来开发、运行和维护软件",
+          "将工程原理应用于软件领域",
+          "核心目标：高质量、低成本、按时交付"
+        ]
+      },
+      {
+        "id": "slide_c2a087c87464",
+        "intent": "comparison",
+        "section": "对比",
+        "title": "软件工程 vs 编程",
+        "notes": [
+          "区分个体编程与工程化开发",
+          "突出工程思维的重要性"
+        ],
+        "left": {
+          "title": "编程",
+          "bullets": [
+            "关注代码实现",
+            "个人或小团队",
+            "缺乏文档与规范",
+            "以功能正确为目标"
+          ]
+        },
+        "right": {
+          "title": "软件工程",
+          "bullets": [
+            "关注全生命周期",
+            "多角色协作",
+            "强调文档与流程",
+            "追求可维护性、可靠性"
+          ]
+        }
+      },
+      {
+        "id": "slide_0456a6d8b00a",
+        "intent": "multi_column",
+        "section": "过程模型",
+        "title": "经典软件过程模型",
+        "notes": [
+          "介绍几种主流模型",
+          "对比适用场景"
+        ],
+        "columns": [
+          {
+            "title": "瀑布模型",
+            "bullets": [
+              "顺序执行阶段",
+              "需求稳定时适用",
+              "后期修改成本高"
+            ]
+          },
+          {
+            "title": "迭代模型",
+            "bullets": [
+              "增量开发",
+              "逐步完善",
+              "风险驱动"
+            ]
+          },
+          {
+            "title": "敏捷开发",
+            "bullets": [
+              "快速迭代",
+              "客户参与",
+              "拥抱变化"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "slide_d2330c589094",
+        "intent": "text",
+        "section": "需求工程",
+        "title": "需求工程",
+        "notes": [
+          "强调需求的重要性",
+          "介绍需求获取与分析"
+        ],
+        "paragraphs": [],
+        "bullets": [
+          "需求获取：访谈、问卷、观察",
+          "需求分析：功能与非功能需求",
+          "需求规范：用例、用户故事",
+          "需求管理：变更控制"
+        ]
+      },
+      {
+        "id": "slide_a9c656f7cd71",
+        "intent": "text",
+        "section": "软件设计",
+        "title": "软件设计",
+        "notes": [
+          "顶层设计与详细设计",
+          "设计原则"
+        ],
+        "paragraphs": [],
+        "bullets": [
+          "体系结构设计：模块划分、层次结构",
+          "详细设计：类设计、数据结构",
+          "设计原则：高内聚、低耦合、SOLID"
+        ]
+      },
+      {
+        "id": "slide_005f64a2d1bf",
+        "intent": "text",
+        "section": "编码与测试",
+        "title": "编码与测试",
+        "notes": [
+          "编码规范与版本控制",
+          "测试策略"
+        ],
+        "paragraphs": [],
+        "bullets": [
+          "编码规范：命名、注释、代码复用",
+          "版本控制：Git、分支策略",
+          "测试层次：单元测试、集成测试、系统测试",
+          "测试工具：JUnit、Selenium"
+        ]
+      },
+      {
+        "id": "slide_456b906a231d",
+        "intent": "text",
+        "section": "项目管理",
+        "title": "项目管理基础",
+        "notes": [
+          "介绍项目管理关键要素",
+          "风险管理与进度控制"
+        ],
+        "paragraphs": [],
+        "bullets": [
+          "项目计划：范围、时间、成本",
+          "风险管理：识别、评估、应对",
+          "进度跟踪：甘特图、燃尽图",
+          "质量保证：评审、审计"
+        ]
+      },
+      {
+        "id": "slide_bb2aa3655bea",
+        "intent": "team",
+        "section": "团队协作",
+        "title": "团队协作",
+        "notes": [
+          "介绍常见角色与职责",
+          "强调沟通的重要性"
+        ],
+        "members": [
+          {
+            "name": "项目经理",
+            "role": "规划与协调",
+            "highlights": [
+              "制定计划",
+              "风险管控",
+              "团队沟通"
+            ]
+          },
+          {
+            "name": "业务分析师",
+            "role": "需求获取与分析",
+            "highlights": [
+              "编写用户故事",
+              "定义验收标准"
+            ]
+          },
+          {
+            "name": "开发工程师",
+            "role": "编码与单元测试",
+            "highlights": [
+              "技术实现",
+              "代码审查"
+            ]
+          },
+          {
+            "name": "测试工程师",
+            "role": "质量保障",
+            "highlights": [
+              "设计测试用例",
+              "自动化测试"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "slide_fbd03b287fc5",
+        "intent": "text",
+        "section": "总结",
+        "title": "关键要点回顾",
+        "notes": [
+          "巩固核心概念",
+          "鼓励进一步学习"
+        ],
+        "paragraphs": [],
+        "bullets": [
+          "软件工程是系统化的软件开发方法",
+          "过程模型提供开发框架",
+          "需求、设计、编码、测试构成核心活动",
+          "项目管理与团队协作保障成功",
+          "持续学习与实践是成长关键"
+        ]
+      },
+      {
+        "id": "slide_2a30a663a39c",
+        "intent": "divider",
+        "section": "结束",
+        "title": "谢谢",
+        "notes": [
+          "感谢参与",
+          "准备提问环节"
+        ],
+        "subtitle": "Q&A"
+      }
+    ]
+  },
+  "renderTree": {
+    "presentationId": "pres_a6c8780fc93c",
+    "title": "软件工程介绍",
+    "themeName": "academic_gray",
+    "themeTokens": {
+      "name": "Academic Gray",
+      "colors": {
+        "background": "#FFFFFF",
+        "surface": "#F3F4F6",
+        "text": "#111827",
+        "muted": "#4B5563",
+        "primary": "#374151",
+        "secondary": "#6B7280",
+        "border": "rgba(17,24,39,0.10)"
+      },
+      "typography": {
+        "fontFamily": "Times New Roman, Georgia, serif",
+        "titlePt": 34,
+        "subtitlePt": 18,
+        "bodyPt": 16,
+        "smallPt": 12
+      },
+      "spacing": {
+        "slidePaddingPx": 64,
+        "gapPx": 16
+      }
+    },
+    "slides": [
+      {
+        "id": "slide_78251a960b54",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "slide_78251a960b54__title",
+            "type": "Title",
+            "x": 64.0,
+            "y": 64.0,
+            "w": 1152.0,
+            "h": 120.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 34,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "软件工程介绍"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "slide_78251a960b54__subtitle",
+            "type": "Subtitle",
+            "x": 64.0,
+            "y": 200.0,
+            "w": 1152.0,
+            "h": 70.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#4B5563",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 18,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "基础概念、过程与方法"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "slide_78251a960b54__tagline",
+            "type": "Text",
+            "x": 64.0,
+            "y": 286.0,
+            "w": 1152.0,
+            "h": 60.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "构建高质量软件的工程化方法"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "slide_78251a960b54__highlights",
+            "type": "BulletList",
+            "x": 64.0,
+            "y": 362.0,
+            "w": 1152.0,
+            "h": 278.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "items": [
+                "系统性",
+                "规范性",
+                "协作性"
+              ]
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": [
+          "建立基础认知",
+          "引导课程目标"
+        ]
+      },
+      {
+        "id": "slide_cff6a52909ac",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "slide_cff6a52909ac__title",
+            "type": "Title",
+            "x": 64.0,
+            "y": 64.0,
+            "w": 1152.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 34,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "课程大纲"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "slide_cff6a52909ac__bullets",
+            "type": "BulletList",
+            "x": 64.0,
+            "y": 176.0,
+            "w": 1152.0,
+            "h": 480.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "items": [
+                "什么是软件工程",
+                "软件工程 vs 编程",
+                "经典过程模型",
+                "需求工程",
+                "软件设计",
+                "编码与测试",
+                "项目管理基础",
+                "团队合作"
+              ]
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": [
+          "明确课程结构",
+          "激发学习兴趣"
+        ]
+      },
+      {
+        "id": "slide_5495f0734eac",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "slide_5495f0734eac__title",
+            "type": "Title",
+            "x": 64.0,
+            "y": 64.0,
+            "w": 1152.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 34,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "什么是软件工程"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "slide_5495f0734eac__text",
+            "type": "Text",
+            "x": 64.0,
+            "y": 176.0,
+            "w": 1152.0,
+            "h": 480.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "\n• 应用系统化、规范化、可量化的方法来开发、运行和维护软件\n• 将工程原理应用于软件领域\n• 核心目标：高质量、低成本、按时交付"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": [
+          "解释工程化思想",
+          "强调系统性和纪律性"
+        ]
+      },
+      {
+        "id": "slide_c2a087c87464",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "slide_c2a087c87464__title",
+            "type": "Title",
+            "x": 64.0,
+            "y": 64.0,
+            "w": 1152.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 34,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "软件工程 vs 编程"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "slide_c2a087c87464__comparison",
+            "type": "ComparisonTable",
+            "x": 64.0,
+            "y": 176.0,
+            "w": 1152.0,
+            "h": 480.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": "#F3F4F6",
+              "borderColor": "rgba(17,24,39,0.10)",
+              "borderWidth": 1,
+              "radius": 12,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "left": {
+                "title": "编程",
+                "bullets": [
+                  "关注代码实现",
+                  "个人或小团队",
+                  "缺乏文档与规范",
+                  "以功能正确为目标"
+                ]
+              },
+              "right": {
+                "title": "软件工程",
+                "bullets": [
+                  "关注全生命周期",
+                  "多角色协作",
+                  "强调文档与流程",
+                  "追求可维护性、可靠性"
+                ]
+              }
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": [
+          "区分个体编程与工程化开发",
+          "突出工程思维的重要性"
+        ]
+      },
+      {
+        "id": "slide_0456a6d8b00a",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "slide_0456a6d8b00a__title",
+            "type": "Title",
+            "x": 64.0,
+            "y": 64.0,
+            "w": 1152.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 34,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "经典软件过程模型"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "slide_0456a6d8b00a__columns",
+            "type": "MultiColumn",
+            "x": 64.0,
+            "y": 176.0,
+            "w": 1152.0,
+            "h": 480.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": "#F3F4F6",
+              "borderColor": "rgba(17,24,39,0.10)",
+              "borderWidth": 1,
+              "radius": 12,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "columns": [
+                {
+                  "title": "瀑布模型",
+                  "bullets": [
+                    "顺序执行阶段",
+                    "需求稳定时适用",
+                    "后期修改成本高"
+                  ]
+                },
+                {
+                  "title": "迭代模型",
+                  "bullets": [
+                    "增量开发",
+                    "逐步完善",
+                    "风险驱动"
+                  ]
+                },
+                {
+                  "title": "敏捷开发",
+                  "bullets": [
+                    "快速迭代",
+                    "客户参与",
+                    "拥抱变化"
+                  ]
+                }
+              ]
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": [
+          "介绍几种主流模型",
+          "对比适用场景"
+        ]
+      },
+      {
+        "id": "slide_d2330c589094",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "slide_d2330c589094__title",
+            "type": "Title",
+            "x": 64.0,
+            "y": 64.0,
+            "w": 1152.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 34,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "需求工程"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "slide_d2330c589094__text",
+            "type": "Text",
+            "x": 64.0,
+            "y": 176.0,
+            "w": 1152.0,
+            "h": 480.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "\n• 需求获取：访谈、问卷、观察\n• 需求分析：功能与非功能需求\n• 需求规范：用例、用户故事\n• 需求管理：变更控制"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": [
+          "强调需求的重要性",
+          "介绍需求获取与分析"
+        ]
+      },
+      {
+        "id": "slide_a9c656f7cd71",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "slide_a9c656f7cd71__title",
+            "type": "Title",
+            "x": 64.0,
+            "y": 64.0,
+            "w": 1152.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 34,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "软件设计"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "slide_a9c656f7cd71__text",
+            "type": "Text",
+            "x": 64.0,
+            "y": 176.0,
+            "w": 1152.0,
+            "h": 480.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "\n• 体系结构设计：模块划分、层次结构\n• 详细设计：类设计、数据结构\n• 设计原则：高内聚、低耦合、SOLID"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": [
+          "顶层设计与详细设计",
+          "设计原则"
+        ]
+      },
+      {
+        "id": "slide_005f64a2d1bf",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "slide_005f64a2d1bf__title",
+            "type": "Title",
+            "x": 64.0,
+            "y": 64.0,
+            "w": 1152.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 34,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "编码与测试"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "slide_005f64a2d1bf__text",
+            "type": "Text",
+            "x": 64.0,
+            "y": 176.0,
+            "w": 1152.0,
+            "h": 480.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "\n• 编码规范：命名、注释、代码复用\n• 版本控制：Git、分支策略\n• 测试层次：单元测试、集成测试、系统测试\n• 测试工具：JUnit、Selenium"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": [
+          "编码规范与版本控制",
+          "测试策略"
+        ]
+      },
+      {
+        "id": "slide_456b906a231d",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "slide_456b906a231d__title",
+            "type": "Title",
+            "x": 64.0,
+            "y": 64.0,
+            "w": 1152.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 34,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "项目管理基础"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "slide_456b906a231d__text",
+            "type": "Text",
+            "x": 64.0,
+            "y": 176.0,
+            "w": 1152.0,
+            "h": 480.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "\n• 项目计划：范围、时间、成本\n• 风险管理：识别、评估、应对\n• 进度跟踪：甘特图、燃尽图\n• 质量保证：评审、审计"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": [
+          "介绍项目管理关键要素",
+          "风险管理与进度控制"
+        ]
+      },
+      {
+        "id": "slide_bb2aa3655bea",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "slide_bb2aa3655bea__title",
+            "type": "Title",
+            "x": 64.0,
+            "y": 64.0,
+            "w": 1152.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 34,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "团队协作"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "slide_bb2aa3655bea__team",
+            "type": "TeamCards",
+            "x": 64.0,
+            "y": 176.0,
+            "w": 1152.0,
+            "h": 480.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": "#F3F4F6",
+              "borderColor": "rgba(17,24,39,0.10)",
+              "borderWidth": 1,
+              "radius": 12,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "members": [
+                {
+                  "name": "项目经理",
+                  "role": "规划与协调",
+                  "highlights": [
+                    "制定计划",
+                    "风险管控",
+                    "团队沟通"
+                  ]
+                },
+                {
+                  "name": "业务分析师",
+                  "role": "需求获取与分析",
+                  "highlights": [
+                    "编写用户故事",
+                    "定义验收标准"
+                  ]
+                },
+                {
+                  "name": "开发工程师",
+                  "role": "编码与单元测试",
+                  "highlights": [
+                    "技术实现",
+                    "代码审查"
+                  ]
+                },
+                {
+                  "name": "测试工程师",
+                  "role": "质量保障",
+                  "highlights": [
+                    "设计测试用例",
+                    "自动化测试"
+                  ]
+                }
+              ]
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": [
+          "介绍常见角色与职责",
+          "强调沟通的重要性"
+        ]
+      },
+      {
+        "id": "slide_fbd03b287fc5",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "slide_fbd03b287fc5__title",
+            "type": "Title",
+            "x": 64.0,
+            "y": 64.0,
+            "w": 1152.0,
+            "h": 96.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 34,
+              "bold": true,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "关键要点回顾"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          },
+          {
+            "id": "slide_fbd03b287fc5__text",
+            "type": "Text",
+            "x": 64.0,
+            "y": 176.0,
+            "w": 1152.0,
+            "h": 480.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": null,
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 16,
+              "bold": false,
+              "italic": null,
+              "align": "left"
+            },
+            "props": {
+              "text": "\n• 软件工程是系统化的软件开发方法\n• 过程模型提供开发框架\n• 需求、设计、编码、测试构成核心活动\n• 项目管理与团队协作保障成功\n• 持续学习与实践是成长关键"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": [
+          "巩固核心概念",
+          "鼓励进一步学习"
+        ]
+      },
+      {
+        "id": "slide_2a30a663a39c",
+        "width": 1280,
+        "height": 720,
+        "background": "#FFFFFF",
+        "components": [
+          {
+            "id": "slide_2a30a663a39c__divider",
+            "type": "Divider",
+            "x": 64.0,
+            "y": 64.0,
+            "w": 1152.0,
+            "h": 592.0,
+            "z": 10,
+            "rotation": 0.0,
+            "style": {
+              "color": "#111827",
+              "background": "#FFFFFF",
+              "borderColor": null,
+              "borderWidth": null,
+              "radius": null,
+              "fontFamily": "Times New Roman, Georgia, serif",
+              "fontSize": 34,
+              "bold": true,
+              "italic": null,
+              "align": "center"
+            },
+            "props": {
+              "title": "谢谢",
+              "subtitle": "Q&A"
+            },
+            "editable": {
+              "movable": true,
+              "resizable": true,
+              "rotatable": false,
+              "editableProps": []
+            }
+          }
+        ],
+        "notes": [
+          "感谢参与",
+          "准备提问环节"
+        ]
+      }
+    ],
+    "meta": {
+      "audience": "学生或初级从业者",
+      "tone": "教育性、专业"
+    }
+  },
+  "lastExportPptx": null
+}

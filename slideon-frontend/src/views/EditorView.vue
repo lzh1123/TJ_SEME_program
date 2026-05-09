@@ -15,11 +15,6 @@
             @blur="saveTitle"
             @keypress.enter="$event.target.blur()"
           >
-          <span class="project-status" :class="{ saved: isSaved }">
-            <IconBase v-if="isSaved" name="check" :size="10" />
-            <IconBase v-else name="sync" :size="10" class="animate-spin" />
-            {{ isSaved ? '已保存' : '保存中...' }}
-          </span>
         </div>
       </div>
       <div class="header-right">
@@ -27,16 +22,6 @@
           <IconBase name="save" :size="14" />
           保存
         </button>
-        <button class="btn btn-secondary btn-sm" @click="shareProject">
-          <IconBase name="share" :size="14" />
-          分享
-        </button>
-        <div class="dropdown">
-          <button class="btn btn-primary btn-sm" @click="exportPresentation">
-            <IconBase name="download" :size="14" />
-            导出
-          </button>
-        </div>
         <div class="user-avatar">
           <img :src="userAvatar" alt="用户头像">
         </div>
@@ -46,7 +31,7 @@
     <!-- 编辑器主体 -->
     <div class="editor-container">
       <!-- 左侧边栏 - 大纲 -->
-      <aside class="editor-sidebar">
+      <aside class="editor-sidebar" v-show="sidebarVisible">
         <div class="sidebar-tabs">
           <button 
             :class="['sidebar-tab', { active: activeTab === 'outline' }]"
@@ -94,11 +79,6 @@
               </div>
             </div>
           </div>
-          
-          <button class="add-page-btn" @click="addPage">
-            <IconBase name="plus" :size="14" />
-            添加页面
-          </button>
         </div>
         
         <!-- 页面缩略图视图 -->
@@ -120,59 +100,222 @@
       </aside>
 
       <!-- 中间画布区域 -->
-      <main class="editor-canvas-area">
-        <div class="canvas-wrapper">
+      <main class="editor-canvas-area" :class="{ 'sidebar-hidden': !sidebarVisible }">
+        <button class="toggle-sidebar-btn" @click="sidebarVisible = !sidebarVisible" :title="sidebarVisible ? '隐藏边栏' : '显示边栏'">
+          <IconBase name="chevronLeft" :size="20" :style="{ transform: sidebarVisible ? 'none' : 'rotate(180deg)' }" />
+        </button>
+        
+        <div class="canvas-wrapper" ref="canvasWrapper">
           <div class="slide-canvas" :style="getCanvasStyle()">
-            <div class="slide-content" v-if="currentSlide.components">
-              <div 
-                v-for="component in currentSlide.components" 
-                :key="component.id"
-                class="slide-component"
-                :style="getComponentStyle(component)"
-              >
-                <!-- 标题组件 -->
-                <div v-if="component.type === 'Title'" class="component-title">
-                  {{ component.props?.text || '' }}
-                </div>
-                <!-- 副标题组件 -->
-                <div v-else-if="component.type === 'Subtitle'" class="component-subtitle">
-                  {{ component.props?.text || '' }}
-                </div>
-                <!-- 文本组件 -->
-                <div v-else-if="component.type === 'Text'" class="component-text">
-                  {{ component.props?.text || '' }}
-                </div>
-                <!-- 项目符号列表 -->
-                <div v-else-if="component.type === 'BulletList'" class="component-bullet-list">
-                  <ul>
-                    <li v-for="(item, idx) in component.props?.items || []" :key="idx">{{ item }}</li>
-                  </ul>
-                </div>
-                <!-- 引用组件 -->
-                <div v-else-if="component.type === 'Quote'" class="component-quote">
-                  <blockquote>{{ component.props?.text || '' }}</blockquote>
-                </div>
-                <!-- 分隔线 -->
-                <div v-else-if="component.type === 'Divider'" class="component-divider">
-                  <hr />
-                </div>
-                <!-- 图片组件 -->
-                <div v-else-if="component.type === 'Image'" class="component-image">
-                  <img v-if="component.props?.url" :src="component.props.url" :alt="component.props?.alt || ''" />
-                  <div v-else style="display:flex;align-items:center;justify-content:center;height:100%;color:#888;">[图片]</div>
-                </div>
-                <!-- 其他组件 - 显示类型 -->
-                <div v-else class="component-other">
-                  [{{ component.type }}]
+            <div class="slide-content" :style="{ transform: `scale(${zoom / 100})`, transformOrigin: 'center center' }">
+              <div v-if="currentSlide.components && currentSlide.components.length > 0">
+                <div 
+                  v-for="component in currentSlide.components" 
+                  :key="component.id"
+                  class="slide-component"
+                  :style="getComponentStyle(component)"
+                >
+                  <!-- Title组件 -->
+                  <div v-if="component.type === 'Title'" class="component-title" :style="getComponentInnerStyle(component)">
+                    {{ component.props?.text || '' }}
+                  </div>
+                  <!-- Subtitle组件 -->
+                  <div v-else-if="component.type === 'Subtitle'" class="component-subtitle" :style="getComponentInnerStyle(component)">
+                    {{ component.props?.text || '' }}
+                  </div>
+                  <!-- Text组件 -->
+                  <div v-else-if="component.type === 'Text'" class="component-text" :style="getComponentInnerStyle(component)">
+                    {{ component.props?.text || '' }}
+                  </div>
+                  <!-- BulletList组件 -->
+                  <div v-else-if="component.type === 'BulletList'" class="component-bullet-list" :style="getComponentInnerStyle(component)">
+                    <ul>
+                      <li v-for="(item, idx) in component.props?.items || []" :key="idx">{{ item }}</li>
+                    </ul>
+                  </div>
+                  <!-- Quote组件 -->
+                  <div v-else-if="component.type === 'Quote'" class="component-quote" :style="getComponentInnerStyle(component)">
+                    <blockquote>{{ component.props?.quote || '' }}</blockquote>
+                    <cite v-if="component.props?.author">— {{ component.props.author }}</cite>
+                  </div>
+                  <!-- Timeline组件 -->
+                  <div v-else-if="component.type === 'Timeline'" class="component-timeline" :style="getComponentInnerStyle(component)">
+                    <ul class="timeline-list">
+                      <li v-for="(event, idx) in component.props?.events || []" :key="idx">
+                        <span class="timeline-date" v-if="event.date">{{ event.date }}</span>
+                        <span class="timeline-label">{{ event.label }}</span>
+                        <span class="timeline-detail" v-if="event.detail">{{ event.detail }}</span>
+                      </li>
+                    </ul>
+                  </div>
+                  <!-- KpiCards组件 -->
+                  <div v-else-if="component.type === 'KpiCards'" class="component-kpi-cards" :style="getComponentInnerStyle(component)">
+                    <div class="kpi-cards-grid">
+                      <div 
+                        v-for="(item, idx) in component.props?.items || []" 
+                        :key="idx" 
+                        class="kpi-card"
+                      >
+                        <div class="kpi-value">{{ item.value }}<span class="kpi-unit" v-if="item.unit">{{ item.unit }}</span></div>
+                        <div class="kpi-label">{{ item.label }}</div>
+                        <div v-if="item.delta" class="kpi-delta" :class="item.delta.startsWith('-') ? 'negative' : 'positive'">
+                          {{ item.delta }}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <!-- ComparisonTable组件 -->
+                  <div v-else-if="component.type === 'ComparisonTable'" class="component-comparison" :style="getComponentInnerStyle(component)">
+                    <div class="comparison-left">
+                      <h3 v-if="component.props?.left?.title">{{ component.props.left.title }}</h3>
+                      <ul v-if="component.props?.left?.bullets">
+                        <li v-for="(bullet, idx) in component.props.left.bullets" :key="idx">{{ bullet }}</li>
+                      </ul>
+                    </div>
+                    <div class="comparison-divider"></div>
+                    <div class="comparison-right">
+                      <h3 v-if="component.props?.right?.title">{{ component.props.right.title }}</h3>
+                      <ul v-if="component.props?.right?.bullets">
+                        <li v-for="(bullet, idx) in component.props.right.bullets" :key="idx">{{ bullet }}</li>
+                      </ul>
+                    </div>
+                  </div>
+                  <!-- Swot组件 -->
+                  <div v-else-if="component.type === 'Swot'" class="component-swot" :style="getComponentInnerStyle(component)">
+                    <div class="swot-grid">
+                      <div class="swot-item swot-strengths" v-if="component.props?.strengths">
+                        <h4>S: 优势</h4>
+                        <ul><li v-for="(item, idx) in component.props.strengths" :key="idx">{{ item }}</li></ul>
+                      </div>
+                      <div class="swot-item swot-weaknesses" v-if="component.props?.weaknesses">
+                        <h4>W: 劣势</h4>
+                        <ul><li v-for="(item, idx) in component.props.weaknesses" :key="idx">{{ item }}</li></ul>
+                      </div>
+                      <div class="swot-item swot-opportunities" v-if="component.props?.opportunities">
+                        <h4>O: 机会</h4>
+                        <ul><li v-for="(item, idx) in component.props.opportunities" :key="idx">{{ item }}</li></ul>
+                      </div>
+                      <div class="swot-item swot-threats" v-if="component.props?.threats">
+                        <h4>T: 威胁</h4>
+                        <ul><li v-for="(item, idx) in component.props.threats" :key="idx">{{ item }}</li></ul>
+                      </div>
+                    </div>
+                  </div>
+                  <!-- Roadmap组件 -->
+                  <div v-else-if="component.type === 'Roadmap'" class="component-roadmap" :style="getComponentInnerStyle(component)">
+                    <div class="roadmap-phases">
+                      <div v-for="(phase, idx) in component.props?.phases || []" :key="idx" class="roadmap-phase">
+                        <div class="phase-header">
+                          <h5>{{ phase.name }}</h5>
+                          <span class="phase-timeframe">{{ phase.timeframe }}</span>
+                        </div>
+                        <ul class="phase-deliverables">
+                          <li v-for="(item, dIdx) in phase.deliverables || []" :key="dIdx">{{ item }}</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                  <!-- ProcessFlow组件 -->
+                  <div v-else-if="component.type === 'ProcessFlow'" class="component-process-flow" :style="getComponentInnerStyle(component)">
+                    <div class="process-steps">
+                      <div v-for="(step, idx) in component.props?.steps || []" :key="idx" class="process-step">
+                        <div class="step-number">{{ idx + 1 }}</div>
+                        <div class="step-content">
+                          <h5>{{ step.name }}</h5>
+                          <p v-if="step.detail">{{ step.detail }}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <!-- MultiColumn组件 -->
+                  <div v-else-if="component.type === 'MultiColumn'" class="component-multi-column" :style="getComponentInnerStyle(component)">
+                    <div class="columns-grid">
+                      <div v-for="(column, idx) in component.props?.columns || []" :key="idx" class="column-item">
+                        <h4 v-if="column.title">{{ column.title }}</h4>
+                        <ul v-if="column.bullets">
+                          <li v-for="(bullet, bIdx) in column.bullets" :key="bIdx">{{ bullet }}</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                  <!-- Chart组件 -->
+                  <div v-else-if="component.type === 'Chart'" class="component-chart" :style="getComponentInnerStyle(component)">
+                    <div class="chart-container">
+                      <div class="chart-title">{{ component.props?.chartType === 'bar' ? '柱状图' : '图表' }}</div>
+                      <div class="chart-content" v-if="component.props?.series && component.props?.labels">
+                        <div class="chart-legend">
+                          <div v-for="(series, idx) in component.props.series" :key="idx" class="legend-item">
+                            <span class="legend-color" :style="{ backgroundColor: getChartColor(idx) }"></span>
+                            <span>{{ series.name }}</span>
+                          </div>
+                        </div>
+                        <div class="chart-bars">
+                          <div v-for="(label, labelIdx) in component.props.labels" :key="labelIdx" class="bar-group">
+                            <div class="bar-label">{{ label }}</div>
+                            <div class="bar-row">
+                              <div 
+                                v-for="(series, seriesIdx) in component.props.series" 
+                                :key="seriesIdx" 
+                                class="bar"
+                                :style="{ 
+                                  height: (series.values[labelIdx] ? (series.values[labelIdx] / getMaxValue(component.props.series)) * 100 : 0) + '%',
+                                  backgroundColor: getChartColor(seriesIdx),
+                                  width: (100 / component.props.series.length) + '%'
+                                }"
+                                :title="`${series.name}: ${series.values[labelIdx]}`"
+                              >
+                                {{ series.values[labelIdx] }}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div v-else class="chart-placeholder">
+                        <IconBase name="chartBar" :size="48" />
+                        <p>图表数据加载中</p>
+                      </div>
+                    </div>
+                  </div>
+                  <!-- ArchitectureDiagram组件 -->
+                  <div v-else-if="component.type === 'ArchitectureDiagram'" class="component-arch" :style="getComponentInnerStyle(component)">
+                    <div class="arch-container">
+                      <div 
+                        v-for="(layer, layerIdx) in component.props?.layers || []" 
+                        :key="layerIdx" 
+                        class="arch-layer"
+                      >
+                        <div class="arch-layer-header">{{ layer.name }}</div>
+                        <div class="arch-layer-items">
+                          <div 
+                            v-for="(item, itemIdx) in layer.items || []" 
+                            :key="itemIdx" 
+                            class="arch-item"
+                          >
+                            {{ item }}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <!-- Divider组件 -->
+                  <div v-else-if="component.type === 'Divider'" class="component-divider" :style="getComponentInnerStyle(component)">
+                    <div class="divider-container">
+                      <div v-if="component.props?.title" class="divider-title">{{ component.props.title }}</div>
+                      <div v-if="component.props?.subtitle" class="divider-subtitle">{{ component.props.subtitle }}</div>
+                    </div>
+                  </div>
+                  <!-- 其他组件 -->
+                  <div v-else class="component-other">
+                    [{{ component.type }}]
+                  </div>
                 </div>
               </div>
-            </div>
-            <!-- 默认渲染 -->
-            <div v-else class="slide-content">
-              <div class="slide-layout-title">
-                <h1 class="slide-title">{{ currentSlide.title }}</h1>
-                <p class="slide-subtitle">{{ currentSlide.subtitle }}</p>
-                <div class="slide-date">{{ currentSlide.date }}</div>
+              <!-- 备用默认渲染 -->
+              <div v-else class="slide-fallback">
+                <div class="slide-layout-title">
+                  <h1 class="slide-title">{{ currentSlide.title }}</h1>
+                  <p class="slide-subtitle">{{ currentSlide.subtitle }}</p>
+                </div>
               </div>
             </div>
           </div>
@@ -181,32 +324,11 @@
         <!-- 画布工具栏 -->
         <div class="canvas-toolbar">
           <div class="toolbar-group">
-            <button class="toolbar-btn" title="撤销" @click="undo">
-              <IconBase name="undo" :size="16" />
-            </button>
-            <button class="toolbar-btn" title="重做" @click="redo">
-              <IconBase name="redo" :size="16" />
-            </button>
-          </div>
-          <div class="toolbar-divider"></div>
-          <div class="toolbar-group">
-            <button class="toolbar-btn" title="插入" @click="showToast('打开插入菜单')">
-              <IconBase name="plus" :size="16" />
-              <IconBase name="chevronDown" :size="10" />
-            </button>
-            <button class="toolbar-btn" title="布局" @click="showToast('打开布局菜单')">
-              <IconBase name="thLarge" :size="16" />
-              <IconBase name="chevronDown" :size="10" />
-            </button>
-            <button class="toolbar-btn" title="主题" @click="showToast('打开主题菜单')">
-              <IconBase name="palette" :size="16" />
-              <IconBase name="chevronDown" :size="10" />
-            </button>
-          </div>
-          <div class="toolbar-divider"></div>
-          <div class="toolbar-group">
             <button class="toolbar-btn" title="缩小" @click="zoomOut">
               <IconBase name="minus" :size="16" />
+            </button>
+            <button class="toolbar-btn" title="适应屏幕" @click="zoomToFit">
+              <IconBase name="chevronDown" :size="16" :style="{ transform: 'rotate(-45deg)' }" />
             </button>
             <span class="zoom-level">{{ zoom }}%</span>
             <button class="toolbar-btn" title="放大" @click="zoomIn">
@@ -216,120 +338,15 @@
           <div class="toolbar-divider"></div>
           <div class="toolbar-group">
             <span class="page-indicator">{{ currentPage }} / {{ totalPages }}</span>
-            <button class="toolbar-btn" title="播放" @click="playPresentation">
-              <IconBase name="play" :size="16" />
-            </button>
           </div>
         </div>
       </main>
-
-      <!-- 右侧AI助手面板 -->
-      <aside class="editor-ai-panel">
-        <div class="ai-panel-header">
-          <div class="ai-avatar">
-            <IconBase name="robot" :size="20" />
-          </div>
-          <div class="ai-info">
-            <h3 class="ai-name">AI助手</h3>
-            <span class="ai-status">
-              <span class="status-dot"></span>
-              在线
-            </span>
-          </div>
-          <button class="btn btn-ghost btn-icon" title="设置" @click="showToast('打开设置')">
-            <IconBase name="cog" :size="16" />
-          </button>
-        </div>
-        
-        <div class="ai-chat-container">
-          <div class="ai-welcome">
-            <div class="ai-message">
-              <div class="ai-avatar-small">
-                <IconBase name="robot" :size="14" />
-              </div>
-              <div class="message-content">
-                <p>你好！我是你的AI助手，可以帮你：</p>
-                <ul>
-                  <li>优化幻灯片内容</li>
-                  <li>生成配图建议</li>
-                  <li>调整页面风格</li>
-                  <li>补充数据案例</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-          
-          <div class="chat-messages">
-            <div 
-              v-for="(msg, index) in chatMessages" 
-              :key="index"
-              :class="['message', msg.type]"
-            >
-              <div v-if="msg.type === 'ai'" class="ai-avatar-small">
-                <IconBase name="robot" :size="14" />
-              </div>
-              <div class="message-content">
-                <p>{{ msg.content }}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <div class="ai-quick-actions">
-          <span class="quick-actions-label">快捷操作：</span>
-          <div class="quick-actions-list">
-            <button 
-              v-for="action in quickActions" 
-              :key="action.text"
-              class="quick-action-btn"
-              @click="sendQuickMessage(action.text)"
-            >
-              <IconBase :name="action.icon" :size="11" />
-              {{ action.text }}
-            </button>
-          </div>
-        </div>
-        
-        <div class="ai-input-area">
-          <div class="input-wrapper">
-            <textarea 
-              class="ai-input" 
-              placeholder="输入你的问题或需求..."
-              rows="1"
-              v-model="aiInput"
-              @input="autoResize"
-              @keypress.enter.prevent="sendMessage"
-            ></textarea>
-            <button class="ai-send-btn" @click="sendMessage">
-              <IconBase name="paperPlane" :size="16" />
-            </button>
-          </div>
-        </div>
-      </aside>
-    </div>
-
-    <!-- 底部状态栏 -->
-    <footer class="editor-footer">
-      <div class="footer-left">
-        <span class="footer-info">正在编辑：第{{ currentPage }}页</span>
-      </div>
-      <div class="footer-right">
-        <span class="footer-info">最后保存：{{ lastSaved }}</span>
-      </div>
-    </footer>
-
-    <!-- 生成中提示 -->
-    <div class="toast" :class="{ show: showGeneratingToast }">
-      <div class="toast-content">
-        <div class="spinner"></div>
-        <span>AI正在生成内容...</span>
-      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import IconBase from '../components/icons/IconBase.vue'
 import { apiService } from '../services/api.js'
@@ -338,11 +355,12 @@ const route = useRoute()
 
 // 项目信息
 const projectTitle = ref('加载中...')
-const isSaved = ref(true)
 const userAvatar = 'https://api.dicebear.com/7.x/avataaars/svg?seed=user'
 const presentationId = ref(null)
+const canvasWrapper = ref(null)
 
-// 侧边栏
+// 左侧边栏
+const sidebarVisible = ref(true)
 const activeTab = ref('outline')
 
 // 大纲数据
@@ -359,10 +377,14 @@ const currentSlide = computed(() => {
   const slide = slides.value[currentPage.value - 1]
   return slide || {
     title: '页面标题',
-    subtitle: currentPage.value === 1 ? 'PPT内容展示' : '副标题',
-    date: new Date().getFullYear() + '年'
+    background: '#ffffff'
   }
 })
+
+// 缩放
+const zoom = ref(100)
+const MIN_ZOOM = 20
+const MAX_ZOOM = 200
 
 // 获取画布样式
 const getCanvasStyle = () => {
@@ -370,7 +392,7 @@ const getCanvasStyle = () => {
   return {
     width: (slide.width || 1280) + 'px',
     height: (slide.height || 720) + 'px',
-    background: slide.background || 'white'
+    background: slide.background || '#ffffff'
   }
 }
 
@@ -378,49 +400,60 @@ const getCanvasStyle = () => {
 const getComponentStyle = (component) => {
   const style = {
     position: 'absolute',
-    left: component.x + 'px',
-    top: component.y + 'px',
-    width: component.w + 'px',
-    height: component.h + 'px',
-    zIndex: component.z
+    left: (component.x || 0) + 'px',
+    top: (component.y || 0) + 'px',
+    width: (component.w || 200) + 'px',
+    height: (component.h || 100) + 'px',
+    zIndex: component.z || 1,
+    boxSizing: 'border-box',
+    padding: '16px'
   }
 
   if (component.style) {
-    if (component.style.color) {
-      style.color = component.style.color
-    }
-    if (component.style.background) {
-      style.backgroundColor = component.style.background
-    }
+    if (component.style.color) style.color = component.style.color
+    if (component.style.background) style.backgroundColor = component.style.background
     if (component.style.borderColor) {
       style.borderColor = component.style.borderColor
-      style.borderWidth = '1px'
+      style.borderWidth = (component.style.borderWidth || 1) + 'px'
       style.borderStyle = 'solid'
     }
-    if (component.style.borderWidth) {
-      style.borderWidth = component.style.borderWidth + 'px'
-    }
-    if (component.style.radius) {
-      style.borderRadius = component.style.radius + 'px'
-    }
-    if (component.style.fontFamily) {
-      style.fontFamily = component.style.fontFamily
-    }
-    if (component.style.fontSize) {
-      style.fontSize = component.style.fontSize + 'px'
-    }
-    if (component.style.bold) {
-      style.fontWeight = 'bold'
-    }
-    if (component.style.italic) {
-      style.fontStyle = 'italic'
-    }
-    if (component.style.align) {
-      style.textAlign = component.style.align
-    }
+    if (component.style.radius) style.borderRadius = component.style.radius + 'px'
+    if (component.style.fontFamily) style.fontFamily = component.style.fontFamily
   }
 
   return style
+}
+
+// 获取组件内部样式
+const getComponentInnerStyle = (component) => {
+  const style = {}
+  if (component.style) {
+    if (component.style.fontSize) style.fontSize = component.style.fontSize + 'px'
+    if (component.style.bold) style.fontWeight = 'bold'
+    if (component.style.italic) style.fontStyle = 'italic'
+    if (component.style.align) style.textAlign = component.style.align
+    if (component.style.color) style.color = component.style.color
+  }
+  return style
+}
+
+// 获取图表颜色
+const getChartColor = (index) => {
+  const colors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4']
+  return colors[index % colors.length]
+}
+
+// 获取图表最大值
+const getMaxValue = (series) => {
+  let max = 0
+  series.forEach(s => {
+    if (s.values) {
+      s.values.forEach(v => {
+        if (v > max) max = v
+      })
+    }
+  })
+  return max || 1
 }
 
 // 从渲染树生成大纲和幻灯片
@@ -430,14 +463,9 @@ const generateFromRenderTree = (tree) => {
   let slideNum = 1
   let sectionNum = 1
 
-  console.log('🔍 解析渲染树:', tree)
-  console.log('📋 树的结构:', JSON.stringify(tree, null, 2))
-
-  // 获取主题信息
-  const theme = tree?.themeTokens
+  console.log('解析渲染树:', tree)
 
   if (tree?.slides) {
-    // 创建一个默认的大纲章节
     const outlineItem = {
       number: sectionNum++,
       title: tree.title || '演示文稿',
@@ -446,81 +474,40 @@ const generateFromRenderTree = (tree) => {
     }
 
     tree.slides.forEach(slide => {
-      console.log(`📄 处理幻灯片${slideNum}:`, slide)
-      // 从第一个Title组件中提取标题
       let slideTitle = `页面${slideNum}`
-      let processedComponents = []
       
       if (slide?.components) {
         const titleComponent = slide.components.find(c => c.type === 'Title')
         if (titleComponent?.props?.text) {
           slideTitle = titleComponent.props.text
-        }
-        console.log(`🎯 找到${slide.components.length}个组件`)
-        
-        // 处理组件，应用主题
-        processedComponents = slide.components.map(component => {
-          const processedComponent = { ...component }
-          
-          // 如果有主题但组件没有特定样式，应用主题默认样式
-          if (theme && !processedComponent.style) {
-            processedComponent.style = {}
-          }
-          
-          // 应用主题颜色到组件
-          if (theme && processedComponent.style) {
-            // 根据组件类型应用主题颜色
-            if (component.type === 'Title') {
-              processedComponent.style.color = theme.colors?.text || '#111827'
-              if (theme.typography?.fontFamily) {
-                processedComponent.style.fontFamily = theme.typography.fontFamily
-              }
-            } else if (component.type === 'Subtitle') {
-              processedComponent.style.color = theme.colors?.muted || '#4B5563'
-              if (theme.typography?.fontFamily) {
-                processedComponent.style.fontFamily = theme.typography.fontFamily
-              }
-            } else if (component.type === 'Text') {
-              processedComponent.style.color = theme.colors?.text || '#111827'
-              if (theme.typography?.fontFamily) {
-                processedComponent.style.fontFamily = theme.typography.fontFamily
-              }
+        } else {
+          // 查找其他可能包含标题的组件
+          const subtitleComponent = slide.components.find(c => c.type === 'Subtitle')
+          if (subtitleComponent?.props?.text) {
+            slideTitle = subtitleComponent.props.text
+          } else {
+            const quoteComponent = slide.components.find(c => c.type === 'Quote')
+            if (quoteComponent?.props?.quote) {
+              slideTitle = quoteComponent.props.quote.length > 20 
+                ? quoteComponent.props.quote.substring(0, 20) + '...' 
+                : quoteComponent.props.quote
             }
           }
-          
-          return processedComponent
-        })
+        }
       }
 
-      // 添加到大纲
       outlineItem.children.push({
         pageNumber: slideNum,
         title: slideTitle
       })
 
-      // 确定幻灯片背景
-      let slideBackground = slide.background
-      if (!slideBackground) {
-        if (slideNum === 1) {
-          // 首页使用渐变背景
-          slideBackground = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-        } else if (theme) {
-          // 使用主题背景
-          slideBackground = theme.colors?.surface || 'white'
-        } else {
-          slideBackground = 'white'
-        }
-      }
-
-      // 添加到幻灯片
       newSlides.push({
         number: slideNum,
         title: slideTitle,
-        components: processedComponents,
-        background: slideBackground,
+        components: slide.components || [],
+        background: slide.background || '#ffffff',
         width: slide.width || 1280,
-        height: slide.height || 720,
-        theme: theme
+        height: slide.height || 720
       })
 
       slideNum++
@@ -529,42 +516,29 @@ const generateFromRenderTree = (tree) => {
     newOutlineItems.push(outlineItem)
   }
 
-  console.log('✅ 生成的幻灯片:', newSlides)
+  console.log('生成的幻灯片:', newSlides)
   return { outlineItems: newOutlineItems, slides: newSlides }
 }
 
 // 初始化数据
 const initData = async () => {
-  // 检查路由查询参数中是否有id
   const id = route.query.id
-  
   if (id) {
     presentationId.value = id
-    
     try {
-      // 获取渲染树
       const tree = await apiService.getRenderTree(id)
       renderTree.value = tree
-      
-      // 从渲染树生成数据
       const { outlineItems: newOutline, slides: newSlides } = generateFromRenderTree(tree)
       outlineItems.value = newOutline
       slides.value = newSlides
-      
-      // 设置标题
-      if (tree?.meta?.title) {
-        projectTitle.value = tree.meta.title
-      }
-      
+      if (tree?.title) projectTitle.value = tree.title
+      else if (tree?.meta?.title) projectTitle.value = tree.meta.title
       console.log('接收到的渲染树:', tree)
     } catch (error) {
       console.error('加载演示文稿失败:', error)
-      showToast('加载演示文稿失败，请稍后重试')
-      // 使用默认数据
       useDefaultData()
     }
   } else {
-    // 使用默认数据
     useDefaultData()
   }
 }
@@ -576,59 +550,50 @@ const useDefaultData = () => {
       title: '封面',
       expanded: true,
       children: [{ pageNumber: 1, title: '产品发布会' }]
-    },
-    {
-      number: 2,
-      title: '目录',
-      expanded: false,
-      children: [{ pageNumber: 2, title: '目录' }]
-    },
-    {
-      number: 3,
-      title: '第一章：产品介绍',
-      expanded: true,
-      children: [
-        { pageNumber: 3, title: '产品概述' },
-        { pageNumber: 4, title: '核心功能' },
-        { pageNumber: 5, title: '技术优势' }
-      ]
     }
   ]
-  
   slides.value = [
-    { number: 1, title: '产品发布会', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' },
-    { number: 2, title: '目录', background: 'white' },
-    { number: 3, title: '产品概述', background: 'white' },
-    { number: 4, title: '核心功能', background: 'white' },
-    { number: 5, title: '技术优势', background: 'white' }
+    { number: 1, title: '产品发布会', background: '#ffffff', components: [] }
   ]
-  
-  projectTitle.value = '2024年度产品发布会'
+  projectTitle.value = '演示文稿'
 }
 
-// 画布缩放
-const zoom = ref(100)
-const canvasStyle = computed(() => ({
-  transform: `scale(${zoom.value / 100})`,
-  transformOrigin: 'center center'
-}))
+// 自动计算合适的缩放比例
+const autoFit = () => {
+  if (!canvasWrapper.value) return
+  
+  const wrapperRect = canvasWrapper.value.getBoundingClientRect()
+  const slideWidth = currentSlide.value.width || 1280
+  const slideHeight = currentSlide.value.height || 720
+  
+  const padding = 60
+  const availableWidth = wrapperRect.width - padding * 2
+  const availableHeight = wrapperRect.height - padding * 2
+  
+  const scaleX = availableWidth / slideWidth
+  const scaleY = availableHeight / slideHeight
+  
+  const newZoom = Math.min(scaleX, scaleY, 1) * 100
+  zoom.value = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, Math.round(newZoom)))
+}
 
-// AI 聊天
-const aiInput = ref('')
-const chatMessages = ref([])
-const showGeneratingToast = ref(false)
+const zoomOut = () => {
+  if (zoom.value > MIN_ZOOM) {
+    zoom.value = Math.max(MIN_ZOOM, zoom.value - 10)
+  }
+}
 
-const quickActions = [
-  { text: '优化内容', icon: 'magic' },
-  { text: '生成图片', icon: 'image' },
-  { text: '调整风格', icon: 'palette' },
-  { text: '补充数据', icon: 'chartBar' }
-]
+const zoomIn = () => {
+  if (zoom.value < MAX_ZOOM) {
+    zoom.value = Math.min(MAX_ZOOM, zoom.value + 10)
+  }
+}
 
-// 状态栏
-const lastSaved = ref('刚刚')
+const zoomToFit = () => {
+  autoFit()
+}
 
-// 方法
+// 操作方法
 const toggleOutlineItem = (index) => {
   outlineItems.value[index].expanded = !outlineItems.value[index].expanded
 }
@@ -637,225 +602,32 @@ const selectPage = (pageNumber) => {
   currentPage.value = pageNumber
 }
 
-const addPage = () => {
-  const newNumber = slides.value.length + 1
-  
-  // 添加到幻灯片
-  slides.value.push({
-    number: newNumber,
-    title: '新页面',
-    background: 'white'
-  })
-  
-  // 添加到大纲（在最后一个章节中）
-  if (outlineItems.value.length > 0) {
-    const lastItem = outlineItems.value[outlineItems.value.length - 1]
-    if (!lastItem.children) {
-      lastItem.children = []
-    }
-    lastItem.children.push({
-      pageNumber: newNumber,
-      title: '新页面'
-    })
-    lastItem.expanded = true
-  }
-  
-  showToast('已添加新页面')
-}
+const saveTitle = () => {}
+const saveProject = () => {}
 
-const zoomOut = () => {
-  if (zoom.value > 50) zoom.value -= 10
-}
-
-const zoomIn = () => {
-  if (zoom.value < 200) zoom.value += 10
-}
-
-const saveProject = async () => {
-  isSaved.value = false
+// 生命周期
+onMounted(async () => {
+  await initData()
+  await nextTick()
+  setTimeout(() => autoFit(), 100)
   
-  if (presentationId.value) {
-    try {
-      // 这里可以调用后端的更新API
-      showToast('保存成功')
-      isSaved.value = true
-      lastSaved.value = '刚刚'
-    } catch (error) {
-      console.error('保存失败:', error)
-      showToast('保存失败，请稍后重试')
-      isSaved.value = true
-    }
-  } else {
-    // 没有ID，模拟保存
-    setTimeout(() => {
-      isSaved.value = true
-      lastSaved.value = '刚刚'
-      showToast('保存成功')
-    }, 1000)
-  }
-}
-
-const shareProject = () => {
-  showToast('分享链接已复制到剪贴板')
-}
-
-const playPresentation = () => {
-  showToast('开始演示模式')
-}
-
-const exportPresentation = async () => {
-  if (!presentationId.value) {
-    showToast('请先创建演示文稿')
-    return
-  }
-  
-  try {
-    showToast('正在导出...')
-    await apiService.exportPptx(presentationId.value)
-    showToast('导出成功！文件已下载')
-  } catch (error) {
-    console.error('导出失败:', error)
-    showToast('导出失败，请稍后重试')
-  }
-}
-
-const undo = () => showToast('已撤销')
-const redo = () => showToast('已重做')
-
-const saveTitle = () => {
-  if (projectTitle.value.trim()) {
-    showToast('标题已保存')
-  }
-}
-
-const autoResize = (e) => {
-  const textarea = e.target
-  textarea.style.height = 'auto'
-  textarea.style.height = Math.min(textarea.scrollHeight, 100) + 'px'
-}
-
-const sendMessage = () => {
-  const message = aiInput.value.trim()
-  if (!message) return
-  
-  chatMessages.value.push({ type: 'user', content: message })
-  aiInput.value = ''
-  
-  showGeneratingToast.value = true
-  
-  setTimeout(() => {
-    showGeneratingToast.value = false
-    const response = generateAIResponse(message)
-    chatMessages.value.push({ type: 'ai', content: response })
-  }, 1500)
-}
-
-const sendQuickMessage = (text) => {
-  aiInput.value = text
-  sendMessage()
-}
-
-const generateAIResponse = (userMessage) => {
-  const responses = {
-    '优化': '我已经为您优化了当前页面的内容，使其更加简洁有力。主要改进包括：\n\n1. 标题更加醒目\n2. 要点更加精炼\n3. 添加了数据支撑',
-    '图片': '根据您的内容，我建议使用以下配图：\n\n1. 产品展示图 - 突出核心功能\n2. 数据图表 - 展示增长趋势\n3. 场景图 - 展示应用场景',
-    '风格': '我为您准备了3种风格方案：\n\n1. 商务蓝 - 专业稳重\n2. 科技紫 - 创新前卫\n3. 简约白 - 清爽现代\n\n您喜欢哪一种？',
-    '数据': '我为您补充了以下数据：\n\n• 市场规模：预计2025年达到1000亿\n• 增长率：年复合增长率25%\n• 用户满意度：95%的用户给予好评',
-    'default': '我理解您的需求。让我为您处理这个问题。请稍等片刻，我正在分析最佳方案...'
-  }
-  
-  for (const key in responses) {
-    if (userMessage.includes(key)) {
-      return responses[key]
-    }
-  }
-  
-  return responses['default']
-}
-
-const showToast = (message) => {
-  // 简单的 toast 实现
-  const toast = document.createElement('div')
-  toast.className = 'editor-toast'
-  toast.innerHTML = `
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <path d="M22 11.08V12C21.9988 14.1564 21.3005 16.2547 20.0093 17.9818C18.7182 19.709 16.9033 20.9725 14.8354 21.5839C12.7674 22.1953 10.5573 22.1219 8.53447 21.3746C6.51168 20.6273 4.78465 19.2461 3.61096 17.4371C2.43727 15.628 1.87979 13.4881 2.02168 11.3363C2.16356 9.18455 2.99721 7.13631 4.39828 5.49706C5.79935 3.85781 7.69279 2.71537 9.79619 2.24013C11.8996 1.7649 14.1003 1.98232 16.07 2.85999" stroke-linecap="round" stroke-linejoin="round"/>
-      <path d="M22 4L12 14.01L9 11.01" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>
-    <span>${message}</span>
-  `
-  toast.style.cssText = `
-    position: fixed;
-    bottom: 48px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: var(--gray-800);
-    color: white;
-    padding: 12px 24px;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 14px;
-    box-shadow: 0 10px 15px rgba(0,0,0,0.2);
-    z-index: 9999;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-  `
-  
-  document.body.appendChild(toast)
-  
-  requestAnimationFrame(() => {
-    toast.style.opacity = '1'
-  })
-  
-  setTimeout(() => {
-    toast.style.opacity = '0'
-    setTimeout(() => toast.remove(), 300)
-  }, 3000)
-}
-
-// 键盘快捷键
-const handleKeydown = (e) => {
-  // Ctrl/Cmd + S 保存
-  if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-    e.preventDefault()
-    saveProject()
-  }
-  
-  // Ctrl/Cmd + Z 撤销
-  if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
-    e.preventDefault()
-    undo()
-  }
-  
-  // Ctrl/Cmd + Shift + Z 重做
-  if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'z') {
-    e.preventDefault()
-    redo()
-  }
-}
-
-// 自动保存
-let autoSaveInterval
-
-onMounted(() => {
-  // 初始化数据
-  initData()
-  
-  document.addEventListener('keydown', handleKeydown)
-  
-  // 每30秒自动保存
-  autoSaveInterval = setInterval(() => {
-    if (!isSaved.value) {
-      saveProject()
-    }
-  }, 30000)
+  window.addEventListener('resize', autoFit)
 })
 
 onUnmounted(() => {
-  document.removeEventListener('keydown', handleKeydown)
-  clearInterval(autoSaveInterval)
+  window.removeEventListener('resize', autoFit)
+})
+
+// 监听边栏显示状态变化，触发重新适应
+watch(sidebarVisible, async () => {
+  await nextTick()
+  setTimeout(() => autoFit(), 100)
+})
+
+// 监听当前页变化，触发重新适应
+watch(currentPage, async () => {
+  await nextTick()
+  setTimeout(() => autoFit(), 50)
 })
 </script>
 
@@ -867,75 +639,56 @@ onUnmounted(() => {
   flex-direction: column;
 }
 
-/* 顶部工具栏 */
 .editor-header {
   height: 56px;
   background: white;
-  border-bottom: 1px solid var(--gray-200);
+  border-bottom: 1px solid #e5e7eb;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 var(--space-4);
+  padding: 0 16px;
   flex-shrink: 0;
 }
 
 .header-left {
   display: flex;
   align-items: center;
-  gap: var(--space-4);
+  gap: 16px;
 }
 
 .project-info {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
+  gap: 12px;
 }
 
 .project-title-input {
   font-size: 16px;
   font-weight: 600;
-  color: var(--gray-800);
+  color: #1f2937;
   border: none;
   background: transparent;
-  padding: var(--space-2);
-  border-radius: var(--radius-md);
+  padding: 8px;
+  border-radius: 6px;
   width: 300px;
-  transition: all 0.2s ease;
 }
 
 .project-title-input:hover {
-  background: var(--gray-100);
-}
-
-.project-title-input:focus {
-  background: white;
-  box-shadow: 0 0 0 2px var(--primary-200);
-}
-
-.project-status {
-  font-size: 12px;
-  color: var(--gray-500);
-  display: flex;
-  align-items: center;
-  gap: var(--space-1);
-}
-
-.project-status.saved {
-  color: var(--success-500);
+  background: #f3f4f6;
 }
 
 .header-right {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
+  gap: 12px;
 }
 
 .user-avatar {
   width: 32px;
   height: 32px;
-  border-radius: var(--radius-full);
+  border-radius: 999px;
   overflow: hidden;
-  border: 2px solid var(--gray-200);
+  border: 2px solid #e5e7eb;
 }
 
 .user-avatar img {
@@ -944,18 +697,16 @@ onUnmounted(() => {
   object-fit: cover;
 }
 
-/* 编辑器主体 */
 .editor-container {
   flex: 1;
   display: flex;
   overflow: hidden;
 }
 
-/* 左侧边栏 */
 .editor-sidebar {
   width: 280px;
-  background: var(--gray-50);
-  border-right: 1px solid var(--gray-200);
+  background: #f9fafb;
+  border-right: 1px solid #e5e7eb;
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
@@ -963,67 +714,64 @@ onUnmounted(() => {
 
 .sidebar-tabs {
   display: flex;
-  border-bottom: 1px solid var(--gray-200);
+  border-bottom: 1px solid #e5e7eb;
 }
 
 .sidebar-tab {
   flex: 1;
-  padding: var(--space-3) 0;
+  padding: 12px 0;
   font-size: 13px;
   font-weight: 500;
-  color: var(--gray-600);
+  color: #4b5563;
   background: transparent;
   border: none;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: var(--space-2);
-  transition: all 0.2s ease;
+  gap: 8px;
 }
 
 .sidebar-tab:hover {
-  color: var(--gray-800);
-  background: var(--gray-100);
+  color: #1f2937;
+  background: #f3f4f6;
 }
 
 .sidebar-tab.active {
-  color: var(--primary-600);
+  color: #3b82f6;
   background: white;
-  border-bottom: 2px solid var(--primary-500);
+  border-bottom: 2px solid #3b82f6;
 }
 
 .sidebar-content {
   flex: 1;
   overflow-y: auto;
-  padding: var(--space-4);
+  padding: 16px;
 }
 
-/* 大纲树 */
 .outline-tree {
-  margin-bottom: var(--space-4);
+  margin-bottom: 16px;
 }
 
 .outline-item {
-  margin-bottom: var(--space-1);
+  margin-bottom: 4px;
 }
 
 .outline-header {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-md);
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 6px;
   cursor: pointer;
-  transition: all 0.2s ease;
 }
 
 .outline-header:hover {
-  background: var(--gray-200);
+  background: #e5e7eb;
 }
 
 .toggle-icon {
-  color: var(--gray-500);
+  color: #6b7280;
   width: 16px;
   text-align: center;
 }
@@ -1031,88 +779,63 @@ onUnmounted(() => {
 .outline-number {
   font-size: 12px;
   font-weight: 600;
-  color: var(--gray-500);
+  color: #6b7280;
   min-width: 20px;
 }
 
 .outline-title {
   font-size: 13px;
   font-weight: 500;
-  color: var(--gray-700);
+  color: #374151;
   flex: 1;
 }
 
 .outline-children {
-  margin-left: var(--space-6);
-  margin-top: var(--space-1);
+  margin-left: 24px;
+  margin-top: 4px;
 }
 
 .outline-item-page {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-md);
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 6px;
   cursor: pointer;
-  transition: all 0.2s ease;
 }
 
 .outline-item-page:hover {
-  background: var(--gray-200);
+  background: #e5e7eb;
 }
 
 .outline-item-page.active {
-  background: var(--primary-100);
+  background: #dbeafe;
 }
 
 .outline-item-page.active .page-number {
-  color: var(--primary-600);
+  color: #3b82f6;
 }
 
 .outline-item-page.active .page-title {
-  color: var(--primary-700);
+  color: #1d4ed8;
   font-weight: 600;
 }
 
 .page-number {
   font-size: 11px;
-  color: var(--gray-400);
+  color: #6b7280;
   min-width: 20px;
 }
 
 .page-title {
   font-size: 13px;
-  color: var(--gray-600);
+  color: #4b5563;
 }
 
-.add-page-btn {
-  width: 100%;
-  padding: var(--space-3);
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--gray-600);
-  background: transparent;
-  border: 1px dashed var(--gray-300);
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-2);
-  transition: all 0.2s ease;
-}
-
-.add-page-btn:hover {
-  border-color: var(--primary-400);
-  color: var(--primary-600);
-  background: var(--primary-50);
-}
-
-/* 页面缩略图 */
 .slides-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: var(--space-3);
+  grid-template-columns: 1fr;
+  gap: 12px;
 }
 
 .slide-thumb {
@@ -1122,51 +845,78 @@ onUnmounted(() => {
 .slide-thumb-preview {
   position: relative;
   aspect-ratio: 16/9;
-  border-radius: var(--radius-md);
+  border-radius: 8px;
   border: 2px solid transparent;
   overflow: hidden;
-  transition: all 0.2s ease;
 }
 
 .slide-thumb:hover .slide-thumb-preview {
-  border-color: var(--primary-300);
+  border-color: #93c5fd;
 }
 
 .slide-thumb.active .slide-thumb-preview {
-  border-color: var(--primary-500);
-  box-shadow: 0 0 0 3px var(--primary-100);
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px #dbeafe;
 }
 
 .slide-number {
   position: absolute;
-  top: var(--space-2);
-  left: var(--space-2);
+  top: 8px;
+  left: 8px;
   font-size: 10px;
   font-weight: 600;
-  color: var(--gray-500);
-  background: rgba(255, 255, 255, 0.9);
+  color: #6b7280;
+  background: rgba(255,255,255,0.9);
   padding: 2px 6px;
-  border-radius: var(--radius-sm);
+  border-radius: 4px;
 }
 
 .slide-thumb-title {
   display: block;
   font-size: 12px;
-  color: var(--gray-600);
-  margin-top: var(--space-2);
+  color: #4b5563;
+  margin-top: 8px;
   text-align: center;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-/* 画布区域 */
 .editor-canvas-area {
   flex: 1;
   display: flex;
   flex-direction: column;
-  background: var(--gray-100);
+  background: #f3f4f6;
   overflow: hidden;
+  position: relative;
+}
+
+.toggle-sidebar-btn {
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 48px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #4b5563;
+  z-index: 10;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.toggle-sidebar-btn:hover {
+  background: #f9fafb;
+  color: #1f2937;
+}
+
+.editor-canvas-area.sidebar-hidden .toggle-sidebar-btn {
+  left: 8px;
 }
 
 .canvas-wrapper {
@@ -1174,51 +924,70 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--space-8);
+  padding: 32px;
   overflow: auto;
+  background: #e5e7eb;
+  background-image: radial-gradient(circle, #d1d5db 1px, transparent 1px);
+  background-size: 20px 20px;
 }
 
 .slide-canvas {
   background: white;
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-xl);
+  border-radius: 8px;
+  box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1), 0 0 0 1px rgba(0,0,0,0.05);
   overflow: hidden;
   flex-shrink: 0;
-  transition: transform 0.2s ease;
+  position: relative;
 }
 
 .slide-content {
   width: 100%;
   height: 100%;
   position: relative;
+  box-sizing: border-box;
+}
+
+.slide-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.slide-layout-title {
+  text-align: center;
+}
+
+.slide-title {
+  font-size: 48px;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.slide-subtitle {
+  font-size: 24px;
+  color: #4b5563;
+  margin-top: 16px;
 }
 
 /* 组件通用样式 */
 .slide-component {
   box-sizing: border-box;
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
   overflow: hidden;
 }
 
 .component-title {
   width: 100%;
   height: 100%;
-  font-size: 48px;
-  font-weight: 700;
-  line-height: 1.2;
-  color: inherit;
   display: flex;
   align-items: center;
+  font-weight: bold;
 }
 
 .component-subtitle {
   width: 100%;
   height: 100%;
-  font-size: 28px;
-  line-height: 1.4;
-  color: inherit;
   display: flex;
   align-items: center;
 }
@@ -1226,12 +995,8 @@ onUnmounted(() => {
 .component-text {
   width: 100%;
   height: 100%;
-  font-size: 20px;
-  line-height: 1.6;
-  color: inherit;
   white-space: pre-wrap;
-  display: flex;
-  align-items: flex-start;
+  line-height: 1.6;
 }
 
 .component-bullet-list {
@@ -1244,8 +1009,7 @@ onUnmounted(() => {
 
 .component-bullet-list ul {
   margin: 0;
-  padding-left: 28px;
-  font-size: 20px;
+  padding-left: 24px;
   line-height: 2;
 }
 
@@ -1256,15 +1020,527 @@ onUnmounted(() => {
 .component-quote {
   width: 100%;
   height: 100%;
-  border-left: 5px solid #667eea;
-  padding-left: 24px;
-  font-size: 22px;
-  font-style: italic;
-  color: #4a5568;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 30px !important;
+}
+
+.component-quote blockquote {
+  margin: 0;
+  font-size: 1.3em;
+  line-height: 1.8;
+  padding: 0 20px;
+  position: relative;
+}
+
+.component-quote blockquote::before {
+  content: '“';
+  font-size: 4em;
+  opacity: 0.3;
+  position: absolute;
+  left: 0;
+  top: -10px;
+  font-family: serif;
+}
+
+.component-quote cite {
+  margin-top: 20px;
+  font-style: normal;
+  opacity: 0.9;
+  font-size: 0.9em;
+  text-align: right;
+  padding-right: 20px;
+}
+
+/* Timeline组件 */
+.component-timeline {
+  width: 100%;
+  height: 100%;
   display: flex;
   align-items: center;
 }
 
+.timeline-list {
+  width: 100%;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.timeline-list li {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  position: relative;
+  padding-left: 44px;
+}
+
+.timeline-list li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 4px;
+  width: 20px;
+  height: 20px;
+  background: #3b82f6;
+  border-radius: 50%;
+}
+
+.timeline-list li::after {
+  content: '';
+  position: absolute;
+  left: 9px;
+  top: 24px;
+  width: 2px;
+  height: calc(100% + 8px);
+  background: #d1d5db;
+}
+
+.timeline-list li:last-child::after {
+  display: none;
+}
+
+.timeline-date {
+  font-size: 0.85em;
+  font-weight: 600;
+  color: #3b82f6;
+}
+
+.timeline-label {
+  font-weight: 600;
+}
+
+.timeline-detail {
+  opacity: 0.7;
+  font-size: 0.9em;
+}
+
+/* KPI Cards组件 */
+.component-kpi-cards {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.kpi-cards-grid {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.kpi-card {
+  text-align: center;
+  padding: 16px;
+}
+
+.kpi-value {
+  font-size: 32px;
+  font-weight: 700;
+  color: #3b82f6;
+  line-height: 1.1;
+}
+
+.kpi-unit {
+  font-size: 0.6em;
+  margin-left: 4px;
+  color: #6b7280;
+}
+
+.kpi-label {
+  margin-top: 8px;
+  color: #4b5563;
+}
+
+.kpi-delta {
+  margin-top: 4px;
+  font-size: 0.85em;
+  font-weight: 600;
+}
+
+.kpi-delta.positive { color: #10b981; }
+.kpi-delta.negative { color: #ef4444; }
+
+/* Comparison Table组件 */
+.component-comparison {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: stretch;
+  gap: 24px;
+}
+
+.comparison-left, .comparison-right {
+  flex: 1;
+  padding: 8px 0;
+}
+
+.comparison-left h3, .comparison-right h3 {
+  margin: 0 0 12px 0;
+  font-size: 1.1em;
+  font-weight: 600;
+}
+
+.comparison-left ul, .comparison-right ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.comparison-left li, .comparison-right li {
+  margin-bottom: 8px;
+  line-height: 1.5;
+}
+
+.comparison-divider {
+  width: 2px;
+  background: #e5e7eb;
+  flex-shrink: 0;
+}
+
+/* Swot组件 */
+.component-swot {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.swot-grid {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 12px;
+}
+
+.swot-item {
+  background: #f9fafb;
+  padding: 16px;
+  border-radius: 8px;
+  overflow: auto;
+}
+
+.swot-item h4 {
+  margin: 0 0 12px 0;
+  font-size: 0.9em;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.swot-strengths { background: #dbeafe; color: #1d4ed8; }
+.swot-weaknesses { background: #fef3c7; color: #92400e; }
+.swot-opportunities { background: #d1fae5; color: #065f46; }
+.swot-threats { background: #fee2e2; color: #991b1b; }
+
+.swot-item ul {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 0.9em;
+}
+
+.swot-item li {
+  margin-bottom: 6px;
+}
+
+/* Roadmap组件 */
+.component-roadmap {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.roadmap-phases {
+  width: 100%;
+  display: flex;
+  gap: 16px;
+}
+
+.roadmap-phase {
+  flex: 1;
+  padding: 16px;
+  background: #f9fafb;
+  border-radius: 8px;
+}
+
+.phase-header {
+  margin-bottom: 12px;
+}
+
+.phase-header h5 {
+  margin: 0;
+  font-size: 1em;
+  font-weight: 600;
+}
+
+.phase-timeframe {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 0.8em;
+  color: #6b7280;
+  background: #e5e7eb;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.phase-deliverables {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 0.9em;
+}
+
+.phase-deliverables li {
+  margin-bottom: 6px;
+}
+
+/* ProcessFlow组件 */
+.component-process-flow {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.process-steps {
+  width: 100%;
+  display: flex;
+  gap: 16px;
+}
+
+.process-step {
+  flex: 1;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.step-number {
+  width: 32px;
+  height: 32px;
+  background: #3b82f6;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.step-content {
+  flex: 1;
+}
+
+.step-content h5 {
+  margin: 0 0 8px 0;
+  font-size: 1em;
+  font-weight: 600;
+}
+
+.step-content p {
+  margin: 0;
+  font-size: 0.9em;
+  opacity: 0.8;
+}
+
+/* MultiColumn组件 */
+.component-multi-column {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.columns-grid {
+  width: 100%;
+  display: flex;
+  gap: 20px;
+}
+
+.column-item {
+  flex: 1;
+}
+
+.column-item h4 {
+  margin: 0 0 12px 0;
+  font-size: 1em;
+  font-weight: 600;
+}
+
+.column-item ul {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 0.9em;
+}
+
+.column-item li {
+  margin-bottom: 8px;
+}
+
+/* Chart组件 */
+.component-chart {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.chart-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.chart-title {
+  font-size: 1.1em;
+  font-weight: 600;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.chart-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  justify-content: center;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85em;
+}
+
+.legend-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+
+.chart-bars {
+  flex: 1;
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+  padding-bottom: 10px;
+}
+
+.bar-group {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  height: 100%;
+}
+
+.bar-label {
+  font-size: 0.75em;
+  text-align: center;
+}
+
+.bar-row {
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  width: 100%;
+}
+
+.bar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  font-size: 0.7em;
+  color: white;
+  padding: 2px;
+  border-radius: 4px 4px 0 0;
+  text-shadow: 0 0 2px rgba(0,0,0,0.5);
+  min-height: 5px;
+}
+
+.chart-placeholder {
+  text-align: center;
+  color: #6b7280;
+}
+
+/* ArchitectureDiagram组件 */
+.component-arch {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.arch-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.arch-layer {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.arch-layer-header {
+  font-size: 1.1em;
+  font-weight: 700;
+  color: #374151;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.arch-layer-items {
+  flex: 1;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+
+.arch-item {
+  background: #f3f4f6;
+  padding: 10px 16px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  font-size: 0.95em;
+  font-weight: 500;
+  color: #1f2937;
+  transition: all 0.2s ease;
+}
+
+.arch-item:hover {
+  background: #e5e7eb;
+  border-color: #9ca3af;
+}
+
+/* Divider组件 */
 .component-divider {
   width: 100%;
   height: 100%;
@@ -1273,25 +1549,28 @@ onUnmounted(() => {
   justify-content: center;
 }
 
-.component-divider hr {
-  width: 100%;
-  border: none;
-  border-top: 3px solid #e2e8f0;
-}
-
-.component-image {
+.divider-container {
   width: 100%;
   height: 100%;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
+  gap: 16px;
+  text-align: center;
 }
 
-.component-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+.divider-title {
+  font-size: 2.2em;
+  font-weight: 700;
+  color: #1f2937;
+  line-height: 1.2;
+}
+
+.divider-subtitle {
+  font-size: 1.2em;
+  color: #6b7280;
+  line-height: 1.4;
 }
 
 .component-other {
@@ -1300,57 +1579,29 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f7fafc;
-  color: #718096;
+  background: #f3f4f6;
+  color: #6b7280;
   font-size: 14px;
-  border: 2px dashed #cbd5e0;
+  border: 2px dashed #d1d5db;
   border-radius: 8px;
   font-weight: 500;
 }
 
-.slide-layout-title {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  text-align: center;
-}
-
-.slide-title {
-  font-size: 48px;
-  font-weight: 700;
-  color: var(--gray-800);
-  margin-bottom: var(--space-4);
-}
-
-.slide-subtitle {
-  font-size: 24px;
-  color: var(--gray-600);
-  margin-bottom: var(--space-8);
-}
-
-.slide-date {
-  font-size: 16px;
-  color: var(--gray-500);
-}
-
-/* 画布工具栏 */
 .canvas-toolbar {
   height: 48px;
   background: white;
-  border-top: 1px solid var(--gray-200);
+  border-top: 1px solid #e5e7eb;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: var(--space-4);
-  padding: 0 var(--space-4);
+  gap: 16px;
+  padding: 0 16px;
 }
 
 .toolbar-group {
   display: flex;
   align-items: center;
-  gap: var(--space-1);
+  gap: 4px;
 }
 
 .toolbar-btn {
@@ -1359,391 +1610,35 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--radius-md);
-  color: var(--gray-600);
+  border-radius: 6px;
+  color: #4b5563;
   background: transparent;
   border: none;
   cursor: pointer;
-  transition: all 0.2s ease;
-  gap: var(--space-1);
+  gap: 4px;
 }
 
 .toolbar-btn:hover {
-  background: var(--gray-100);
-  color: var(--gray-800);
+  background: #f3f4f6;
+  color: #1f2937;
 }
 
 .toolbar-divider {
   width: 1px;
   height: 24px;
-  background: var(--gray-200);
+  background: #e5e7eb;
 }
 
 .zoom-level {
   font-size: 13px;
   font-weight: 500;
-  color: var(--gray-700);
+  color: #374151;
   min-width: 50px;
   text-align: center;
 }
 
 .page-indicator {
   font-size: 13px;
-  color: var(--gray-600);
-}
-
-/* AI助手面板 */
-.editor-ai-panel {
-  width: 320px;
-  background: white;
-  border-left: 1px solid var(--gray-200);
-  display: flex;
-  flex-direction: column;
-  flex-shrink: 0;
-}
-
-.ai-panel-header {
-  padding: var(--space-4);
-  border-bottom: 1px solid var(--gray-200);
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-}
-
-.ai-avatar {
-  width: 44px;
-  height: 44px;
-  background: linear-gradient(135deg, var(--primary-500) 0%, var(--primary-600) 100%);
-  border-radius: var(--radius-lg);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-}
-
-.ai-info {
-  flex: 1;
-}
-
-.ai-name {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--gray-800);
-  margin-bottom: 2px;
-}
-
-.ai-status {
-  font-size: 12px;
-  color: var(--gray-500);
-  display: flex;
-  align-items: center;
-  gap: var(--space-1);
-}
-
-.status-dot {
-  width: 8px;
-  height: 8px;
-  background: var(--success-500);
-  border-radius: var(--radius-full);
-  animation: pulse 2s infinite;
-}
-
-.ai-chat-container {
-  flex: 1;
-  overflow-y: auto;
-  padding: var(--space-4);
-}
-
-.ai-welcome {
-  margin-bottom: var(--space-4);
-}
-
-.ai-message {
-  display: flex;
-  gap: var(--space-3);
-}
-
-.ai-avatar-small {
-  width: 32px;
-  height: 32px;
-  background: var(--primary-500);
-  border-radius: var(--radius-md);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  flex-shrink: 0;
-}
-
-.message-content {
-  flex: 1;
-  background: var(--gray-100);
-  padding: var(--space-3);
-  border-radius: var(--radius-lg);
-  border-top-left-radius: var(--space-1);
-}
-
-.message-content p {
-  font-size: 13px;
-  color: var(--gray-700);
-  margin-bottom: var(--space-2);
-  white-space: pre-line;
-}
-
-.message-content ul {
-  margin: 0;
-  padding-left: var(--space-4);
-}
-
-.message-content li {
-  font-size: 13px;
-  color: var(--gray-600);
-  margin-bottom: var(--space-1);
-}
-
-.chat-messages {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
-
-.message {
-  display: flex;
-  gap: var(--space-3);
-}
-
-.message.user {
-  flex-direction: row-reverse;
-}
-
-.message.user .message-content {
-  background: var(--primary-500);
-  color: white;
-  border-top-left-radius: var(--radius-lg);
-  border-top-right-radius: var(--space-1);
-}
-
-.message.user .message-content p {
-  color: white;
-}
-
-/* 快捷操作 */
-.ai-quick-actions {
-  padding: var(--space-3) var(--space-4);
-  border-top: 1px solid var(--gray-200);
-  background: var(--gray-50);
-}
-
-.quick-actions-label {
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--gray-500);
-  margin-bottom: var(--space-2);
-  display: block;
-}
-
-.quick-actions-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-}
-
-.quick-action-btn {
-  padding: var(--space-2) var(--space-3);
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--gray-600);
-  background: white;
-  border: 1px solid var(--gray-200);
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: var(--space-1);
-  transition: all 0.2s ease;
-}
-
-.quick-action-btn:hover {
-  border-color: var(--primary-400);
-  color: var(--primary-600);
-  background: var(--primary-50);
-}
-
-/* AI输入区域 */
-.ai-input-area {
-  padding: var(--space-3) var(--space-4);
-  border-top: 1px solid var(--gray-200);
-}
-
-.input-wrapper {
-  display: flex;
-  gap: var(--space-2);
-  background: var(--gray-100);
-  border-radius: var(--radius-lg);
-  padding: var(--space-2);
-}
-
-.ai-input {
-  flex: 1;
-  border: none;
-  background: transparent;
-  font-size: 13px;
-  color: var(--gray-700);
-  resize: none;
-  max-height: 100px;
-  padding: var(--space-1);
-  font-family: inherit;
-}
-
-.ai-input::placeholder {
-  color: var(--gray-500);
-}
-
-.ai-send-btn {
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--primary-500);
-  color: white;
-  border: none;
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  flex-shrink: 0;
-}
-
-.ai-send-btn:hover {
-  background: var(--primary-600);
-}
-
-/* 底部状态栏 */
-.editor-footer {
-  height: 32px;
-  background: var(--gray-800);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 var(--space-4);
-  flex-shrink: 0;
-}
-
-.footer-info {
-  font-size: 12px;
-  color: var(--gray-400);
-}
-
-/* Toast提示 */
-.toast {
-  position: fixed;
-  bottom: 48px;
-  left: 50%;
-  transform: translateX(-50%) translateY(100px);
-  background: var(--gray-800);
-  color: white;
-  padding: var(--space-3) var(--space-5);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
-  opacity: 0;
-  transition: all 0.3s ease;
-  z-index: 3000;
-}
-
-.toast.show {
-  transform: translateX(-50%) translateY(0);
-  opacity: 1;
-}
-
-.toast-content {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  font-size: 14px;
-}
-
-.spinner {
-  width: 16px;
-  height: 16px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-top-color: white;
-  border-radius: var(--radius-full);
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
-}
-
-/* 响应式 */
-@media (max-width: 1200px) {
-  .editor-sidebar {
-    width: 240px;
-  }
-  
-  .editor-ai-panel {
-    width: 280px;
-  }
-  
-  .slide-canvas {
-    width: 800px;
-    height: 450px;
-  }
-}
-
-@media (max-width: 1024px) {
-  .editor-sidebar {
-    display: none;
-  }
-  
-  .editor-ai-panel {
-    position: fixed;
-    right: -320px;
-    top: 56px;
-    bottom: 32px;
-    transition: right 0.3s ease;
-    z-index: 100;
-  }
-  
-  .editor-ai-panel.open {
-    right: 0;
-  }
-  
-  .slide-canvas {
-    width: 720px;
-    height: 405px;
-  }
-}
-
-@media (max-width: 768px) {
-  .slide-canvas {
-    width: 100%;
-    max-width: 600px;
-    height: auto;
-    aspect-ratio: 16/9;
-  }
-  
-  .header-right .btn-secondary {
-    display: none;
-  }
-  
-  .canvas-toolbar {
-    gap: var(--space-2);
-  }
-  
-  .toolbar-divider {
-    display: none;
-  }
+  color: #4b5563;
 }
 </style>

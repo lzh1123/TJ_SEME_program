@@ -53,6 +53,21 @@ class RegenerateRequest(BaseModel):
     section: Optional[str] = None
 
 
+class GenerateOutlineRequest(BaseModel):
+    model_config = {"extra": "forbid"}
+
+    topic: str
+    theme: Optional[str] = None
+
+
+class CompileOutlineRequest(BaseModel):
+    model_config = {"extra": "forbid"}
+
+    topic: str
+    outline: dict
+    theme: Optional[str] = None
+
+
 @router.get("/health")
 def health():
     return {"ok": True}
@@ -61,6 +76,23 @@ def health():
 @router.get("/themes")
 def list_themes(svc: PresentationService = Depends(get_service)):
     return svc.list_themes()
+
+
+@router.post("/dsl")
+def generate_outline(payload: GenerateOutlineRequest, svc: PresentationService = Depends(get_service)):
+    try:
+        return svc.generate_outline(topic=payload.topic, theme=payload.theme)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/render-tree", response_model=RenderTree)
+def compile_outline(payload: CompileOutlineRequest, svc: PresentationService = Depends(get_service)):
+    try:
+        bundle = svc.create_from_outline(topic=payload.topic, outline=payload.outline, theme=payload.theme)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return bundle.render_tree
 
 
 @router.post("/presentations", response_model=CreatePresentationResponse)
@@ -158,4 +190,3 @@ def export_pptx(presentation_id: str, svc: PresentationService = Depends(get_ser
         filename=Path(out_path).name,
         media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation",
     )
-

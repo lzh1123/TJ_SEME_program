@@ -41,6 +41,114 @@ class PresentationService:
         self._repo.save(bundle)
         return bundle
 
+    def generate_outline(self, topic: str, theme: Optional[str] = None) -> dict:
+        dsl = self._ai.generate_dsl(topic=topic, theme=theme)
+        data = dsl.model_dump(by_alias=True)
+        slides = data.get("slides") or []
+        if isinstance(slides, list):
+            for s in slides:
+                if isinstance(s, dict):
+                    s.pop("id", None)
+        data["slides"] = slides
+        return data
+
+    def create_from_outline(self, topic: str, outline: dict, theme: Optional[str] = None) -> PresentationBundle:
+        presentation_id = new_id("pres")
+        hydrated = self._hydrate_outline(outline, topic=topic, theme=theme)
+        theme_tokens = get_theme_tokens(hydrated.theme)
+        tree = self._compiler.compile(presentation_id, hydrated, theme_tokens)
+        tree = apply_theme_to_tree(tree, theme_tokens)
+        meta = PresentationMeta(id=presentation_id, topic=topic)
+        bundle = PresentationBundle(meta=meta, dsl=hydrated, renderTree=tree)
+        self._repo.save(bundle)
+        return bundle
+
+    def _hydrate_outline(self, outline: dict, *, topic: str, theme: Optional[str]) -> "PresentationDSL":
+        def as_str_list(v):
+            if v is None:
+                return []
+            if isinstance(v, str):
+                t = v.strip()
+                return [t] if t else []
+            if isinstance(v, list):
+                out = []
+                for it in v:
+                    if it is None:
+                        continue
+                    if isinstance(it, str):
+                        t = it.strip()
+                        if t:
+                            out.append(t)
+                        continue
+                    if isinstance(it, dict):
+                        for k in ("label", "title", "name", "text", "content"):
+                            vv = it.get(k)
+                            if isinstance(vv, str) and vv.strip():
+                                out.append(vv.strip())
+                                break
+                        continue
+                    out.append(str(it))
+                return out
+            if isinstance(v, dict):
+                for k in ("items", "bullets", "highlights", "paragraphs"):
+                    if k in v:
+                        return as_str_list(v.get(k))
+            return [str(v)]
+
+        if not isinstance(outline, dict):
+            raise ValueError("outline must be an object")
+
+        data = dict(outline)
+        data.setdefault("title", topic)
+        data.setdefault("audience", "通用受众")
+        data.setdefault("tone", "清晰、教学")
+        if theme:
+            data["theme"] = theme
+        data.setdefault("theme", "modern_blue")
+
+        slides = data.get("slides")
+        if not isinstance(slides, list):
+            slides = []
+
+        hydrated_slides = []
+        for s in slides:
+            if not isinstance(s, dict):
+                continue
+            slide = dict(s)
+            if not slide.get("id"):
+                slide["id"] = new_id("slide")
+            notes = slide.get("notes")
+            slide["notes"] = as_str_list(notes)
+
+            intent = slide.get("intent")
+            if intent == "agenda":
+                slide["items"] = as_str_list(slide.get("items"))
+            elif intent == "text":
+                slide["paragraphs"] = as_str_list(slide.get("paragraphs"))
+                slide["bullets"] = as_str_list(slide.get("bullets"))
+                if not slide["paragraphs"] and isinstance(slide.get("content"), str) and slide.get("content").strip():
+                    slide["paragraphs"] = [slide.get("content").strip()]
+                slide.pop("content", None)
+            elif intent == "kpi":
+                items = slide.get("items")
+                if isinstance(items, list):
+                    out_items = []
+                    for it in items:
+                        if not isinstance(it, dict):
+                            continue
+                        item = dict(it)
+                        if "value" in item and not isinstance(item["value"], str):
+                            item["value"] = str(item["value"])
+                        out_items.append(item)
+                    slide["items"] = out_items
+            hydrated_slides.append(slide)
+
+        data["slides"] = hydrated_slides
+
+        from ..domain.dsl import PresentationDSL
+
+        return PresentationDSL.model_validate(data)
+
     def get(self, presentation_id: str) -> PresentationBundle:
         return self._repo.load(presentation_id)
 

@@ -88,11 +88,11 @@ class AiPipeline:
             plan.title = analysis.topic
         return plan
 
-    def generate_dsl(self, topic: str, theme: Optional[str] = None) -> PresentationDSL:
-        dsl, _ = self.generate_dsl_with_debug(topic=topic, theme=theme)
+    def generate_dsl(self, topic: str, theme: Optional[str] = None, rag_context: str = "") -> PresentationDSL:
+        dsl, _ = self.generate_dsl_with_debug(topic=topic, theme=theme, rag_context=rag_context)
         return dsl
 
-    def generate_dsl_with_debug(self, topic: str, theme: Optional[str] = None):
+    def generate_dsl_with_debug(self, topic: str, theme: Optional[str] = None, rag_context: str = ""):
         if not topic:
             raise ValueError("topic required")
 
@@ -181,10 +181,14 @@ class AiPipeline:
                     "严格禁止输出任何布局字段：x/y/w/h/fontSize/templateId/坐标/尺寸。\n"
                     "只输出结构化语义数据（如 items/events/phases/steps/columns/layers 等）。",
                 ),
-                ("human", "topic: {topic}\nanalysis: {analysis_json}\nplan: {plan_json}\ntheme: {theme_name}"),
+                ("human", "topic: {topic}\nanalysis: {analysis_json}\nplan: {plan_json}\ntheme: {theme_name}\n{rag_block}"),
             ]
         )
         try:
+            rag_block = ""
+            if rag_context:
+                rag_block = f"\n## 参考资料（请优先使用以下资料中的信息和数据）\n{rag_context}"
+
             raw = invoke_llm_text(
                 self._llm,
                 prompt,
@@ -193,6 +197,7 @@ class AiPipeline:
                     "analysis_json": analysis.model_dump_json(by_alias=True),
                     "plan_json": plan.model_dump_json(),
                     "theme_name": theme_name,
+                    "rag_block": rag_block,
                 },
             )
         except Exception as e:

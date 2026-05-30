@@ -23,15 +23,20 @@ class PresentationService:
         ai: AiPipeline,
         compiler: RenderCompiler,
         exporter: PptxExporter,
+        rag=None,
     ):
         self._repo = repo
         self._ai = ai
         self._compiler = compiler
         self._exporter = exporter
+        self._rag = rag
 
-    def create(self, topic: str, theme: Optional[str] = None) -> PresentationBundle:
+    def create(self, topic: str, theme: Optional[str] = None, use_rag: bool = False) -> PresentationBundle:
         presentation_id = new_id("pres")
-        dsl, ai_debug = self._ai.generate_dsl_with_debug(topic=topic, theme=theme)
+        rag_context = ""
+        if use_rag and self._rag:
+            rag_context = self._rag.retrieve_context(topic, top_k=5)
+        dsl, ai_debug = self._ai.generate_dsl_with_debug(topic=topic, theme=theme, rag_context=rag_context)
         theme_tokens = get_theme_tokens(dsl.theme)
         tree = self._compiler.compile(presentation_id, dsl, theme_tokens)
         tree = apply_theme_to_tree(tree, theme_tokens)
@@ -41,8 +46,11 @@ class PresentationService:
         self._repo.save(bundle)
         return bundle
 
-    def generate_outline(self, topic: str, theme: Optional[str] = None) -> dict:
-        dsl = self._ai.generate_dsl(topic=topic, theme=theme)
+    def generate_outline(self, topic: str, theme: Optional[str] = None, use_rag: bool = False) -> dict:
+        rag_context = ""
+        if use_rag and self._rag:
+            rag_context = self._rag.retrieve_context(topic, top_k=5)
+        dsl = self._ai.generate_dsl(topic=topic, theme=theme, rag_context=rag_context)
         data = dsl.model_dump(by_alias=True)
         slides = data.get("slides") or []
         if isinstance(slides, list):
@@ -232,10 +240,13 @@ class PresentationService:
         self._repo.save(bundle)
         return out_path
 
-    def regenerate(self, presentation_id: str, topic: Optional[str] = None, section: Optional[str] = None) -> PresentationBundle:
+    def regenerate(self, presentation_id: str, topic: Optional[str] = None, section: Optional[str] = None, use_rag: bool = False) -> PresentationBundle:
         bundle = self._repo.load(presentation_id)
         base_topic = topic or bundle.meta.topic
-        new_dsl, ai_debug = self._ai.generate_dsl_with_debug(topic=base_topic, theme=bundle.dsl.theme)
+        rag_context = ""
+        if use_rag and self._rag:
+            rag_context = self._rag.retrieve_context(base_topic, top_k=5)
+        new_dsl, ai_debug = self._ai.generate_dsl_with_debug(topic=base_topic, theme=bundle.dsl.theme, rag_context=rag_context)
         bundle.meta.extra = {"ai": ai_debug}
         if section:
             old_ids = [s.id for s in bundle.dsl.slides if getattr(s, "section", "") == section]

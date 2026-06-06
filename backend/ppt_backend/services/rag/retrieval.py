@@ -87,7 +87,7 @@ class HybridRetriever:
             text = item.get("text") or item.get("snippet", "")
             if not text:
                 continue
-            head = text[:2000] if len(text) > 2000 else text
+            head = text[:3000] if len(text) > 3000 else text
             parts.append(f"[来源 {i + 1} - {source}]\n{head}")
         return "\n\n---\n\n".join(parts)
 

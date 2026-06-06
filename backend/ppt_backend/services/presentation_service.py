@@ -35,7 +35,7 @@ class PresentationService:
         presentation_id = new_id("pres")
         rag_context = ""
         if use_rag and self._rag:
-            rag_context = self._rag.retrieve_context(topic, top_k=5)
+            rag_context = self._rag.retrieve_context(topic, top_k=8)
         dsl, ai_debug = self._ai.generate_dsl_with_debug(
             topic=topic, theme=theme, rag_context=rag_context
         )
@@ -51,7 +51,7 @@ class PresentationService:
     def generate_outline(self, topic: str, theme: Optional[str] = None, use_rag: bool = True) -> dict:
         rag_context = ""
         if use_rag and self._rag:
-            rag_context = self._rag.retrieve_context(topic, top_k=5)
+            rag_context = self._rag.retrieve_context(topic, top_k=8)
         dsl = self._ai.generate_dsl(topic=topic, theme=theme, rag_context=rag_context)
         data = dsl.model_dump(by_alias=True)
         slides = data.get("slides") or []

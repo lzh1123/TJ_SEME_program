@@ -30,7 +30,7 @@ class CreatePresentationRequest(BaseModel):
 
     topic: str
     theme: Optional[str] = None
-    use_rag: bool = False
+    use_rag: bool = True
 
 
 class CreatePresentationResponse(BaseModel):
@@ -58,7 +58,7 @@ class RegenerateRequest(BaseModel):
 
     topic: Optional[str] = None
     section: Optional[str] = None
-    use_rag: bool = False
+    use_rag: bool = True
 
 
 class GenerateOutlineRequest(BaseModel):
@@ -66,7 +66,7 @@ class GenerateOutlineRequest(BaseModel):
 
     topic: str
     theme: Optional[str] = None
-    use_rag: bool = False
+    use_rag: bool = True
 
 
 class CompileOutlineRequest(BaseModel):

@@ -138,6 +138,18 @@ export const chevronDown = {
   }
 }
 
+export const chevronUp = {
+  render() {
+    return [createPath('M18 15L12 9L6 15', defaultStroke)]
+  }
+}
+
+export const chevronLeft = {
+  render() {
+    return [createPath('M15 18L9 12L15 6', defaultStroke)]
+  }
+}
+
 export const chevronRight = {
   render() {
     return [createPath('M9 18L15 12L9 6', defaultStroke)]

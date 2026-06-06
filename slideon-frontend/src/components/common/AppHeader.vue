@@ -28,9 +28,9 @@
             @keypress.enter="handleSearch"
           >
         </div>
-        <button class="btn btn-primary" @click="$emit('create-ppt')">
+        <button class="btn btn-primary" @click="$emit('create-outline')">
           <IconBase name="plus" :size="14" />
-          新建PPT
+          新建大纲
         </button>
         <div class="user-avatar">
           <img :src="userAvatar" alt="用户头像">
@@ -51,8 +51,7 @@ const scrollY = ref(0)
 
 const navItems = [
   { name: '首页', path: '/' },
-  { name: '模板库', path: '/templates' },
-  { name: '我的PPT', path: '/dashboard' }
+  { name: '我的大纲', path: '/dashboard' }
 ]
 
 const userAvatar = 'https://api.dicebear.com/7.x/avataaars/svg?seed=user'
@@ -87,7 +86,7 @@ onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll)
 })
 
-defineEmits(['create-ppt'])
+defineEmits(['create-outline'])
 </script>
 
 <style scoped>

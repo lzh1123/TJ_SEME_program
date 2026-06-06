@@ -138,8 +138,7 @@ const ballStyle = computed(() => ({
   left: ballState.position.x != null ? ballState.position.x + 'px' : undefined,
   top: ballState.position.y != null ? ballState.position.y + 'px' : undefined,
   right: ballState.position.x == null ? '32px' : undefined,
-  bottom: ballState.position.y == null ? '32px' : undefined,
-  transition: ballState._transition ? 'left 0.45s cubic-bezier(0.34, 1.56, 0.64, 1), top 0.45s cubic-bezier(0.34, 1.56, 0.64, 1)' : undefined
+  bottom: ballState.position.y == null ? '32px' : undefined
 }))
 
 const expandBallStyle = computed(() => ({
@@ -185,23 +184,11 @@ function handleBallClick() {
 }
 
 async function expandToModal() {
-  // Save ball position for reverse animation
-  const bx = ballState.position.x, by = ballState.position.y
-  // Move ball to center with animation
-  ballState._transition = true
-  ballState.position = {
-    x: window.innerWidth / 2 - 36,
-    y: window.innerHeight / 2 - 36
-  }
-
-  await new Promise(r => setTimeout(r, 480))
-  // Show modal
-  showModal()
-  // Hide ball temporarily
+  // Smooth transition: ball fades out via Vue transition, then modal appears
   ballState.visible = false
-  ballState._transition = false
-  // Restore ball position for next minimize
-  ballState.position = { x: bx, y: by }
+  await nextTick()
+  await new Promise(r => setTimeout(r, 200))
+  showModal()
 }
 
 async function expandToEditor() {
@@ -225,7 +212,7 @@ async function expandToEditor() {
   await new Promise(r => setTimeout(r, 650))
   hideBall()
   ballExpanding.value = false
-  router.push({ path: '/outline-editor', query: { id } })
+  router.replace({ path: '/outline-editor', query: { id } })
 }
 
 function minimizeModal() {
@@ -238,28 +225,12 @@ function minimizeModal() {
 }
 
 async function animateMinimize() {
-  const bx = ballState.position.x, by = ballState.position.y
-  // Hide modal
   hideModal()
-
-  // Show ball at center first (where modal was)
-  ballState.position = {
-    x: window.innerWidth / 2 - 36,
-    y: window.innerHeight / 2 - 36
-  }
+  // Show ball at corner with bounce-in animation
+  await new Promise(r => setTimeout(r, 150))
   ballEntering.value = true
   showBall('generating')
-
-  await nextTick()
-  await new Promise(r => setTimeout(r, 50))
-
-  // Animate to corner
-  ballState._transition = true
-  ballState.position = { x: bx, y: by }
-
-  await new Promise(r => setTimeout(r, 500))
-  ballState._transition = false
-  ballEntering.value = false
+  setTimeout(() => { ballEntering.value = false }, 500)
 }
 
 function handleCancel() {

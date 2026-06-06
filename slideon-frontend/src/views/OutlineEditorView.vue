@@ -404,7 +404,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import IconBase from '../components/icons/IconBase.vue'
 import { useOutlineStore } from '../stores/outlineStore.js'
@@ -494,16 +494,25 @@ function normalizeSlide(slide) {
   return s
 }
 
-onMounted(() => {
-  const id = route.query.id
+function loadOutline(id) {
   outlineId.value = id
   if (id) {
     const loaded = outlineStore.getOutline(id)
     if (loaded) {
       loaded.slides = (loaded.slides||[]).map(normalizeSlide)
       dsl.value = loaded
-      if (dsl.value.slides.length > 0) selectedIndex.value = 0
+      selectedIndex.value = dsl.value.slides.length > 0 ? 0 : 0
     }
+  }
+}
+
+onMounted(() => {
+  loadOutline(route.query.id)
+})
+
+watch(() => route.query.id, (newId) => {
+  if (newId && newId !== outlineId.value) {
+    loadOutline(newId)
   }
 })
 

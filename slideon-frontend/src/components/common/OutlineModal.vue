@@ -2,16 +2,19 @@
   <Teleport to="body">
     <div class="modal" :class="{ active: modelValue }" @click.self="close">
       <div class="modal-overlay" @click="close"></div>
-      <div class="modal-content">
+      <div class="modal-content" :class="{ expanded: step === 'editor' }">
         <div class="modal-header">
-          <h2 class="modal-title">智能生成PPT</h2>
+          <h2 class="modal-title">
+            <span v-if="step === 'input'">智能生成PPT</span>
+            <span v-else>编辑大纲</span>
+          </h2>
           <button class="modal-close" @click="close">
             <IconBase name="times" :size="20" />
           </button>
         </div>
         
         <div class="modal-body">
-          <div class="step-content">
+          <div v-if="step === 'input'" class="step-content">
             <div class="form-step">
               <label class="form-label">
                 <span class="step-number">1</span>
@@ -26,27 +29,6 @@
                 @input="updateCharCount"
               ></textarea>
               <div class="char-count" :class="{ error: charCount > 500 }">{{ charCount }}/500</div>
-            </div>
-
-            <div class="form-group">
-              <label class="form-label optional">
-                <IconBase name="paperclip" :size="14" />
-                上传参考文档（可选）
-              </label>
-              <div 
-                class="upload-area"
-                :class="{ dragover: isDragging }"
-                @click="() => {}"
-                @dragover.prevent="isDragging = true"
-                @dragleave.prevent="isDragging = false"
-                @drop.prevent="() => {}"
-              >
-                <div class="upload-content">
-                  <IconBase name="cloudUpload" :size="40" class="upload-icon" />
-                  <p class="upload-text">文件上传功能即将上线</p>
-                  <p class="upload-hint">敬请期待</p>
-                </div>
-              </div>
             </div>
 
             <div class="form-step">
@@ -68,18 +50,213 @@
               </div>
             </div>
           </div>
+
+          <div v-else class="step-content outline-editor">
+            <div class="outline-header">
+              <div class="outline-stats">
+                <div class="stat-item">
+                  <IconBase name="thLarge" :size="14" />
+                  <span>{{ outlineData.slides?.length || 0 }} 页</span>
+                </div>
+                <div class="stat-item">
+                  <IconBase name="document" :size="14" />
+                  <span>{{ outlineData.title || '未命名' }}</span>
+                </div>
+              </div>
+              <div class="outline-actions">
+                <button class="btn btn-secondary btn-sm" @click="goBack">
+                  <IconBase name="arrowLeft" :size="14" />
+                  返回
+                </button>
+                <button class="btn btn-outline btn-sm" @click="regenerateOutline">
+                  <IconBase name="refresh" :size="14" />
+                  重新生成
+                </button>
+              </div>
+            </div>
+
+            <div class="outline-tree-container">
+              <div class="outline-tree">
+                <div 
+                  v-for="(slide, index) in outlineData.slides" 
+                  :key="slide.id || index"
+                  class="outline-item"
+                  :class="{ expanded: slide._expanded !== false }"
+                >
+                  <div class="outline-item-header">
+                    <button class="toggle-btn" @click="toggleExpand(slide)">
+                      <IconBase name="chevronRight" :size="14" />
+                    </button>
+                    <div class="item-number">{{ index + 1 }}</div>
+                    <input 
+                      v-if="slide._editing"
+                      v-model="slide.title"
+                      class="item-input"
+                      @blur="slide._editing = false"
+                      @keyup.enter="slide._editing = false"
+                      ref="inputRef"
+                    />
+                    <span v-else class="item-title" @click="editSlideTitle(slide)">
+                      {{ slide.title }}
+                    </span>
+                    <div class="item-actions">
+                      <button class="action-btn" @click="editSlideTitle(slide)" title="编辑">
+                        <IconBase name="edit" :size="14" />
+                      </button>
+                      <button class="action-btn" @click="duplicateSlide(slide, index)" title="复制">
+                        <IconBase name="copy" :size="14" />
+                      </button>
+                      <button class="action-btn" @click="moveSlideUp(index)" :disabled="index === 0" title="上移">
+                        <IconBase name="chevronUp" :size="14" />
+                      </button>
+                      <button class="action-btn" @click="moveSlideDown(index)" :disabled="index === outlineData.slides.length - 1" title="下移">
+                        <IconBase name="chevronDown" :size="14" />
+                      </button>
+                      <button class="action-btn danger" @click="deleteSlide(index)" title="删除">
+                        <IconBase name="trash" :size="14" />
+                      </button>
+                    </div>
+                  </div>
+                  <div class="outline-children" v-if="slide._expanded !== false">
+                    <div class="outline-child-item">
+                      <span class="child-number">{{ index + 1 }}.1</span>
+                      <span class="child-title">类型：{{ getSlideType(slide.intent) }}</span>
+                    </div>
+                    
+                    <div class="outline-child-list" v-if="showBullets(slide)">
+                      <div class="list-header">
+                        <span>要点</span>
+                        <button class="add-child-btn" @click="addBullet(slide)">
+                          <IconBase name="plus" :size="12" />
+                        </button>
+                      </div>
+                      <div v-if="slide.bullets && slide.bullets.length > 0" v-for="(bullet, i) in slide.bullets" :key="`bullet-${i}`" class="outline-child-item editable">
+                        <span class="child-number">{{ index + 1 }}.{{ i + 2 }}</span>
+                        <input 
+                          v-if="bullet._editing"
+                          v-model="bullet.text"
+                          class="child-input"
+                          @blur="bullet._editing = false"
+                          @keyup.enter="bullet._editing = false"
+                        />
+                        <span v-else class="child-title child-bullet" @click="editChild(bullet)">• {{ bullet.text || bullet }}</span>
+                        <div class="child-actions">
+                          <button class="action-btn" @click="editChild(bullet)" title="编辑">
+                            <IconBase name="edit" :size="12" />
+                          </button>
+                          <button class="action-btn danger" @click="removeBullet(slide, i)" title="删除">
+                            <IconBase name="trash" :size="12" />
+                          </button>
+                        </div>
+                      </div>
+                      <div v-else class="outline-child-item empty">
+                        <span class="child-title">暂无要点</span>
+                      </div>
+                    </div>
+                    
+                    <div class="outline-child-list" v-if="showParagraphs(slide)">
+                      <div class="list-header">
+                        <span>段落</span>
+                        <button class="add-child-btn" @click="addParagraph(slide)">
+                          <IconBase name="plus" :size="12" />
+                        </button>
+                      </div>
+                      <div v-if="slide.paragraphs && slide.paragraphs.length > 0" v-for="(para, i) in slide.paragraphs" :key="`para-${i}`" class="outline-child-item editable">
+                        <span class="child-number">{{ index + 1 }}.{{ i + (slide.bullets ? slide.bullets.length : 0) + 2 }}</span>
+                        <textarea 
+                          v-if="para._editing"
+                          v-model="para.text"
+                          class="child-textarea"
+                          @blur="para._editing = false"
+                        ></textarea>
+                        <span v-else class="child-title child-paragraph" @click="editChild(para)">{{ (para.text || para).substring(0, 50) }}{{ (para.text || para).length > 50 ? '...' : '' }}</span>
+                        <div class="child-actions">
+                          <button class="action-btn" @click="editChild(para)" title="编辑">
+                            <IconBase name="edit" :size="12" />
+                          </button>
+                          <button class="action-btn danger" @click="removeParagraph(slide, i)" title="删除">
+                            <IconBase name="trash" :size="12" />
+                          </button>
+                        </div>
+                      </div>
+                      <div v-else class="outline-child-item empty">
+                        <span class="child-title">暂无段落</span>
+                      </div>
+                    </div>
+                    
+                    <div class="outline-child-list" v-if="showItems(slide)">
+                      <div class="list-header">
+                        <span>项目</span>
+                        <button class="add-child-btn" @click="addItem(slide)">
+                          <IconBase name="plus" :size="12" />
+                        </button>
+                      </div>
+                      <div v-if="slide.items && slide.items.length > 0" v-for="(item, i) in slide.items" :key="`item-${i}`" class="outline-child-item editable">
+                        <span class="child-number">{{ index + 1 }}.{{ i + 2 }}</span>
+                        <input 
+                          v-if="item._editing"
+                          v-model="item.text"
+                          class="child-input"
+                          @blur="item._editing = false"
+                          @keyup.enter="item._editing = false"
+                        />
+                        <span v-else class="child-title child-item" @click="editChild(item)">- {{ item.text || item }}</span>
+                        <div class="child-actions">
+                          <button class="action-btn" @click="editChild(item)" title="编辑">
+                            <IconBase name="edit" :size="12" />
+                          </button>
+                          <button class="action-btn danger" @click="removeItem(slide, i)" title="删除">
+                            <IconBase name="trash" :size="12" />
+                          </button>
+                        </div>
+                      </div>
+                      <div v-else class="outline-child-item empty">
+                        <span class="child-title">暂无项目</span>
+                      </div>
+                    </div>
+                    
+                    <div class="outline-child-list" v-if="slide.notes && slide.notes.length > 0">
+                      <div class="list-header">
+                        <span>备注</span>
+                      </div>
+                      <div v-for="(note, i) in slide.notes" :key="`note-${i}`" class="outline-child-item">
+                        <span class="child-number">{{ index + 1 }}.{{ i + (slide.bullets ? slide.bullets.length : 0) + (slide.paragraphs ? slide.paragraphs.length : 0) + (slide.items ? slide.items.length : 0) + 2 }}</span>
+                        <span class="child-title child-note">📝 {{ (note.text || note).substring(0, 40) }}{{ (note.text || note).length > 40 ? '...' : '' }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <button class="add-section-btn" @click="addNewSlide">
+                  <IconBase name="plus" :size="16" />
+                  添加新页面
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div class="modal-footer">
           <button class="btn btn-secondary" @click="close">取消</button>
           <button 
+            v-if="step === 'input'"
             class="btn btn-primary" 
             :disabled="isGenerating || !form.topic.trim()"
-            @click="generatePresentation"
+            @click="generateOutline"
           >
             <IconBase v-if="isGenerating" name="spinner" :size="14" class="animate-spin" />
             <IconBase v-else name="magic" :size="14" />
-            {{ isGenerating ? '生成中...' : '开始生成' }}
+            {{ isGenerating ? '生成大纲中...' : '生成大纲' }}
+          </button>
+          <button 
+            v-else
+            class="btn btn-primary" 
+            :disabled="isGenerating"
+            @click="generatePresentation"
+          >
+            <IconBase v-if="isGenerating" name="spinner" :size="14" class="animate-spin" />
+            <IconBase v-else name="check" :size="14" />
+            {{ isGenerating ? '生成中...' : '生成PPT' }}
           </button>
         </div>
       </div>
@@ -88,10 +265,11 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import IconBase from '../icons/IconBase.vue'
 import { apiService } from '../../services/api.js'
+import { new_id } from '../../utils/ids.js'
 
 const props = defineProps({
   modelValue: {
@@ -104,16 +282,20 @@ const emit = defineEmits(['update:modelValue'])
 
 const router = useRouter()
 
-const isDragging = ref(false)
+const step = ref('input')
 const isGenerating = ref(false)
-const uploadedFiles = ref([])
+const presentationId = ref('')
 
 const form = ref({
   topic: '',
-  style: 'modern'
+  style: 'modern_blue'
 })
 
-const themes = ref({})
+const outlineData = ref({
+  title: '',
+  theme: 'modern_blue',
+  slides: []
+})
 
 const charCount = computed(() => form.value.topic.length)
 
@@ -124,10 +306,11 @@ const styleOptions = [
   { value: 'minimal_black', name: '简约黑', icon: '🎨' }
 ]
 
-const generateId = () => Date.now() + Math.random()
-
 const close = () => {
   emit('update:modelValue', false)
+  step.value = 'input'
+  form.value.topic = ''
+  outlineData.value = { title: '', theme: 'modern_blue', slides: [] }
 }
 
 const updateCharCount = () => {
@@ -136,92 +319,35 @@ const updateCharCount = () => {
   }
 }
 
-const handleFiles = (files) => {
-  const validTypes = ['.pdf', '.docx', '.txt', '.md']
-  const maxSize = 20 * 1024 * 1024
-
-  Array.from(files).forEach(file => {
-    const extension = '.' + file.name.split('.').pop().toLowerCase()
-    
-    if (!validTypes.includes(extension)) {
-      alert(`不支持的文件格式: ${file.name}`)
-      return
-    }
-    
-    if (file.size > maxSize) {
-      alert(`文件过大: ${file.name} (最大20MB)`)
-      return
-    }
-    
-    if (uploadedFiles.value.some(f => f.name === file.name)) {
-      alert(`文件已存在: ${file.name}`)
-      return
-    }
-    
-    const fileData = {
-      id: generateId(),
-      name: file.name,
-      size: file.size,
-      type: extension,
-      status: 'uploading',
-      progress: 0
-    }
-    
-    uploadedFiles.value.push(fileData)
-    simulateUpload(fileData)
-  })
+const prepareChildForEdit = (child) => {
+  if (typeof child === 'string') {
+    return { text: child, _editing: false }
+  }
+  return { ...child, _editing: false }
 }
 
-const simulateUpload = (fileData) => {
-  const file = uploadedFiles.value.find(f => f.id === fileData.id)
-  if (!file) return
+const prepareSlideForEdit = (slide) => {
+  const prepared = {
+    ...slide,
+    _expanded: true,
+    _editing: false
+  }
   
-  let progress = 0
-  const interval = setInterval(() => {
-    progress += Math.random() * 30
-    if (progress >= 100) {
-      progress = 100
-      clearInterval(interval)
-      file.status = 'success'
-      file.progress = 100
-    } else {
-      file.progress = progress
-    }
-  }, 200)
-}
-
-const removeFile = (id) => {
-  uploadedFiles.value = uploadedFiles.value.filter(f => f.id !== id)
-}
-
-const getFileIcon = (type) => {
-  const iconMap = {
-    '.pdf': 'filePdf',
-    '.docx': 'fileWord',
-    '.txt': 'fileAlt',
-    '.md': 'fileCode'
+  if (slide.intent === 'text') {
+    if (slide.bullets) prepared.bullets = slide.bullets.map(prepareChildForEdit)
+    if (slide.paragraphs) prepared.paragraphs = slide.paragraphs.map(prepareChildForEdit)
   }
-  return iconMap[type] || 'file'
-}
-
-const formatFileSize = (bytes) => {
-  if (bytes === 0) return '0 B'
-  const k = 1024
-  const sizes = ['B', 'KB', 'MB', 'GB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i]
-}
-
-const getStatusText = (status) => {
-  const statusMap = {
-    uploading: '上传中...',
-    success: '上传成功',
-    error: '上传失败'
+  
+  if (slide.intent === 'agenda' || slide.intent === 'kpi') {
+    if (slide.items) prepared.items = slide.items.map(prepareChildForEdit)
   }
-  return statusMap[status] || status
+  
+  if (slide.notes) prepared.notes = slide.notes.map(prepareChildForEdit)
+  
+  return prepared
 }
 
-const generatePresentation = async () => {
+const generateOutline = async () => {
   if (!form.value.topic.trim()) {
     alert('请输入主题')
     return
@@ -230,31 +356,239 @@ const generatePresentation = async () => {
   isGenerating.value = true
   
   try {
-    const result = await apiService.createPresentation(form.value.topic)
+    const result = await apiService.generateOutline(form.value.topic, form.value.style)
     
-    console.log('✅ 创建演示文稿成功，完整响应:', result)
-    console.log('📊 AI Debug 信息:', result.bundle?.meta?.extra?.ai)
+    console.log('✅ 生成大纲成功:', result)
     
-    // 检查是否使用了 Fallback
-    const aiDebug = result.bundle?.meta?.extra?.ai
-    if (aiDebug) {
-      if (aiDebug.usedFallback) {
-        console.warn('⚠️ 使用了 Fallback 模拟数据！')
-        console.warn('  - Stage:', aiDebug.stage)
-        console.warn('  - Error:', aiDebug.error)
-      } else {
-        console.log('✅ 成功！使用了真实 API 生成内容！')
-      }
+    outlineData.value = {
+      title: result.title || form.value.topic,
+      theme: result.theme || form.value.style,
+      slides: (result.slides || []).map(prepareSlideForEdit)
     }
     
+    step.value = 'editor'
+  } catch (error) {
+    console.error('❌ 生成大纲失败:', error)
+    alert('生成大纲失败: ' + error.message)
+  } finally {
+    isGenerating.value = false
+  }
+}
+
+const goBack = () => {
+  step.value = 'input'
+}
+
+const regenerateOutline = () => {
+  generateOutline()
+}
+
+const toggleExpand = (slide) => {
+  slide._expanded = !slide._expanded
+}
+
+const editSlideTitle = (slide) => {
+  slide._editing = true
+  nextTick(() => {
+    const input = document.querySelector('.item-input:focus')
+    if (input) input.focus()
+  })
+}
+
+const duplicateSlide = (slide, index) => {
+  const newSlide = {
+    ...slide,
+    id: new_id('slide'),
+    title: slide.title + ' (副本)',
+    _expanded: true,
+    _editing: false
+  }
+  outlineData.value.slides.splice(index + 1, 0, newSlide)
+}
+
+const moveSlideUp = (index) => {
+  if (index === 0) return
+  const slide = outlineData.value.slides[index]
+  outlineData.value.slides.splice(index, 1)
+  outlineData.value.slides.splice(index - 1, 0, slide)
+}
+
+const moveSlideDown = (index) => {
+  if (index === outlineData.value.slides.length - 1) return
+  const slide = outlineData.value.slides[index]
+  outlineData.value.slides.splice(index, 1)
+  outlineData.value.slides.splice(index + 1, 0, slide)
+}
+
+const deleteSlide = (index) => {
+  if (outlineData.value.slides.length <= 1) {
+    alert('至少需要保留一页')
+    return
+  }
+  outlineData.value.slides.splice(index, 1)
+}
+
+const addNewSlide = () => {
+  const newSlide = {
+    id: new_id('slide'),
+    title: '新页面',
+    intent: 'text',
+    bullets: [],
+    paragraphs: [],
+    notes: [],
+    _expanded: true,
+    _editing: true
+  }
+  outlineData.value.slides.push(newSlide)
+}
+
+const getSlideType = (intent) => {
+  const typeMap = {
+    'cover': '标题页',
+    'agenda': '议程页',
+    'text': '内容页',
+    'chart': '图表页',
+    'quote': '引用页',
+    'kpi': 'KPI页',
+    'divider': '分隔页',
+    'architecture': '架构页',
+    'timeline': '时间线',
+    'comparison': '对比页',
+    'swot': 'SWOT分析',
+    'roadmap': '路线图',
+    'process_flow': '流程图',
+    'multi_column': '多列页',
+    'team': '团队页'
+  }
+  return typeMap[intent] || '内容页'
+}
+
+const showBullets = (slide) => {
+  return slide.intent === 'text'
+}
+
+const showParagraphs = (slide) => {
+  return slide.intent === 'text'
+}
+
+const showItems = (slide) => {
+  return slide.intent === 'agenda' || slide.intent === 'kpi'
+}
+
+const allowedFieldsByIntent = {
+  'cover': ['id', 'intent', 'section', 'title', 'notes', 'subtitle', 'tagline', 'highlights'],
+  'agenda': ['id', 'intent', 'section', 'title', 'notes', 'items'],
+  'text': ['id', 'intent', 'section', 'title', 'notes', 'paragraphs', 'bullets'],
+  'timeline': ['id', 'intent', 'section', 'title', 'notes', 'events'],
+  'kpi': ['id', 'intent', 'section', 'title', 'notes', 'items'],
+  'comparison': ['id', 'intent', 'section', 'title', 'notes', 'left', 'right'],
+  'swot': ['id', 'intent', 'section', 'title', 'notes', 'swot'],
+  'roadmap': ['id', 'intent', 'section', 'title', 'notes', 'phases'],
+  'process_flow': ['id', 'intent', 'section', 'title', 'notes', 'steps'],
+  'chart': ['id', 'intent', 'section', 'title', 'notes', 'chart'],
+  'multi_column': ['id', 'intent', 'section', 'title', 'notes', 'columns'],
+  'architecture': ['id', 'intent', 'section', 'title', 'notes', 'layers'],
+  'quote': ['id', 'intent', 'section', 'title', 'notes', 'quote', 'author'],
+  'divider': ['id', 'intent', 'section', 'title', 'notes', 'subtitle'],
+  'team': ['id', 'intent', 'section', 'title', 'notes', 'members']
+}
+
+const cleanSlideByIntent = (slide) => {
+  const allowed = allowedFieldsByIntent[slide.intent] || allowedFieldsByIntent['text']
+  const cleaned = {}
+  
+  allowed.forEach(field => {
+    if (slide[field] !== undefined) {
+      if (field === 'bullets' || field === 'paragraphs' || field === 'items' || field === 'notes') {
+        cleaned[field] = slide[field].map(prepareChildForBackend)
+      } else {
+        cleaned[field] = slide[field]
+      }
+    }
+  })
+  
+  return cleaned
+}
+
+const editChild = (child) => {
+  child._editing = true
+  nextTick(() => {
+    const input = document.querySelector('.child-input:focus, .child-textarea:focus')
+    if (input) input.focus()
+  })
+}
+
+const addBullet = (slide) => {
+  if (!slide.bullets) slide.bullets = []
+  slide.bullets.push({ text: '新要点', _editing: true })
+}
+
+const removeBullet = (slide, index) => {
+  slide.bullets.splice(index, 1)
+}
+
+const addParagraph = (slide) => {
+  if (!slide.paragraphs) slide.paragraphs = []
+  slide.paragraphs.push({ text: '新段落', _editing: true })
+}
+
+const removeParagraph = (slide, index) => {
+  slide.paragraphs.splice(index, 1)
+}
+
+const addItem = (slide) => {
+  if (!slide.items) slide.items = []
+  slide.items.push({ text: '新项目', _editing: true })
+}
+
+const removeItem = (slide, index) => {
+  slide.items.splice(index, 1)
+}
+
+const prepareChildForBackend = (child) => {
+  if (typeof child === 'string') return child
+  return child.text || ''
+}
+
+const generatePresentation = async () => {
+  isGenerating.value = true
+  
+  try {
+    const outline = {
+      ...outlineData.value,
+      slides: outlineData.value.slides.map(cleanSlideByIntent)
+    }
+    
+    const renderTree = await apiService.compileOutline(form.value.topic, outline, form.value.style)
+    
+    console.log('✅ 生成渲染树成功:', renderTree)
+    
     close()
+    
+    const id = new_id('pres')
+    const meta = {
+      id,
+      topic: form.value.topic,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      version: 1
+    }
+    
+    const bundle = {
+      meta,
+      dsl: outline,
+      renderTree
+    }
+    
+    window.__presentationBundle = bundle
+    
     router.push({
       path: '/editor',
-      query: { id: result.id }
+      query: { id }
     })
   } catch (error) {
-    console.error('❌ 创建演示文稿失败:', error)
-    alert('创建演示文稿失败: ' + error.message)
+    console.error('❌ 生成PPT失败:', error)
+    alert('生成PPT失败: ' + error.message)
   } finally {
     isGenerating.value = false
   }
@@ -356,10 +690,6 @@ const generatePresentation = async () => {
   margin-bottom: var(--space-6);
 }
 
-.form-group {
-  margin-bottom: var(--space-6);
-}
-
 .form-label {
   display: flex;
   align-items: center;
@@ -368,11 +698,6 @@ const generatePresentation = async () => {
   font-weight: 600;
   color: var(--gray-700);
   margin-bottom: var(--space-3);
-}
-
-.form-label.optional {
-  font-weight: 500;
-  color: var(--gray-600);
 }
 
 .step-number {
@@ -397,163 +722,6 @@ const generatePresentation = async () => {
 
 .char-count.error {
   color: var(--error-500);
-}
-
-.upload-area {
-  border: 2px dashed var(--gray-300);
-  border-radius: var(--radius-lg);
-  padding: var(--space-8);
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  position: relative;
-}
-
-.upload-area:hover,
-.upload-area.dragover {
-  border-color: var(--primary-400);
-  background: var(--primary-50);
-}
-
-.file-input {
-  display: none;
-}
-
-.upload-icon {
-  color: var(--gray-400);
-  margin-bottom: var(--space-3);
-}
-
-.upload-text {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--gray-700);
-  margin-bottom: var(--space-1);
-}
-
-.upload-hint {
-  font-size: 12px;
-  color: var(--gray-500);
-}
-
-.uploaded-files-list {
-  margin-top: var(--space-4);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
-
-.file-item {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-3) var(--space-4);
-  background: var(--gray-50);
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--gray-200);
-}
-
-.file-icon {
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: white;
-  border-radius: var(--radius-md);
-  flex-shrink: 0;
-}
-
-.file-icon.pdf {
-  color: #EF4444;
-}
-
-.file-icon.docx {
-  color: #3B82F6;
-}
-
-.file-icon.txt,
-.file-icon.md {
-  color: #6B7280;
-}
-
-.file-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.file-name {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--gray-800);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  margin-bottom: 2px;
-}
-
-.file-meta {
-  font-size: 12px;
-  color: var(--gray-500);
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-}
-
-.file-size {
-  padding: 1px 6px;
-  background: var(--gray-200);
-  border-radius: var(--radius-sm);
-}
-
-.file-status {
-  display: flex;
-  align-items: center;
-  gap: var(--space-1);
-}
-
-.file-status.uploading {
-  color: var(--primary-500);
-}
-
-.file-status.success {
-  color: var(--success-500);
-}
-
-.upload-progress {
-  width: 100%;
-  height: 4px;
-  background: var(--gray-200);
-  border-radius: var(--radius-full);
-  overflow: hidden;
-  margin-top: var(--space-2);
-}
-
-.upload-progress-bar {
-  height: 100%;
-  background: linear-gradient(90deg, var(--primary-500), var(--primary-400));
-  border-radius: var(--radius-full);
-  transition: width 0.3s ease;
-}
-
-.file-remove {
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--gray-400);
-  background: transparent;
-  border: none;
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  flex-shrink: 0;
-}
-
-.file-remove:hover {
-  color: var(--error-500);
-  background: var(--error-50);
 }
 
 .style-options {
@@ -606,58 +774,6 @@ const generatePresentation = async () => {
   border-color: var(--primary-500);
   background: var(--primary-500);
   box-shadow: inset 0 0 0 3px white;
-}
-
-.page-slider {
-  padding: var(--space-4) 0;
-}
-
-.slider {
-  width: 100%;
-  height: 6px;
-  -webkit-appearance: none;
-  appearance: none;
-  background: var(--gray-200);
-  border-radius: var(--radius-full);
-  outline: none;
-}
-
-.slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 20px;
-  height: 20px;
-  background: var(--primary-500);
-  border-radius: var(--radius-full);
-  cursor: pointer;
-  box-shadow: var(--shadow-md);
-}
-
-.slider::-moz-range-thumb {
-  width: 20px;
-  height: 20px;
-  background: var(--primary-500);
-  border-radius: var(--radius-full);
-  cursor: pointer;
-  border: none;
-  box-shadow: var(--shadow-md);
-}
-
-.slider-info {
-  display: flex;
-  justify-content: space-between;
-  margin-top: var(--space-3);
-}
-
-.page-count {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--primary-600);
-}
-
-.page-hint {
-  font-size: 13px;
-  color: var(--gray-500);
 }
 
 .outline-editor {
@@ -739,10 +855,6 @@ const generatePresentation = async () => {
   flex-shrink: 0;
 }
 
-.toggle-btn.hidden {
-  visibility: hidden;
-}
-
 .toggle-btn:hover {
   color: var(--primary-600);
 }
@@ -817,6 +929,11 @@ const generatePresentation = async () => {
   color: var(--gray-700);
 }
 
+.action-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
 .action-btn.danger:hover {
   background: var(--error-50);
   color: var(--error-600);
@@ -854,23 +971,114 @@ const generatePresentation = async () => {
   flex-shrink: 0;
 }
 
+.child-bullet {
+  color: var(--gray-700);
+}
+
+.child-paragraph {
+  color: var(--gray-600);
+  font-style: italic;
+}
+
+.child-item {
+  color: var(--primary-700);
+}
+
+.child-note {
+  color: var(--success-700);
+  font-size: 13px;
+}
+
+.outline-child-list {
+  margin-bottom: var(--space-3);
+}
+
+.list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-2) var(--space-4);
+  padding-left: calc(var(--space-4) + 48px);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gray-500);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
 .add-child-btn {
-  width: 100%;
+  width: 24px;
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: var(--space-1);
-  padding: var(--space-2);
   border: none;
   background: transparent;
-  color: var(--primary-600);
-  font-size: 13px;
   cursor: pointer;
-  transition: background 0.2s ease;
+  color: var(--primary-500);
+  border-radius: var(--radius-sm);
+  transition: all 0.2s ease;
 }
 
 .add-child-btn:hover {
-  background: var(--primary-50);
+  background: var(--primary-100);
+}
+
+.outline-child-item.editable {
+  cursor: pointer;
+}
+
+.outline-child-item.editable:hover {
+  background: var(--gray-100);
+}
+
+.outline-child-item.empty {
+  color: var(--gray-400);
+  font-style: italic;
+}
+
+.child-input {
+  flex: 1;
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--primary-300);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  outline: none;
+  background: white;
+}
+
+.child-input:focus {
+  border-color: var(--primary-500);
+  box-shadow: 0 0 0 3px var(--primary-100);
+}
+
+.child-textarea {
+  flex: 1;
+  padding: var(--space-2);
+  border: 1px solid var(--primary-300);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  outline: none;
+  background: white;
+  resize: vertical;
+  min-height: 60px;
+  font-family: inherit;
+}
+
+.child-textarea:focus {
+  border-color: var(--primary-500);
+  box-shadow: 0 0 0 3px var(--primary-100);
+}
+
+.child-actions {
+  display: flex;
+  gap: var(--space-1);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.outline-child-item.editable:hover .child-actions {
+  opacity: 1;
 }
 
 .add-section-btn {

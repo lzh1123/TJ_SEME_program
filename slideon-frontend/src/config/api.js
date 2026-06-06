@@ -18,6 +18,10 @@ export const API_ENDPOINTS = {
   // 主题相关
   themes: '/themes',
 
+  // 大纲相关
+  dsl: '/dsl',
+  renderTree: '/render-tree',
+
   // 演示文稿相关
   presentations: {
     create: '/presentations',

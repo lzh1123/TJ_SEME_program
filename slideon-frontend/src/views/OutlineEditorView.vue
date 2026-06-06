@@ -3,8 +3,11 @@
     <!-- 顶部工具栏 -->
     <header class="editor-header">
       <div class="header-left">
-        <router-link to="/" class="btn btn-ghost btn-icon" title="返回首页">
+        <button class="btn btn-ghost btn-icon" @click="goBack" title="返回上一页">
           <IconBase name="arrowLeft" :size="18" />
+        </button>
+        <router-link to="/" class="btn btn-ghost btn-icon" title="返回主页">
+          <IconBase name="home" :size="18" />
         </router-link>
         <div class="header-title-group">
           <label class="header-label">大纲标题</label>
@@ -18,6 +21,22 @@
         <span class="slide-count-badge">{{ dsl.slides.length }} 页</span>
       </div>
       <div class="header-right">
+        <div class="download-dropdown">
+          <button class="btn btn-secondary" @click.stop="showDownloadMenu = !showDownloadMenu">
+            <IconBase name="download" :size="14" />
+            下载
+          </button>
+          <div class="download-menu" v-if="showDownloadMenu">
+            <button @click="downloadOutline('json')">
+              <IconBase name="fileCode" :size="14" />
+              下载 JSON
+            </button>
+            <button @click="downloadOutline('md')">
+              <IconBase name="fileAlt" :size="14" />
+              下载 Markdown
+            </button>
+          </div>
+        </div>
         <button class="btn btn-secondary" @click="saveOutline" :disabled="isSaving">
           <IconBase name="save" :size="14" />
           {{ isSaving ? '保存中...' : '保存' }}
@@ -385,7 +404,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import IconBase from '../components/icons/IconBase.vue'
 import { useOutlineStore } from '../stores/outlineStore.js'
@@ -396,13 +415,14 @@ const route = useRoute()
 const router = useRouter()
 const outlineStore = useOutlineStore()
 
-const dsl = ref({ title: '未命名大纲', audience: '通用受众', tone: '清晰、教学', theme: 'modern_blue', slides: [] })
+const dsl = ref({ title: '未命名大纲', audience: '通用受众', tone: '清晰、教学', theme: 'paper_light', slides: [] })
 const selectedIndex = ref(0)
 const isSaving = ref(false)
 const isGenerating = ref(false)
 const toastMessage = ref('')
 const toastType = ref('success')
 const outlineId = ref(null)
+const showDownloadMenu = ref(false)
 
 const selectedSlide = computed(() => {
   if (dsl.value.slides.length === 0) return null
@@ -474,16 +494,25 @@ function normalizeSlide(slide) {
   return s
 }
 
-onMounted(() => {
-  const id = route.query.id
+function loadOutline(id) {
   outlineId.value = id
   if (id) {
     const loaded = outlineStore.getOutline(id)
     if (loaded) {
       loaded.slides = (loaded.slides||[]).map(normalizeSlide)
       dsl.value = loaded
-      if (dsl.value.slides.length > 0) selectedIndex.value = 0
+      selectedIndex.value = dsl.value.slides.length > 0 ? 0 : 0
     }
+  }
+}
+
+onMounted(() => {
+  loadOutline(route.query.id)
+})
+
+watch(() => route.query.id, (newId) => {
+  if (newId && newId !== outlineId.value) {
+    loadOutline(newId)
   }
 })
 
@@ -491,6 +520,166 @@ function showToast(msg, type='success') {
   toastMessage.value = msg
   toastType.value = type
   setTimeout(() => { toastMessage.value = '' }, 2500)
+}
+
+function toMarkdown(dsl) {
+  const lines = []
+  lines.push(`# ${dsl.title || '未命名大纲'}`)
+  lines.push('')
+  if (dsl.audience) lines.push(`> 受众：${dsl.audience}　|　风格：${dsl.tone || '—'}　|　主题：${dsl.theme || '—'}`)
+  lines.push('')
+
+  dsl.slides.forEach((slide, i) => {
+    const label = getIntentLabel(slide.intent)
+    lines.push(`## ${i + 1}. ${slide.title || '未命名'}（${label}）`)
+    lines.push('')
+
+    switch (slide.intent) {
+      case 'cover':
+        if (slide.subtitle) lines.push(`- **副标题**：${slide.subtitle}`)
+        if (slide.tagline) lines.push(`- **标语**：${slide.tagline}`)
+        if (slide.highlights?.length) {
+          lines.push('- **亮点**：')
+          slide.highlights.forEach(h => lines.push(`  - ${h}`))
+        }
+        break
+      case 'agenda':
+        if (slide.items?.length) {
+          lines.push('- **议程项**：')
+          slide.items.forEach(item => lines.push(`  - ${typeof item === 'string' ? item : item.text || item.label || ''}`))
+        }
+        break
+      case 'text':
+        if (slide.bullets?.length) {
+          lines.push('### 要点')
+          slide.bullets.forEach(b => lines.push(`- ${typeof b === 'string' ? b : b.text || ''}`))
+          lines.push('')
+        }
+        if (slide.paragraphs?.length) {
+          lines.push('### 段落')
+          slide.paragraphs.forEach(p => lines.push(`${typeof p === 'string' ? p : p.text || ''}`))
+          lines.push('')
+        }
+        break
+      case 'chart':
+        if (slide.chart) {
+          lines.push(`- **图表类型**：${slide.chart.chartType || 'bar'}`)
+          if (slide.chart.labels?.length) lines.push(`- **标签**：${slide.chart.labels.join(', ')}`)
+          if (slide.chart.series?.length) {
+            lines.push('- **数据系列**：')
+            slide.chart.series.forEach(s => lines.push(`  - ${s.name}: ${(s.values || []).join(', ')}`))
+          }
+        }
+        break
+      case 'quote':
+        if (slide.quote) lines.push(`> ${slide.quote}`)
+        if (slide.author) lines.push(`— ${slide.author}`)
+        break
+      case 'kpi':
+        if (slide.items?.length) {
+          lines.push('| 指标 | 数值 | 单位 | 变化 |')
+          lines.push('|------|------|------|------|')
+          slide.items.forEach(item => lines.push(`| ${item.label || ''} | ${item.value || ''} | ${item.unit || ''} | ${item.delta || ''} |`))
+        }
+        break
+      case 'timeline':
+        if (slide.events?.length) {
+          lines.push('| 日期 | 事件 | 详情 |')
+          lines.push('|------|------|------|')
+          slide.events.forEach(e => lines.push(`| ${e.date || ''} | ${e.label || ''} | ${e.detail || ''} |`))
+        }
+        break
+      case 'comparison':
+        if (slide.left) {
+          lines.push(`- **${slide.left.title || '左侧'}**：${(slide.left.bullets || []).join('；')}`)
+        }
+        if (slide.right) {
+          lines.push(`- **${slide.right.title || '右侧'}**：${(slide.right.bullets || []).join('；')}`)
+        }
+        break
+      case 'swot':
+        if (slide.swot) {
+          const s = slide.swot
+          if (s.strengths?.length) { lines.push('- **优势 (S)**：'); s.strengths.forEach(x => lines.push(`  - ${x}`)) }
+          if (s.weaknesses?.length) { lines.push('- **劣势 (W)**：'); s.weaknesses.forEach(x => lines.push(`  - ${x}`)) }
+          if (s.opportunities?.length) { lines.push('- **机会 (O)**：'); s.opportunities.forEach(x => lines.push(`  - ${x}`)) }
+          if (s.threats?.length) { lines.push('- **威胁 (T)**：'); s.threats.forEach(x => lines.push(`  - ${x}`)) }
+        }
+        break
+      case 'roadmap':
+        if (slide.phases?.length) {
+          slide.phases.forEach(p => {
+            lines.push(`- **${p.name || ''}**${p.timeframe ? `（${p.timeframe}）` : ''}`)
+            if (p.deliverables?.length) p.deliverables.forEach(d => lines.push(`  - ${d}`))
+          })
+        }
+        break
+      case 'process_flow':
+        if (slide.steps?.length) {
+          slide.steps.forEach((s, si) => lines.push(`${si + 1}. **${s.name || ''}**${s.detail ? ' — ' + s.detail : ''}`))
+        }
+        break
+      case 'multi_column':
+        if (slide.columns?.length) {
+          slide.columns.forEach(col => {
+            lines.push(`- **${col.title || ''}**：${(col.bullets || []).join('；')}`)
+          })
+        }
+        break
+      case 'architecture':
+        if (slide.layers?.length) {
+          slide.layers.forEach(l => lines.push(`- **${l.name || ''}**：${(l.items || []).join('、')}`))
+        }
+        break
+      case 'divider':
+        if (slide.subtitle) lines.push(`- **副标题**：${slide.subtitle}`)
+        break
+      case 'team':
+        if (slide.members?.length) {
+          slide.members.forEach(m => {
+            lines.push(`- **${m.name || ''}**${m.role ? ` — ${m.role}` : ''}`)
+            if (m.highlights?.length) m.highlights.forEach(h => lines.push(`  - ${h}`))
+          })
+        }
+        break
+    }
+
+    if (slide.notes?.length) {
+      lines.push('')
+      lines.push('> 备注：' + slide.notes.join('；'))
+    }
+    lines.push('')
+  })
+
+  return lines.join('\n')
+}
+
+function downloadOutline(format) {
+  showDownloadMenu.value = false
+
+  const filename = (dsl.value.title || '大纲').replace(/[\\/:*?"<>|]/g, '_')
+
+  if (format === 'json') {
+    const json = JSON.stringify(dsl.value, null, 2)
+    const blob = new Blob([json], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${filename}.json`
+    a.click()
+    URL.revokeObjectURL(url)
+    showToast('JSON 下载成功')
+  } else if (format === 'md') {
+    const md = toMarkdown(dsl.value)
+    const blob = new Blob([md], { type: 'text/markdown' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${filename}.md`
+    a.click()
+    URL.revokeObjectURL(url)
+    showToast('Markdown 下载成功')
+  }
 }
 
 function saveOutline() {
@@ -523,7 +712,10 @@ async function generatePPT() {
     })
     const renderTree = await apiService.compileOutline(dsl.value.title, { ...dsl.value, slides: cleanSlides }, dsl.value.theme)
     const presId = new_id('pres')
-    window.__presentationBundle = { meta:{ id:presId, topic:dsl.value.title, createdAt:new Date().toISOString(), updatedAt:new Date().toISOString(), version:1 }, dsl:{ ...dsl.value, slides:cleanSlides }, renderTree }
+    const bundle = { meta:{ id:presId, topic:dsl.value.title, createdAt:new Date().toISOString(), updatedAt:new Date().toISOString(), version:1 }, dsl:{ ...dsl.value, slides:cleanSlides }, renderTree }
+    // Save to both window (immediate) and sessionStorage (survives back navigation)
+    window.__presentationBundle = bundle
+    try { sessionStorage.setItem('slideon_pres_' + presId, JSON.stringify(bundle)) } catch {}
     router.push({ path:'/editor', query:{ id:presId } })
   } catch(e) { showToast('生成PPT失败: '+e.message, 'error') }
   finally { isGenerating.value = false }
@@ -562,8 +754,21 @@ function removeLayer(i) { if(selectedSlide.value)selectedSlide.value.layers.spli
 function addTeamMember() { if(selectedSlide.value){ if(!selectedSlide.value.members)selectedSlide.value.members=[]; selectedSlide.value.members.push({name:'',role:'',highlights:[]}) } }
 function removeTeamMember(i) { if(selectedSlide.value)selectedSlide.value.members.splice(i,1) }
 
+function goBack() {
+  if (window.history.length > 1) {
+    router.back()
+  } else {
+    router.push('/dashboard')
+  }
+}
 function handleKeydown(e) { if((e.ctrlKey||e.metaKey)&&e.key==='s'){ e.preventDefault(); saveOutline() } }
-onMounted(() => { window.addEventListener('keydown', handleKeydown) })
+function handleDocumentClick(e) {
+  if (!e.target.closest('.download-dropdown')) showDownloadMenu.value = false
+}
+onMounted(() => {
+  window.addEventListener('keydown', handleKeydown)
+  document.addEventListener('click', handleDocumentClick)
+})
 </script>
 
 <style scoped>
@@ -576,6 +781,10 @@ onMounted(() => { window.addEventListener('keydown', handleKeydown) })
 .title-input:hover, .title-input:focus { background:#f3f4f6; }
 .slide-count-badge { font-size:12px; color:#6b7280; background:#f3f4f6; padding:4px 10px; border-radius:999px; font-weight:500; }
 .header-right { display:flex; align-items:center; gap:8px; }
+.download-dropdown { position:relative; }
+.download-menu { position:absolute; top:100%; right:0; margin-top:4px; background:white; border:1px solid #e5e7eb; border-radius:8px; box-shadow:0 10px 25px rgba(0,0,0,.12); overflow:hidden; z-index:100; min-width:160px; }
+.download-menu button { display:flex; align-items:center; gap:8px; width:100%; padding:10px 16px; border:none; background:transparent; font-size:13px; color:#374151; cursor:pointer; white-space:nowrap; }
+.download-menu button:hover { background:#f3f4f6; color:#1f2937; }
 .editor-body { flex:1; display:flex; overflow:hidden; }
 .outline-sidebar { width:280px; background:#f9fafb; border-right:1px solid #e5e7eb; display:flex; flex-direction:column; flex-shrink:0; }
 .sidebar-header { display:flex; align-items:center; justify-content:space-between; padding:16px; border-bottom:1px solid #e5e7eb; }

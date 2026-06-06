@@ -18,16 +18,6 @@
         </nav>
       </div>
       <div class="header-right">
-        <div class="search-box">
-          <IconBase name="search" :size="14" class="search-icon" />
-          <input 
-            type="text" 
-            class="search-input" 
-            placeholder="搜索..."
-            v-model="searchQuery"
-            @keypress.enter="handleSearch"
-          >
-        </div>
         <button class="btn btn-primary" @click="$emit('create-outline')">
           <IconBase name="plus" :size="14" />
           新建大纲
@@ -46,7 +36,6 @@ import { useRoute } from 'vue-router'
 import IconBase from '../icons/IconBase.vue'
 
 const route = useRoute()
-const searchQuery = ref('')
 const scrollY = ref(0)
 
 const navItems = [
@@ -69,13 +58,6 @@ const headerStyle = computed(() => ({
 
 const handleScroll = () => {
   scrollY.value = window.scrollY
-}
-
-const handleSearch = () => {
-  if (searchQuery.value.trim()) {
-    // 处理搜索逻辑
-    console.log('搜索:', searchQuery.value)
-  }
 }
 
 onMounted(() => {
@@ -166,36 +148,6 @@ defineEmits(['create-outline'])
   gap: var(--space-4);
 }
 
-.search-box {
-  position: relative;
-  width: 240px;
-}
-
-.search-icon {
-  position: absolute;
-  left: var(--space-3);
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--gray-400);
-}
-
-.search-input {
-  width: 100%;
-  height: 36px;
-  padding: 0 var(--space-4) 0 var(--space-10);
-  font-size: 13px;
-  border: 1px solid var(--gray-200);
-  border-radius: var(--radius-full);
-  background: var(--gray-50);
-  transition: all 0.2s ease;
-}
-
-.search-input:focus {
-  background: white;
-  border-color: var(--primary-300);
-  box-shadow: 0 0 0 3px var(--primary-100);
-}
-
 .user-avatar {
   width: 36px;
   height: 36px;
@@ -219,10 +171,6 @@ defineEmits(['create-outline'])
 @media (max-width: 768px) {
   .nav {
     display: none;
-  }
-  
-  .search-box {
-    width: 160px;
   }
 }
 </style>

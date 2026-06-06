@@ -183,15 +183,23 @@ class AiPipeline:
                     "严格禁止输出任何布局字段：x/y/w/h/fontSize/templateId/坐标/尺寸。\n"
                     "只输出结构化语义数据（如 items/events/phases/steps/columns/layers 等）。\n\n"
                     "## 内容丰富度要求（重要）：\n"
+                    "当《提供了》参考资料(RAG)时（rag_block 非空）：\n"
                     "- 每页 text slide 的 bullets 至少 4-6 条，每条用完整的句子表达，包含具体信息\n"
                     "- 每页 text slide 的 paragraphs 至少 1-2 段，每段 2-3 句充实内容\n"
-                    "- 如果提供了参考资料(RAG)，必须从中提取具体数据、案例、趋势、事实融入内容\n"
+                    "- 必须从参考资料中提取具体数据、案例、趋势、事实融入内容\n"
                     "- KPI 页至少包含 3-4 个指标，附带具体数值\n"
                     "- Timeline 页至少包含 4-6 个事件，每个事件有详细说明\n"
                     "- Roadmap 页每个 phase 至少包含 2-4 个 deliverables\n"
-                    "- 避免低信息量内容如单独一个\"概述\"、\"简介\"等空洞短语\n"
-                    "- 优先使用参考资料中的具体数据、百分比、时间节点，而非泛泛而谈\n"
-                    "- 每个 section 应包含足够的 slides 来充分展开主题",
+                    "- 每个 section 应包含足够的 slides 来充分展开主题\n\n"
+                    "当《没有提供》参考资料（rag_block 为空）时：\n"
+                    "- 内容保持简洁精炼，每页 text slide 的 bullets 只需 2-3 条\n"
+                    "- 每页 text slide 的 paragraphs 只需 0-1 段简短内容\n"
+                    "- KPI 页只需 2 个指标，Timeline 只需 2-3 个事件\n"
+                    "- Roadmap 每个 phase 只需 1-2 个 deliverables\n"
+                    "- 避免冗长，只保留最核心的信息点\n"
+                    "- 总页数可适当减少至 8-10 页\n\n"
+                    "通用规则（始终遵守）：\n"
+                    "- 避免低信息量内容如单独一个\"概述\"、\"简介\"等空洞短语",
                 ),
                 ("human", "topic: {topic}\nanalysis: {analysis_json}\nplan: {plan_json}\ntheme: {theme_name}\n{rag_block}"),
             ]

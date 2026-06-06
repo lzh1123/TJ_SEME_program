@@ -370,6 +370,16 @@ export const file = {
   }
 }
 
+export const home = {
+  render() {
+    return [
+      createPath('M3 12L12 3L21 12', defaultStroke),
+      createPath('M5 10V20H19V10', defaultStroke),
+      createPath('M9 20V13H15V20', defaultStroke)
+    ]
+  }
+}
+
 export const help = {
   render() {
     return [

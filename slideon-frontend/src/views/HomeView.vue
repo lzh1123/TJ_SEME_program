@@ -6,7 +6,8 @@
     <section class="hero">
       <div class="container">
         <div class="hero-content">
-          <h1 class="hero-title">智能PPT生成，让创作更高效</h1>
+          <h1 class="hero-title">智能PPT大纲生成与内容补全</h1>
+          <h3 class="hero-title">让创作更高效</h3>
           <p class="hero-subtitle">输入主题，AI自动生成专业大纲和内容</p>
           <button class="btn btn-primary btn-xl" @click="openModal">
             <IconBase name="magic" :size="24" />
@@ -71,19 +72,15 @@
         </div>
       </div>
     </footer>
-
-    <!-- AI大纲生成对话框 -->
-    <OutlineModal v-model="showModal" />
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
 import AppHeader from '../components/common/AppHeader.vue'
-import OutlineModal from '../components/common/OutlineModal.vue'
 import IconBase from '../components/icons/IconBase.vue'
+import { useFloatingBall } from '../composables/useFloatingBall.js'
 
-const showModal = ref(false)
+const { showModal } = useFloatingBall()
 
 const features = [
   {
@@ -113,7 +110,7 @@ const features = [
 ]
 
 const openModal = () => {
-  showModal.value = true
+  showModal()
 }
 </script>
 

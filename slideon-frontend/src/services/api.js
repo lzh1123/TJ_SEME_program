@@ -7,8 +7,16 @@ class ApiService {
   }
 
   async request(url, options = {}) {
-    const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), this.timeout)
+    const timeoutController = new AbortController()
+    const timeoutId = setTimeout(() => timeoutController.abort(), this.timeout)
+    const externalSignal = options.signal
+
+    // Merge external signal with timeout signal
+    const signal = externalSignal
+      ? this._combinedSignal(externalSignal, timeoutController.signal)
+      : timeoutController.signal
+
+    delete options.signal
 
     try {
       const response = await fetch(`${this.baseURL}${url}`, {
@@ -17,7 +25,7 @@ class ApiService {
           ...API_CONFIG.headers,
           ...options.headers
         },
-        signal: controller.signal
+        signal
       })
 
       clearTimeout(timeoutId)
@@ -31,10 +39,20 @@ class ApiService {
     } catch (error) {
       clearTimeout(timeoutId)
       if (error.name === 'AbortError') {
-        throw new Error('Request timeout')
+        // Re-throw AbortError so callers can distinguish cancel from timeout
+        throw error
       }
       throw error
     }
+  }
+
+  _combinedSignal(signalA, signalB) {
+    if (signalA.aborted || signalB.aborted) return AbortSignal.abort()
+    const controller = new AbortController()
+    const onAbort = () => controller.abort()
+    signalA.addEventListener('abort', onAbort, { once: true })
+    signalB.addEventListener('abort', onAbort, { once: true })
+    return controller.signal
   }
 
   async get(url) {
@@ -144,12 +162,12 @@ class ApiService {
     return blob
   }
 
-  // 生成大纲
-  async generateOutline(topic, theme = null, useRag = true) {
-    const response = await this.post(API_ENDPOINTS.dsl, {
-      topic,
-      theme,
-      use_rag: useRag
+  // 生成大纲 (signal 可选，用于取消请求)
+  async generateOutline(topic, theme = null, useRag = true, signal = null) {
+    const response = await this.request(API_ENDPOINTS.dsl, {
+      method: 'POST',
+      body: JSON.stringify({ topic, theme, use_rag: useRag }),
+      signal
     })
     return response.json()
   }

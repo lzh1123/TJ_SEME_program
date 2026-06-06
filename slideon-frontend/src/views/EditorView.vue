@@ -3,8 +3,11 @@
     <!-- 顶部工具栏 -->
     <header class="editor-header">
       <div class="header-left">
-        <router-link to="/" class="btn btn-ghost btn-icon">
+        <button class="btn btn-ghost btn-icon" @click="goBack" title="返回上一页">
           <IconBase name="arrowLeft" :size="18" />
+        </button>
+        <router-link to="/" class="btn btn-ghost btn-icon" title="返回主页">
+          <IconBase name="home" :size="18" />
         </router-link>
         <div class="project-info">
           <input 
@@ -366,11 +369,12 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import IconBase from '../components/icons/IconBase.vue'
 import { apiService } from '../services/api.js'
 
 const route = useRoute()
+const router = useRouter()
 
 // 项目信息
 const projectTitle = ref('加载中...')
@@ -551,13 +555,20 @@ const generateFromRenderTree = (tree) => {
 // 初始化数据
 const initData = async () => {
   const id = route.query.id
-  
-  // 先检查window.__presentationBundle是否存在
-  if (window.__presentationBundle) {
-    console.log('从window.__presentationBundle加载数据:', window.__presentationBundle)
-    const bundle = window.__presentationBundle
+
+  // Check window first, then sessionStorage as fallback (survives back navigation)
+  let bundle = window.__presentationBundle
+  if (!bundle && id) {
+    try {
+      const raw = sessionStorage.getItem('slideon_pres_' + id)
+      if (raw) bundle = JSON.parse(raw)
+    } catch {}
+  }
+
+  if (bundle) {
+    console.log('加载演示文稿数据:', bundle)
     presentationId.value = id || bundle.meta?.id
-    
+
     if (bundle.renderTree) {
       renderTree.value = bundle.renderTree
       const { outlineItems: newOutline, slides: newSlides } = generateFromRenderTree(bundle.renderTree)
@@ -570,12 +581,12 @@ const initData = async () => {
       console.error('只有DSL没有renderTree，需要调用API生成')
       useDefaultData()
     }
-    
-    // 清除window上的数据
+
+    // Clear one-shot window reference but keep in sessionStorage
     delete window.__presentationBundle
     return
   }
-  
+
   if (id) {
     presentationId.value = id
     try {
@@ -655,6 +666,13 @@ const selectPage = (pageNumber) => {
   currentPage.value = pageNumber
 }
 
+const goBack = () => {
+  if (window.history.length > 1) {
+    router.back()
+  } else {
+    router.push('/dashboard')
+  }
+}
 const saveTitle = () => {}
 const saveProject = () => {}
 

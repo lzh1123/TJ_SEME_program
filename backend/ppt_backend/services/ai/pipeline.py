@@ -88,11 +88,11 @@ class AiPipeline:
             plan.title = analysis.topic
         return plan
 
-    def generate_dsl(self, topic: str, theme: Optional[str] = None, rag_context: str = "") -> PresentationDSL:
-        dsl, _ = self.generate_dsl_with_debug(topic=topic, theme=theme, rag_context=rag_context)
+    def generate_dsl(self, topic: str, theme: Optional[str] = None, rag_context: str = "", rag_images: list = None) -> PresentationDSL:
+        dsl, _ = self.generate_dsl_with_debug(topic=topic, theme=theme, rag_context=rag_context, rag_images=rag_images)
         return dsl
 
-    def generate_dsl_with_debug(self, topic: str, theme: Optional[str] = None, rag_context: str = ""):
+    def generate_dsl_with_debug(self, topic: str, theme: Optional[str] = None, rag_context: str = "", rag_images: list = None):
         if not topic:
             raise ValueError("topic required")
 
@@ -189,6 +189,24 @@ class AiPipeline:
             if rag_context:
                 rag_block = f"\n## 参考资料（请优先使用以下资料中的信息和数据）\n{rag_context}"
 
+            image_hint = ""
+            if rag_images:
+                image_descriptions = []
+                for i, img in enumerate(rag_images[:10]):
+                    desc = img.get("alt") or img.get("title") or ""
+                    url = img.get("url", "")
+                    if desc and url:
+                        image_descriptions.append(f"  [{i+1}] {desc}")
+                if image_descriptions:
+                    image_hint = (
+                        "\n## 可用图片资源（来自网络搜索）\n"
+                        "以下图片可供使用。对于需要视觉辅助的幻灯片（如封面、分隔页、内容丰富的页），"
+                        "请在 slide 对象中设置 image_query 字段，值为匹配的图片描述关键词。"
+                        "示例：\"image_query\": \"城市夜景\"。\n"
+                        "适合使用图片的 slide intent：cover, divider, text（内容丰富时）, quote\n"
+                        + "\n".join(image_descriptions) + "\n"
+                    )
+
             raw = invoke_llm_text(
                 self._llm,
                 prompt,
@@ -197,7 +215,7 @@ class AiPipeline:
                     "analysis_json": analysis.model_dump_json(by_alias=True),
                     "plan_json": plan.model_dump_json(),
                     "theme_name": theme_name,
-                    "rag_block": rag_block,
+                    "rag_block": rag_block + image_hint,
                 },
             )
         except Exception as e:
@@ -372,6 +390,7 @@ class AiPipeline:
         section = s.get("section") or wrapper.get("section") or ""
         title = s.get("title") or wrapper.get("title") or topic
         notes_raw = s.get("notes") if s.get("notes") is not None else wrapper.get("notes")
+        image_query = s.get("image_query") if s.get("image_query") is not None else wrapper.get("image_query")
 
         base = {
             "id": as_str(slide_id) or new_id("slide"),
@@ -379,6 +398,7 @@ class AiPipeline:
             "section": as_str(section),
             "title": as_str(title) or topic,
             "notes": as_str_list(notes_raw),
+            "image_query": image_query if isinstance(image_query, str) and image_query.strip() else None,
         }
 
         if intent == "cover":

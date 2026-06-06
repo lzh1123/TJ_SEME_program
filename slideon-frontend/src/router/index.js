@@ -21,9 +21,9 @@ const router = createRouter({
       component: EditorView
     },
     {
-      path: '/templates',
-      name: 'templates',
-      component: () => import('../views/TemplatesView.vue')
+      path: '/outline-editor',
+      name: 'outline-editor',
+      component: () => import('../views/OutlineEditorView.vue')
     },
     {
       path: '/dashboard',

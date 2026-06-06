@@ -114,6 +114,16 @@ class CoverComposer:
                     z=10,
                 )
             )
+        if slide.image_query:
+            comps.append(
+                ComponentBlueprint(
+                    component_id=f"{slide.id}__image",
+                    type="Image",
+                    props={"query": slide.image_query, "alt": slide.title, "fit": "cover"},
+                    slot="visual",
+                    z=5,
+                )
+            )
         return SlidePlan(
             slide_id=slide.id,
             layout_id="cover",
@@ -175,13 +185,23 @@ class TextComposer:
                 component_id=f"{slide.id}__text",
                 type="Text",
                 props={"text": "\n".join([p for p in body_parts if p is not None])},
-                slot="body",
+                slot="text" if slide.image_query else "body",
                 z=10,
             ),
         ]
+        if slide.image_query:
+            comps.append(
+                ComponentBlueprint(
+                    component_id=f"{slide.id}__image",
+                    type="Image",
+                    props={"query": slide.image_query, "alt": slide.title, "fit": "contain"},
+                    slot="image",
+                    z=5,
+                )
+            )
         return SlidePlan(
             slide_id=slide.id,
-            layout_id="title_body",
+            layout_id="text_image_split" if slide.image_query else "title_body",
             title=slide.title,
             section=slide.section,
             notes=slide.notes,
@@ -498,9 +518,19 @@ class DividerComposer:
                 z=10,
             )
         ]
+        if slide.image_query:
+            comps.append(
+                ComponentBlueprint(
+                    component_id=f"{slide.id}__bg_image",
+                    type="Image",
+                    props={"query": slide.image_query, "alt": slide.title, "fit": "cover"},
+                    slot="body",
+                    z=1,
+                )
+            )
         return SlidePlan(
             slide_id=slide.id,
-            layout_id="divider",
+            layout_id="gradient_overlay",
             title=slide.title,
             section=slide.section,
             notes=slide.notes,

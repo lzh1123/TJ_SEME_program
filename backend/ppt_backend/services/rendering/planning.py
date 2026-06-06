@@ -33,6 +33,16 @@ LayoutId = Literal[
     "process_flow",
     "chart",
     "divider",
+    "magazine_hero",
+    "big_number_grid",
+    "asymmetric_split",
+    "card_masonry",
+    "step_numbered",
+    "quote_centered",
+    "bento_grid",
+    "gradient_overlay",
+    "image_hero",
+    "text_image_split",
 ]
 
 

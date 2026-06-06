@@ -76,6 +76,7 @@ class RenderSlide(BaseModel):
     width: int = 1280
     height: int = 720
     background: Optional[str] = None
+    background_image: Optional[str] = Field(default=None, alias="backgroundImage")
     components: List[ComponentSpec] = Field(default_factory=list)
     notes: List[str] = Field(default_factory=list)
 

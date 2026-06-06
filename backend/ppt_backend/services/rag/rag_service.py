@@ -66,9 +66,6 @@ class RagService:
             deep_fetch=deep_fetch,
         )
 
-    def search_images(self, query: str, max_results: int = 5) -> List[Dict[str, Any]]:
-        return self._retriever.search_images(query, max_results=max_results)
-
     async def enhance_topic(self, topic: str, llm=None) -> Dict[str, Any]:
         graph = self.get_graph(llm=llm)
         result = await graph.ainvoke({"topic": topic})
@@ -117,15 +114,6 @@ class RagService:
     ) -> str:
         query = f"{topic} {slide_title} {slide_intent}"
         return self._retriever.retrieve_context(query, top_k=3)
-
-    def find_images_for_slide(
-        self,
-        slide_title: str,
-        topic: str,
-        max_results: int = 3,
-    ) -> List[Dict[str, Any]]:
-        query = f"{topic} {slide_title}"
-        return self._retriever.search_images(query, max_results=max_results)
 
     def ingest_document(
         self,

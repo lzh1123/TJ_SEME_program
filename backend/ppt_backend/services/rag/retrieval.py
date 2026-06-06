@@ -91,13 +91,6 @@ class HybridRetriever:
             parts.append(f"[来源 {i + 1} - {source}]\n{head}")
         return "\n\n---\n\n".join(parts)
 
-    def search_images(
-        self,
-        query: str,
-        max_results: int = 5,
-    ) -> List[Dict[str, Any]]:
-        return self._web.search_images(query, max_results=max_results)
-
     def _deep_fetch(
         self,
         snippets: List[Dict[str, Any]],

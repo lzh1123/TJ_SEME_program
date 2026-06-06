@@ -98,7 +98,6 @@ class BaseSlideDSL(BaseModel):
     section: str = ""
     title: str
     notes: List[str] = Field(default_factory=list)
-    image_query: Optional[str] = None
 
 
 class CoverSlideDSL(BaseSlideDSL):

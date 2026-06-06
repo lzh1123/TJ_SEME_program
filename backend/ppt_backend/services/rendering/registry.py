@@ -11,16 +11,6 @@ from .layout import (
     TimelineLayout,
     TitleBodyLayout,
     TwoColumnLayout,
-    MagazineHeroLayout,
-    BigNumberGridLayout,
-    AsymmetricSplitLayout,
-    CardMasonryLayout,
-    StepNumberedLayout,
-    QuoteCenteredLayout,
-    BentoGridLayout,
-    GradientOverlayLayout,
-    ImageHeroLayout,
-    TextImageSplitLayout,
 )
 from .planning import (
     AgendaComposer,
@@ -77,17 +67,6 @@ def build_layout_registry():
         ProcessFlowLayout(),
         ChartLayout(),
         DividerLayout(),
-        MagazineHeroLayout(),
-        BigNumberGridLayout(),
-        AsymmetricSplitLayout(),
-        CardMasonryLayout(),
-        StepNumberedLayout(),
-        QuoteCenteredLayout(),
-        BentoGridLayout(),
-        GradientOverlayLayout(),
-        ImageHeroLayout(),
-        TextImageSplitLayout(),
     ]:
         reg.register(layout.layout_id, layout)
     return reg
-

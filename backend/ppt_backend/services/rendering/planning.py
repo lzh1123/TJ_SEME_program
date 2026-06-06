@@ -33,16 +33,6 @@ LayoutId = Literal[
     "process_flow",
     "chart",
     "divider",
-    "magazine_hero",
-    "big_number_grid",
-    "asymmetric_split",
-    "card_masonry",
-    "step_numbered",
-    "quote_centered",
-    "bento_grid",
-    "gradient_overlay",
-    "image_hero",
-    "text_image_split",
 ]
 
 
@@ -114,16 +104,6 @@ class CoverComposer:
                     z=10,
                 )
             )
-        if slide.image_query:
-            comps.append(
-                ComponentBlueprint(
-                    component_id=f"{slide.id}__image",
-                    type="Image",
-                    props={"query": slide.image_query, "alt": slide.title, "fit": "cover"},
-                    slot="visual",
-                    z=5,
-                )
-            )
         return SlidePlan(
             slide_id=slide.id,
             layout_id="cover",
@@ -185,23 +165,13 @@ class TextComposer:
                 component_id=f"{slide.id}__text",
                 type="Text",
                 props={"text": "\n".join([p for p in body_parts if p is not None])},
-                slot="text" if slide.image_query else "body",
+                slot="body",
                 z=10,
             ),
         ]
-        if slide.image_query:
-            comps.append(
-                ComponentBlueprint(
-                    component_id=f"{slide.id}__image",
-                    type="Image",
-                    props={"query": slide.image_query, "alt": slide.title, "fit": "contain"},
-                    slot="image",
-                    z=5,
-                )
-            )
         return SlidePlan(
             slide_id=slide.id,
-            layout_id="text_image_split" if slide.image_query else "title_body",
+            layout_id="title_body",
             title=slide.title,
             section=slide.section,
             notes=slide.notes,
@@ -518,19 +488,9 @@ class DividerComposer:
                 z=10,
             )
         ]
-        if slide.image_query:
-            comps.append(
-                ComponentBlueprint(
-                    component_id=f"{slide.id}__bg_image",
-                    type="Image",
-                    props={"query": slide.image_query, "alt": slide.title, "fit": "cover"},
-                    slot="body",
-                    z=1,
-                )
-            )
         return SlidePlan(
             slide_id=slide.id,
-            layout_id="gradient_overlay",
+            layout_id="divider",
             title=slide.title,
             section=slide.section,
             notes=slide.notes,

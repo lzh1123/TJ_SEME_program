@@ -87,13 +87,6 @@ class RagSearchRequest(BaseModel):
     deep_fetch: bool = True
 
 
-class RagImageSearchRequest(BaseModel):
-    model_config = {"extra": "forbid"}
-
-    query: str
-    max_results: int = 5
-
-
 @router.get("/health")
 def health():
     return {"ok": True}
@@ -237,17 +230,6 @@ def rag_search(payload: RagSearchRequest, svc: PresentationService = Depends(get
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/rag/images/search")
-def rag_image_search(payload: RagImageSearchRequest, svc: PresentationService = Depends(get_service)):
-    rag = getattr(svc, "_rag", None)
-    if not rag:
-        raise HTTPException(status_code=503, detail="RAG service not available")
-    try:
-        return {"images": rag.search_images(query=payload.query, max_results=payload.max_results)}
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-
 @router.post("/rag/documents")
 def rag_upload_document(
     file: UploadFile = File(...),
@@ -308,8 +290,7 @@ def rag_enhance(payload: RagSearchRequest, svc: PresentationService = Depends(ge
             enable_local=payload.enable_local,
             deep_fetch=payload.deep_fetch,
         )
-        images = rag.search_images(payload.query, max_results=5)
-        return {"context": context, "images": images}
+        return {"context": context}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 

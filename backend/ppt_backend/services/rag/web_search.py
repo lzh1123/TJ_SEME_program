@@ -34,31 +34,6 @@ class WebSearchService:
             })
         return results
 
-    def search_images(self, query: str, max_results: int = 5) -> List[Dict[str, Any]]:
-        try:
-            from ddgs import DDGS
-        except ImportError:
-            try:
-                from duckduckgo_search import DDGS
-            except ImportError:
-                return []
-
-        try:
-            with DDGS() as ddgs:
-                raw = list(ddgs.images(query, region=self._region, max_results=max_results))
-        except Exception:
-            return []
-
-        results = []
-        for r in raw:
-            results.append({
-                "title": r.get("title", ""),
-                "url": r.get("image", ""),
-                "thumbnail": r.get("thumbnail", ""),
-                "source_url": r.get("url", ""),
-            })
-        return results
-
     def _fallback_search(self, query: str, limit: int) -> List[Dict[str, Any]]:
         return [
             {

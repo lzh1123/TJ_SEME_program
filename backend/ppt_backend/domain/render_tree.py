@@ -14,7 +14,6 @@ ComponentType = Literal[
     "BulletList",
     "Quote",
     "Divider",
-    "Image",
     "Timeline",
     "KpiCards",
     "ComparisonTable",
@@ -70,19 +69,18 @@ class ComponentSpec(BaseModel):
 
 
 class RenderSlide(BaseModel):
-    model_config = {"extra": "forbid"}
+    model_config = {"extra": "forbid", "populate_by_name": True}
 
     id: str
     width: int = 1280
     height: int = 720
     background: Optional[str] = None
-    background_image: Optional[str] = Field(default=None, alias="backgroundImage")
     components: List[ComponentSpec] = Field(default_factory=list)
     notes: List[str] = Field(default_factory=list)
 
 
 class RenderTree(BaseModel):
-    model_config = {"extra": "forbid"}
+    model_config = {"extra": "forbid", "populate_by_name": True}
 
     presentation_id: str = Field(alias="presentationId")
     title: str

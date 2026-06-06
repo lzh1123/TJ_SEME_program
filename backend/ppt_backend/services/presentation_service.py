@@ -34,15 +34,13 @@ class PresentationService:
     def create(self, topic: str, theme: Optional[str] = None, use_rag: bool = True) -> PresentationBundle:
         presentation_id = new_id("pres")
         rag_context = ""
-        rag_images: list = []
         if use_rag and self._rag:
             rag_context = self._rag.retrieve_context(topic, top_k=5)
-            rag_images = self._rag.search_images(topic, max_results=10)
         dsl, ai_debug = self._ai.generate_dsl_with_debug(
-            topic=topic, theme=theme, rag_context=rag_context, rag_images=rag_images
+            topic=topic, theme=theme, rag_context=rag_context
         )
         theme_tokens = get_theme_tokens(dsl.theme)
-        tree = self._compiler.compile(presentation_id, dsl, theme_tokens, rag_images=rag_images if rag_images else None)
+        tree = self._compiler.compile(presentation_id, dsl, theme_tokens)
         tree = apply_theme_to_tree(tree, theme_tokens)
         meta = PresentationMeta(id=presentation_id, topic=topic)
         meta.extra = {"ai": ai_debug}
@@ -52,11 +50,9 @@ class PresentationService:
 
     def generate_outline(self, topic: str, theme: Optional[str] = None, use_rag: bool = True) -> dict:
         rag_context = ""
-        rag_images: list = []
         if use_rag and self._rag:
             rag_context = self._rag.retrieve_context(topic, top_k=5)
-            rag_images = self._rag.search_images(topic, max_results=10)
-        dsl = self._ai.generate_dsl(topic=topic, theme=theme, rag_context=rag_context, rag_images=rag_images)
+        dsl = self._ai.generate_dsl(topic=topic, theme=theme, rag_context=rag_context)
         data = dsl.model_dump(by_alias=True)
         slides = data.get("slides") or []
         if isinstance(slides, list):
@@ -70,17 +66,7 @@ class PresentationService:
         presentation_id = new_id("pres")
         hydrated = self._hydrate_outline(outline, topic=topic, theme=theme)
         theme_tokens = get_theme_tokens(hydrated.theme)
-
-        # Search images for slides with image_query
-        rag_images: list = []
-        if self._rag:
-            for slide in hydrated.slides:
-                iq = getattr(slide, "image_query", None)
-                if iq:
-                    imgs = self._rag.search_images(iq, max_results=3)
-                    rag_images.extend(imgs)
-
-        tree = self._compiler.compile(presentation_id, hydrated, theme_tokens, rag_images=rag_images if rag_images else None)
+        tree = self._compiler.compile(presentation_id, hydrated, theme_tokens)
         tree = apply_theme_to_tree(tree, theme_tokens)
         meta = PresentationMeta(id=presentation_id, topic=topic)
         bundle = PresentationBundle(meta=meta, dsl=hydrated, renderTree=tree)
@@ -260,13 +246,10 @@ class PresentationService:
         bundle = self._repo.load(presentation_id)
         base_topic = topic or bundle.meta.topic
         rag_context = ""
-        rag_images: list = []
         if use_rag and self._rag:
             rag_context = self._rag.retrieve_context(base_topic, top_k=5)
-            rag_images = self._rag.search_images(base_topic, max_results=10)
         new_dsl, ai_debug = self._ai.generate_dsl_with_debug(
-            topic=base_topic, theme=bundle.dsl.theme,
-            rag_context=rag_context, rag_images=rag_images
+            topic=base_topic, theme=bundle.dsl.theme, rag_context=rag_context
         )
         bundle.meta.extra = {"ai": ai_debug}
         if section:
@@ -277,7 +260,7 @@ class PresentationService:
         else:
             bundle.dsl = new_dsl
         tokens = get_theme_tokens(bundle.dsl.theme)
-        bundle.render_tree = self._compiler.compile(presentation_id, bundle.dsl, tokens, rag_images=rag_images if rag_images else None)
+        bundle.render_tree = self._compiler.compile(presentation_id, bundle.dsl, tokens)
         apply_theme_to_tree(bundle.render_tree, tokens)
         bundle.meta.topic = base_topic
         bundle.meta.updated_at = datetime.now(timezone.utc)

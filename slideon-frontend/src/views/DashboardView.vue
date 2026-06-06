@@ -8,16 +8,37 @@
           <h1>我的大纲</h1>
           <p class="page-subtitle">管理您的大纲项目，点击即可编辑</p>
         </div>
-        <button class="btn btn-primary" @click="showModal = true">
-          <IconBase name="plus" :size="14" />
-          新建大纲
-        </button>
+        <div class="header-actions">
+          <div class="search-box">
+            <IconBase name="search" :size="14" class="search-icon" />
+            <input
+              type="text"
+              class="search-input"
+              placeholder="搜索大纲..."
+              v-model="searchQuery"
+            />
+            <button v-if="searchQuery" class="search-clear" @click="searchQuery = ''">
+              <IconBase name="times" :size="12" />
+            </button>
+          </div>
+          <select class="time-filter" v-model="timeFilter">
+            <option value="all">全部时间</option>
+            <option value="today">今天</option>
+            <option value="7days">最近7天</option>
+            <option value="30days">最近30天</option>
+            <option value="older">更早</option>
+          </select>
+          <button class="btn btn-primary" @click="showModal = true">
+            <IconBase name="plus" :size="14" />
+            新建大纲
+          </button>
+        </div>
       </div>
 
       <!-- 大纲列表 -->
-      <div v-if="outlines.length > 0" class="outlines-grid">
+      <div v-if="filteredOutlines.length > 0" class="outlines-grid">
         <div
-          v-for="outline in outlines"
+          v-for="outline in filteredOutlines"
           :key="outline.id"
           class="outline-card"
           @click="openOutline(outline)"
@@ -31,7 +52,7 @@
             <div class="card-meta">
               <span class="card-time">
                 <IconBase name="clock" :size="12" />
-                {{ formatTime(outline.updatedAt) }}
+                创建 {{ formatFullTime(outline.createdAt) }}
               </span>
             </div>
           </div>
@@ -46,8 +67,18 @@
         </div>
       </div>
 
-      <!-- 空状态 -->
-      <div v-else class="empty-state">
+      <!-- 搜索无结果 -->
+      <div v-else-if="outlines.length > 0 && filteredOutlines.length === 0" class="empty-state">
+        <div class="empty-icon">
+          <IconBase name="search" :size="64" />
+        </div>
+        <h2>未找到匹配的大纲</h2>
+        <p>没有标题包含「{{ searchQuery }}」的大纲，试试其他关键词</p>
+        <button class="btn btn-secondary" @click="searchQuery = ''">清除搜索</button>
+      </div>
+
+      <!-- 完全空状态 -->
+      <div v-else-if="outlines.length === 0" class="empty-state">
         <div class="empty-icon">
           <IconBase name="file" :size="64" />
         </div>
@@ -91,8 +122,37 @@ const router = useRouter()
 const outlineStore = useOutlineStore()
 const showModal = ref(false)
 const deleteTarget = ref(null)
+const searchQuery = ref('')
+const timeFilter = ref('all')
 
 const outlines = computed(() => outlineStore.outlines)
+
+const filteredOutlines = computed(() => {
+  let result = outlines.value
+  const q = searchQuery.value.trim().toLowerCase()
+  if (q) result = result.filter(o => o.title.toLowerCase().includes(q))
+
+  const now = new Date()
+  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const msPerDay = 86400000
+
+  switch (timeFilter.value) {
+    case 'today':
+      result = result.filter(o => o.createdAt && new Date(o.createdAt) >= startOfDay)
+      break
+    case '7days':
+      result = result.filter(o => o.createdAt && new Date(o.createdAt) >= new Date(now.getTime() - 7 * msPerDay))
+      break
+    case '30days':
+      result = result.filter(o => o.createdAt && new Date(o.createdAt) >= new Date(now.getTime() - 30 * msPerDay))
+      break
+    case 'older':
+      result = result.filter(o => o.createdAt && new Date(o.createdAt) < new Date(now.getTime() - 30 * msPerDay))
+      break
+  }
+
+  return result
+})
 
 onMounted(() => {
   outlineStore.loadOutlines()
@@ -113,20 +173,16 @@ function doDelete() {
   }
 }
 
-function formatTime(isoString) {
+function formatFullTime(isoString) {
   if (!isoString) return ''
-  const date = new Date(isoString)
-  const now = new Date()
-  const diff = now - date
-  const mins = Math.floor(diff / 60000)
-  const hours = Math.floor(diff / 3600000)
-  const days = Math.floor(diff / 86400000)
-
-  if (mins < 1) return '刚刚'
-  if (mins < 60) return `${mins}分钟前`
-  if (hours < 24) return `${hours}小时前`
-  if (days < 7) return `${days}天前`
-  return date.toLocaleDateString('zh-CN')
+  const d = new Date(isoString)
+  const y = d.getFullYear()
+  const mo = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  const h = String(d.getHours()).padStart(2, '0')
+  const mi = String(d.getMinutes()).padStart(2, '0')
+  const s = String(d.getSeconds()).padStart(2, '0')
+  return `${y}-${mo}-${day} ${h}:${mi}:${s}`
 }
 </script>
 
@@ -148,6 +204,8 @@ function formatTime(isoString) {
   align-items: flex-start;
   justify-content: space-between;
   margin-bottom: var(--space-8);
+  flex-wrap: wrap;
+  gap: var(--space-4);
 }
 
 .page-header h1 {
@@ -161,6 +219,93 @@ function formatTime(isoString) {
   font-size: 14px;
   color: var(--gray-500);
   margin: 0;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.search-box {
+  position: relative;
+  width: 240px;
+}
+
+.search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--gray-400);
+  pointer-events: none;
+}
+
+.search-input {
+  width: 100%;
+  height: 40px;
+  padding: 0 36px 0 36px;
+  font-size: 13px;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  background: white;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.search-input:focus {
+  border-color: var(--primary-300);
+  box-shadow: 0 0 0 3px var(--primary-100);
+}
+
+.search-clear {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: var(--gray-200);
+  color: var(--gray-500);
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 10px;
+}
+
+.search-clear:hover {
+  background: var(--gray-300);
+  color: var(--gray-700);
+}
+
+.time-filter {
+  height: 40px;
+  padding: 0 32px 0 12px;
+  font-size: 13px;
+  color: var(--gray-700);
+  background: white;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  outline: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 8px center;
+  background-repeat: no-repeat;
+  background-size: 18px;
+  transition: border-color 0.2s ease;
+}
+
+.time-filter:hover {
+  border-color: var(--gray-300);
+}
+
+.time-filter:focus {
+  border-color: var(--primary-300);
+  box-shadow: 0 0 0 3px var(--primary-100);
 }
 
 /* 大纲卡片网格 */

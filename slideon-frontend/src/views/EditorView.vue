@@ -3,7 +3,7 @@
     <!-- 顶部工具栏 -->
     <header class="editor-header">
       <div class="header-left">
-        <router-link to="/" class="btn btn-ghost btn-icon">
+        <router-link to="/dashboard" class="btn btn-ghost btn-icon">
           <IconBase name="arrowLeft" :size="18" />
         </router-link>
         <div class="project-info">

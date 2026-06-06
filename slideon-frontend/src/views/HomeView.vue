@@ -72,19 +72,15 @@
         </div>
       </div>
     </footer>
-
-    <!-- AI大纲生成对话框 -->
-    <OutlineModal v-model="showModal" />
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
 import AppHeader from '../components/common/AppHeader.vue'
-import OutlineModal from '../components/common/OutlineModal.vue'
 import IconBase from '../components/icons/IconBase.vue'
+import { useFloatingBall } from '../composables/useFloatingBall.js'
 
-const showModal = ref(false)
+const { showModal } = useFloatingBall()
 
 const features = [
   {
@@ -114,7 +110,7 @@ const features = [
 ]
 
 const openModal = () => {
-  showModal.value = true
+  showModal()
 }
 </script>
 

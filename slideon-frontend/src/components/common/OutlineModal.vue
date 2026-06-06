@@ -1,11 +1,12 @@
 <template>
   <Teleport to="body">
-    <div class="modal" :class="{ active: modelValue }" @click.self="close">
-      <div class="modal-overlay" @click="close"></div>
+    <!-- 模态框 -->
+    <div v-if="modelValue" class="modal active" @click.self="minimize">
+      <div class="modal-overlay" @click="minimize"></div>
       <div class="modal-content">
         <div class="modal-header">
           <h2 class="modal-title">智能生成大纲</h2>
-          <button class="modal-close" @click="close">
+          <button class="modal-close" @click="minimize">
             <IconBase name="times" :size="20" />
           </button>
         </div>
@@ -23,6 +24,7 @@
 
 例如：为科技公司CEO准备的产品发布会PPT，介绍新一代AI芯片的性能优势和市场前景"
                 v-model="form.topic"
+                :disabled="isGenerating"
                 @input="updateCharCount"
               ></textarea>
               <div class="char-count" :class="{ error: charCount > 500 }">{{ charCount }}/500</div>
@@ -31,25 +33,6 @@
             <div class="form-step">
               <label class="form-label">
                 <span class="step-number">2</span>
-                选择主题风格
-              </label>
-              <div class="style-options">
-                <div
-                  v-for="style in styleOptions"
-                  :key="style.value"
-                  :class="['style-card', { active: form.style === style.value }]"
-                  @click="form.style = style.value"
-                >
-                  <div class="style-icon">{{ style.icon }}</div>
-                  <span class="style-name">{{ style.name }}</span>
-                  <div class="style-radio"></div>
-                </div>
-              </div>
-            </div>
-
-            <div class="form-step">
-              <label class="form-label">
-                <span class="step-number">3</span>
                 AI增强选项
               </label>
               <div class="rag-toggle-row">
@@ -60,6 +43,7 @@
                 <button
                   :class="['rag-toggle-switch', { active: useRag }]"
                   @click="useRag = !useRag"
+                  :disabled="isGenerating"
                   role="switch"
                   :aria-checked="useRag"
                 >
@@ -71,7 +55,7 @@
         </div>
 
         <div class="modal-footer">
-          <button class="btn btn-secondary" @click="close">取消</button>
+          <button class="btn btn-secondary" @click="handleCancel">取消</button>
           <button
             class="btn btn-primary"
             :disabled="isGenerating || !form.topic.trim()"
@@ -88,11 +72,11 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, watch } from 'vue'
 import IconBase from '../icons/IconBase.vue'
 import { apiService } from '../../services/api.js'
 import { useOutlineStore } from '../../stores/outlineStore.js'
+import { useFloatingBall } from '../../composables/useFloatingBall.js'
 
 const props = defineProps({
   modelValue: {
@@ -103,26 +87,27 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue'])
 
-const router = useRouter()
 const outlineStore = useOutlineStore()
+const { state: ballState, show: showBall, setSuccess, setError, consumeReopen } = useFloatingBall()
 
 const isGenerating = ref(false)
+let abortController = null
+
+// Watch for reopen request (user clicked ball during generation)
+watch(() => ballState.reopenRequested, (val) => {
+  if (val) {
+    consumeReopen()
+    emit('update:modelValue', true)
+  }
+})
 
 const form = ref({
   topic: '',
-  style: 'modern_blue'
+  style: 'paper_light'
 })
 
 const useRag = ref(true)
-
 const charCount = computed(() => form.value.topic.length)
-
-const styleOptions = [
-  { value: 'modern_blue', name: '现代蓝', icon: '💼' },
-  { value: 'paper_light', name: '纸张白', icon: '📄' },
-  { value: 'academic_gray', name: '学术灰', icon: '📖' },
-  { value: 'minimal_black', name: '简约黑', icon: '🎨' }
-]
 
 const close = () => {
   emit('update:modelValue', false)
@@ -135,6 +120,28 @@ const updateCharCount = () => {
   }
 }
 
+const minimize = () => {
+  if (isGenerating.value) {
+    // Show floating ball and close modal
+    showBall('generating')
+    emit('update:modelValue', false)
+  } else {
+    close()
+  }
+}
+
+const handleCancel = () => {
+  if (isGenerating.value) {
+    if (abortController) {
+      abortController.abort()
+      abortController = null
+    }
+    isGenerating.value = false
+  } else {
+    close()
+  }
+}
+
 const generateOutline = async () => {
   if (!form.value.topic.trim()) {
     alert('请输入主题')
@@ -144,23 +151,47 @@ const generateOutline = async () => {
   isGenerating.value = true
 
   try {
-    const result = await apiService.generateOutline(form.value.topic, form.value.style, useRag.value)
+    abortController = new AbortController()
+    const result = await apiService.generateOutline(
+      form.value.topic,
+      form.value.style,
+      useRag.value,
+      abortController.signal
+    )
 
     console.log('✅ 生成大纲成功:', result)
 
-    // Save DSL to localStorage via store
     const { id } = outlineStore.createOutline(result)
 
-    // Close modal and navigate to outline editor
-    close()
-    router.push({ path: '/outline-editor', query: { id } })
+    // Check if modal was closed (minimized to ball) during generation
+    if (!props.modelValue) {
+      // Ball is visible, update to success
+      setSuccess(id)
+    } else {
+      // Still in modal, close and navigate
+      close()
+      router.push({ path: '/outline-editor', query: { id } })
+    }
   } catch (error) {
+    if (error.name === 'AbortError') {
+      console.log('⚠️ 生成已取消')
+      return
+    }
     console.error('❌ 生成大纲失败:', error)
-    alert('生成大纲失败: ' + error.message)
+    if (!props.modelValue) {
+      setError()
+    } else {
+      alert('生成大纲失败: ' + error.message)
+    }
   } finally {
     isGenerating.value = false
+    abortController = null
   }
 }
+
+// Need router for navigation on success when modal is still open
+import { useRouter } from 'vue-router'
+const router = useRouter()
 </script>
 
 <style scoped>
@@ -287,58 +318,6 @@ const generateOutline = async () => {
   color: var(--error-500);
 }
 
-.style-options {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: var(--space-3);
-}
-
-.style-card {
-  padding: var(--space-4);
-  border: 2px solid var(--gray-200);
-  border-radius: var(--radius-lg);
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.style-card:hover {
-  border-color: var(--primary-300);
-}
-
-.style-card.active {
-  border-color: var(--primary-500);
-  background: var(--primary-50);
-}
-
-.style-icon {
-  font-size: 24px;
-  margin-bottom: var(--space-2);
-}
-
-.style-name {
-  display: block;
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--gray-700);
-  margin-bottom: var(--space-2);
-}
-
-.style-radio {
-  width: 16px;
-  height: 16px;
-  border: 2px solid var(--gray-300);
-  border-radius: var(--radius-full);
-  margin: 0 auto;
-  transition: all 0.2s ease;
-}
-
-.style-card.active .style-radio {
-  border-color: var(--primary-500);
-  background: var(--primary-500);
-  box-shadow: inset 0 0 0 3px white;
-}
-
 .rag-toggle-row {
   display: flex;
   align-items: center;
@@ -402,23 +381,13 @@ const generateOutline = async () => {
 }
 
 @keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @media (max-width: 640px) {
@@ -426,10 +395,6 @@ const generateOutline = async () => {
     width: 100%;
     max-height: 100vh;
     border-radius: 0;
-  }
-
-  .style-options {
-    grid-template-columns: repeat(2, 1fr);
   }
 }
 </style>

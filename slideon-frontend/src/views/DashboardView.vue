@@ -1,6 +1,6 @@
 <template>
   <div class="dashboard-page">
-    <AppHeader @create-outline="showModal = true" />
+    <AppHeader @create-outline="showModal()" />
 
     <div class="container">
       <div class="page-header">
@@ -28,7 +28,7 @@
             <option value="30days">最近30天</option>
             <option value="older">更早</option>
           </select>
-          <button class="btn btn-primary" @click="showModal = true">
+          <button class="btn btn-primary" @click="showModal()">
             <IconBase name="plus" :size="14" />
             新建大纲
           </button>
@@ -84,15 +84,12 @@
         </div>
         <h2>还没有大纲</h2>
         <p>点击上方按钮创建您的第一个大纲，AI将为您生成专业的PPT大纲结构</p>
-        <button class="btn btn-primary btn-lg" @click="showModal = true">
+        <button class="btn btn-primary btn-lg" @click="showModal()">
           <IconBase name="magic" :size="18" />
           开始创建
         </button>
       </div>
     </div>
-
-    <!-- 大纲生成对话框 -->
-    <OutlineModal v-model="showModal" />
 
     <!-- 删除确认 -->
     <Teleport to="body">
@@ -114,13 +111,13 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import AppHeader from '../components/common/AppHeader.vue'
-import OutlineModal from '../components/common/OutlineModal.vue'
 import IconBase from '../components/icons/IconBase.vue'
 import { useOutlineStore } from '../stores/outlineStore.js'
+import { useFloatingBall } from '../composables/useFloatingBall.js'
 
 const router = useRouter()
 const outlineStore = useOutlineStore()
-const showModal = ref(false)
+const { showModal } = useFloatingBall()
 const deleteTarget = ref(null)
 const searchQuery = ref('')
 const timeFilter = ref('all')

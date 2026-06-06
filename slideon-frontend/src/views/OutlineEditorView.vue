@@ -3,8 +3,11 @@
     <!-- 顶部工具栏 -->
     <header class="editor-header">
       <div class="header-left">
-        <router-link to="/dashboard" class="btn btn-ghost btn-icon" title="返回我的大纲">
+        <button class="btn btn-ghost btn-icon" @click="goBack" title="返回上一页">
           <IconBase name="arrowLeft" :size="18" />
+        </button>
+        <router-link to="/" class="btn btn-ghost btn-icon" title="返回主页">
+          <IconBase name="home" :size="18" />
         </router-link>
         <div class="header-title-group">
           <label class="header-label">大纲标题</label>
@@ -412,7 +415,7 @@ const route = useRoute()
 const router = useRouter()
 const outlineStore = useOutlineStore()
 
-const dsl = ref({ title: '未命名大纲', audience: '通用受众', tone: '清晰、教学', theme: 'modern_blue', slides: [] })
+const dsl = ref({ title: '未命名大纲', audience: '通用受众', tone: '清晰、教学', theme: 'paper_light', slides: [] })
 const selectedIndex = ref(0)
 const isSaving = ref(false)
 const isGenerating = ref(false)
@@ -700,7 +703,10 @@ async function generatePPT() {
     })
     const renderTree = await apiService.compileOutline(dsl.value.title, { ...dsl.value, slides: cleanSlides }, dsl.value.theme)
     const presId = new_id('pres')
-    window.__presentationBundle = { meta:{ id:presId, topic:dsl.value.title, createdAt:new Date().toISOString(), updatedAt:new Date().toISOString(), version:1 }, dsl:{ ...dsl.value, slides:cleanSlides }, renderTree }
+    const bundle = { meta:{ id:presId, topic:dsl.value.title, createdAt:new Date().toISOString(), updatedAt:new Date().toISOString(), version:1 }, dsl:{ ...dsl.value, slides:cleanSlides }, renderTree }
+    // Save to both window (immediate) and sessionStorage (survives back navigation)
+    window.__presentationBundle = bundle
+    try { sessionStorage.setItem('slideon_pres_' + presId, JSON.stringify(bundle)) } catch {}
     router.push({ path:'/editor', query:{ id:presId } })
   } catch(e) { showToast('生成PPT失败: '+e.message, 'error') }
   finally { isGenerating.value = false }
@@ -739,6 +745,13 @@ function removeLayer(i) { if(selectedSlide.value)selectedSlide.value.layers.spli
 function addTeamMember() { if(selectedSlide.value){ if(!selectedSlide.value.members)selectedSlide.value.members=[]; selectedSlide.value.members.push({name:'',role:'',highlights:[]}) } }
 function removeTeamMember(i) { if(selectedSlide.value)selectedSlide.value.members.splice(i,1) }
 
+function goBack() {
+  if (window.history.length > 1) {
+    router.back()
+  } else {
+    router.push('/dashboard')
+  }
+}
 function handleKeydown(e) { if((e.ctrlKey||e.metaKey)&&e.key==='s'){ e.preventDefault(); saveOutline() } }
 function handleDocumentClick(e) {
   if (!e.target.closest('.download-dropdown')) showDownloadMenu.value = false

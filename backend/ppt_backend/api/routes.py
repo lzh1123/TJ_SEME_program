@@ -3,13 +3,14 @@ from __future__ import annotations
 from pathlib import Path
 from typing import List, Optional
 
-from fastapi import APIRouter, Body, Depends, HTTPException, Request
+from fastapi import APIRouter, Body, Depends, HTTPException, Request, UploadFile, File
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
 from ..domain.presentation import PresentationBundle
 from ..domain.render_tree import ComponentPatch, RenderTree
 from ..services.presentation_service import PresentationService
+from ..services.rag.rag_service import RagService
 
 
 router = APIRouter()
@@ -19,11 +20,17 @@ def get_service(req: Request) -> PresentationService:
     return req.app.state.presentation_service
 
 
+def get_rag_service(req: Request):
+    svc = req.app.state.presentation_service
+    return getattr(svc, "_rag", None)
+
+
 class CreatePresentationRequest(BaseModel):
     model_config = {"extra": "forbid"}
 
     topic: str
     theme: Optional[str] = None
+    use_rag: bool = True
 
 
 class CreatePresentationResponse(BaseModel):
@@ -51,6 +58,7 @@ class RegenerateRequest(BaseModel):
 
     topic: Optional[str] = None
     section: Optional[str] = None
+    use_rag: bool = True
 
 
 class GenerateOutlineRequest(BaseModel):
@@ -58,6 +66,7 @@ class GenerateOutlineRequest(BaseModel):
 
     topic: str
     theme: Optional[str] = None
+    use_rag: bool = True
 
 
 class CompileOutlineRequest(BaseModel):
@@ -66,6 +75,16 @@ class CompileOutlineRequest(BaseModel):
     topic: str
     outline: dict
     theme: Optional[str] = None
+
+
+class RagSearchRequest(BaseModel):
+    model_config = {"extra": "forbid"}
+
+    query: str
+    top_k: int = 5
+    enable_web: bool = True
+    enable_local: bool = True
+    deep_fetch: bool = True
 
 
 @router.get("/health")
@@ -81,7 +100,7 @@ def list_themes(svc: PresentationService = Depends(get_service)):
 @router.post("/dsl")
 def generate_outline(payload: GenerateOutlineRequest, svc: PresentationService = Depends(get_service)):
     try:
-        return svc.generate_outline(topic=payload.topic, theme=payload.theme)
+        return svc.generate_outline(topic=payload.topic, theme=payload.theme, use_rag=payload.use_rag)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -98,7 +117,7 @@ def compile_outline(payload: CompileOutlineRequest, svc: PresentationService = D
 @router.post("/presentations", response_model=CreatePresentationResponse)
 def create_presentation(payload: CreatePresentationRequest, svc: PresentationService = Depends(get_service)):
     try:
-        bundle = svc.create(topic=payload.topic, theme=payload.theme)
+        bundle = svc.create(topic=payload.topic, theme=payload.theme, use_rag=payload.use_rag)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
     return CreatePresentationResponse(id=bundle.meta.id, bundle=bundle)
@@ -170,7 +189,7 @@ def switch_theme(presentation_id: str, payload: SwitchThemeRequest, svc: Present
 @router.post("/presentations/{presentation_id}/regenerate", response_model=PresentationBundle)
 def regenerate(presentation_id: str, payload: RegenerateRequest, svc: PresentationService = Depends(get_service)):
     try:
-        return svc.regenerate(presentation_id, topic=payload.topic, section=payload.section)
+        return svc.regenerate(presentation_id, topic=payload.topic, section=payload.section, use_rag=payload.use_rag)
     except FileNotFoundError:
         raise HTTPException(status_code=404, detail="not found")
     except Exception as e:
@@ -190,3 +209,141 @@ def export_pptx(presentation_id: str, svc: PresentationService = Depends(get_ser
         filename=Path(out_path).name,
         media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation",
     )
+
+
+# ── RAG endpoints ──────────────────────────────────────────────
+
+@router.post("/rag/search")
+def rag_search(payload: RagSearchRequest, svc: PresentationService = Depends(get_service)):
+    rag = getattr(svc, "_rag", None)
+    if not rag:
+        raise HTTPException(status_code=503, detail="RAG service not available")
+    try:
+        return rag.search(
+            query=payload.query,
+            top_k=payload.top_k,
+            enable_web=payload.enable_web,
+            enable_local=payload.enable_local,
+            deep_fetch=payload.deep_fetch,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/rag/documents")
+def rag_upload_document(
+    file: UploadFile = File(...),
+    svc: PresentationService = Depends(get_service),
+):
+    rag = getattr(svc, "_rag", None)
+    if not rag:
+        raise HTTPException(status_code=503, detail="RAG service not available")
+    try:
+        import tempfile
+        import os
+
+        suffix = Path(file.filename or "upload").suffix or ".txt"
+        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+            tmp.write(file.file.read())
+            tmp_path = tmp.name
+
+        count = rag.ingest_document(Path(tmp_path))
+        os.unlink(tmp_path)
+        return {"filename": file.filename, "chunks_inserted": count}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.delete("/rag/documents/{source}")
+def rag_remove_document(source: str, svc: PresentationService = Depends(get_service)):
+    rag = getattr(svc, "_rag", None)
+    if not rag:
+        raise HTTPException(status_code=503, detail="RAG service not available")
+    try:
+        deleted = rag.remove_document(source)
+        return {"source": source, "deleted": deleted}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.get("/rag/stats")
+def rag_stats(svc: PresentationService = Depends(get_service)):
+    rag = getattr(svc, "_rag", None)
+    if not rag:
+        raise HTTPException(status_code=503, detail="RAG service not available")
+    try:
+        return rag.get_kb_stats()
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/rag/enhance")
+def rag_enhance(payload: RagSearchRequest, svc: PresentationService = Depends(get_service)):
+    rag = getattr(svc, "_rag", None)
+    if not rag:
+        raise HTTPException(status_code=503, detail="RAG service not available")
+    try:
+        context = rag.retrieve_context(
+            query=payload.query,
+            top_k=payload.top_k,
+            enable_web=payload.enable_web,
+            enable_local=payload.enable_local,
+            deep_fetch=payload.deep_fetch,
+        )
+        return {"context": context}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/rag/collection/init")
+def rag_init_collection(svc: PresentationService = Depends(get_service)):
+    rag = getattr(svc, "_rag", None)
+    if not rag:
+        raise HTTPException(status_code=503, detail="RAG service not available")
+    try:
+        created = rag.ensure_collection()
+        stats = rag.get_kb_stats()
+        return {"collection_created": created, "stats": stats}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/rag/collection/reset")
+def rag_reset_collection(svc: PresentationService = Depends(get_service)):
+    rag = getattr(svc, "_rag", None)
+    if not rag:
+        raise HTTPException(status_code=503, detail="RAG service not available")
+    try:
+        rag.ensure_collection(drop_if_exists=True)
+        return {"message": "Collection reset successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+class BootstrapRequest(BaseModel):
+    model_config = {"extra": "forbid"}
+
+    max_articles_per_topic: int = 3
+    max_topics: int = 0
+
+
+@router.post("/rag/bootstrap")
+def rag_bootstrap(payload: BootstrapRequest, svc: PresentationService = Depends(get_service)):
+    rag = getattr(svc, "_rag", None)
+    if not rag:
+        raise HTTPException(status_code=503, detail="RAG service not available")
+    try:
+        result = rag.bootstrap_knowledge_base(
+            max_articles_per_topic=payload.max_articles_per_topic,
+            max_topics=payload.max_topics,
+        )
+        return {
+            "topics_completed": result.topics_completed,
+            "topics_total": result.topics_total,
+            "documents_ingested": result.documents_ingested,
+            "chunks_ingested": result.chunks_ingested,
+            "errors": len(result.errors),
+            "error_details": result.errors[:10],
+        }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))

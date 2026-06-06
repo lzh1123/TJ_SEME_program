@@ -15,7 +15,7 @@ class IntentAnalysis(BaseModel):
     preferred_theme: Optional[Literal["modern_blue", "paper_light", "academic_gray", "minimal_black"]] = Field(
         default=None, alias="preferredTheme"
     )
-    slide_count: int = Field(default=8, alias="slideCount")
+    slide_count: int = Field(default=12, alias="slideCount")
 
 
 class SlideSkeleton(BaseModel):

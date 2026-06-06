@@ -56,7 +56,8 @@ class AiPipeline:
                     "system",
                     "你是资深 PPT 规划助手。你只输出 JSON，不要输出任何解释文字。\n"
                     "任务：对用户主题做意图分析，给出 audience/goal/tone/slideCount/preferredTheme。\n"
-                    "preferredTheme 只能是 modern_blue/paper_light/academic_gray/minimal_black 或 null。",
+                    "preferredTheme 只能是 modern_blue/paper_light/academic_gray/minimal_black 或 null。\n"
+                    "slideCount 至少 10 页，内容丰富或含数据的主题可到 15-20 页。宁可多些页数保证内容覆盖面。",
                 ),
                 ("human", "{topic}"),
             ]
@@ -77,7 +78,8 @@ class AiPipeline:
                     "你是资深 PPT 结构规划助手。你只输出 JSON，不要输出任何解释文字。\n"
                     "任务：基于 topic/audience/goal/tone/slideCount 规划 slides 列表。\n"
                     "slides 中每个元素包含 id/intent/section/title/purpose。\n"
-                    "intent 必须从以下集合选择：cover/agenda/text/timeline/kpi/comparison/swot/roadmap/process_flow/chart/multi_column/architecture/quote/divider/team。",
+                    "intent 必须从以下集合选择：cover/agenda/text/timeline/kpi/comparison/swot/roadmap/process_flow/chart/multi_column/architecture/quote/divider/team。\n"
+                    "确保规划至少 10 页，涵盖封面、目录、多个内容页、数据页、总结/结束页。每个 section 可包含多页内容以充分展开。",
                 ),
                 ("human", "{analysis_json}"),
             ]
@@ -88,11 +90,11 @@ class AiPipeline:
             plan.title = analysis.topic
         return plan
 
-    def generate_dsl(self, topic: str, theme: Optional[str] = None) -> PresentationDSL:
-        dsl, _ = self.generate_dsl_with_debug(topic=topic, theme=theme)
+    def generate_dsl(self, topic: str, theme: Optional[str] = None, rag_context: str = "") -> PresentationDSL:
+        dsl, _ = self.generate_dsl_with_debug(topic=topic, theme=theme, rag_context=rag_context)
         return dsl
 
-    def generate_dsl_with_debug(self, topic: str, theme: Optional[str] = None):
+    def generate_dsl_with_debug(self, topic: str, theme: Optional[str] = None, rag_context: str = ""):
         if not topic:
             raise ValueError("topic required")
 
@@ -179,12 +181,31 @@ class AiPipeline:
                     "- divider: subtitle(str|null)\n"
                     "- team: members(list[object]) 含 name/role/highlights(list[str])\n"
                     "严格禁止输出任何布局字段：x/y/w/h/fontSize/templateId/坐标/尺寸。\n"
-                    "只输出结构化语义数据（如 items/events/phases/steps/columns/layers 等）。",
+                    "只输出结构化语义数据（如 items/events/phases/steps/columns/layers 等）。\n\n"
+                    "## 内容丰富度要求（重要）：\n"
+                    "- 每页 text slide 的 bullets 至少 4-6 条，每条用完整的句子表达，包含具体信息\n"
+                    "- 每页 text slide 的 paragraphs 至少 1-2 段，每段 2-3 句充实内容\n"
+                    "- 如果提供了参考资料(RAG)，必须从中提取具体数据、案例、趋势、事实融入内容\n"
+                    "- KPI 页至少包含 3-4 个指标，附带具体数值\n"
+                    "- Timeline 页至少包含 4-6 个事件，每个事件有详细说明\n"
+                    "- Roadmap 页每个 phase 至少包含 2-4 个 deliverables\n"
+                    "- 避免低信息量内容如单独一个\"概述\"、\"简介\"等空洞短语\n"
+                    "- 优先使用参考资料中的具体数据、百分比、时间节点，而非泛泛而谈\n"
+                    "- 每个 section 应包含足够的 slides 来充分展开主题",
                 ),
-                ("human", "topic: {topic}\nanalysis: {analysis_json}\nplan: {plan_json}\ntheme: {theme_name}"),
+                ("human", "topic: {topic}\nanalysis: {analysis_json}\nplan: {plan_json}\ntheme: {theme_name}\n{rag_block}"),
             ]
         )
         try:
+            rag_block = ""
+            if rag_context:
+                rag_block = (
+                    f"\n## 参考资料（来自知识库和网络搜索，务必充分利用）\n"
+                    f"请大量引用以下资料中的具体数据、案例、趋势、事实来丰富 PPT 内容。"
+                    f"每页内容应从参考资料中提取相关信息，而非泛泛而谈。\n{rag_context}\n"
+                    f"基于以上参考资料，确保生成的内容有深度、有数据支撑、有具体案例。"
+                )
+
             raw = invoke_llm_text(
                 self._llm,
                 prompt,
@@ -193,6 +214,7 @@ class AiPipeline:
                     "analysis_json": analysis.model_dump_json(by_alias=True),
                     "plan_json": plan.model_dump_json(),
                     "theme_name": theme_name,
+                    "rag_block": rag_block,
                 },
             )
         except Exception as e:
@@ -367,7 +389,6 @@ class AiPipeline:
         section = s.get("section") or wrapper.get("section") or ""
         title = s.get("title") or wrapper.get("title") or topic
         notes_raw = s.get("notes") if s.get("notes") is not None else wrapper.get("notes")
-
         base = {
             "id": as_str(slide_id) or new_id("slide"),
             "intent": intent if intent in allowed_intents else "text",

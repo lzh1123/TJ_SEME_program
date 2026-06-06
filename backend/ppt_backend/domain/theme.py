@@ -32,6 +32,10 @@ class ThemeSpacing(BaseModel):
 
     slide_padding_px: int = Field(alias="slidePaddingPx")
     gap_px: int = Field(alias="gapPx")
+    title_body_ratio: float = Field(default=1.618, alias="titleBodyRatio")
+    accent_bar_width: int = Field(default=4, alias="accentBarWidth")
+    card_radius: int = Field(default=12, alias="cardRadius")
+    card_shadow: str = Field(default="0 2px 12px rgba(0,0,0,0.08)", alias="cardShadow")
 
 
 class ThemeTokens(BaseModel):
@@ -62,7 +66,11 @@ DEFAULT_THEMES: Dict[str, ThemeTokens] = {
             "bodyPt": 16,
             "smallPt": 12,
         },
-        spacing={"slidePaddingPx": 56, "gapPx": 18},
+        spacing={
+            "slidePaddingPx": 56, "gapPx": 18,
+            "titleBodyRatio": 1.618, "accentBarWidth": 4,
+            "cardRadius": 12, "cardShadow": "0 2px 12px rgba(255,255,255,0.06)",
+        },
     ),
     "paper_light": ThemeTokens(
         name="Paper Light",
@@ -82,7 +90,11 @@ DEFAULT_THEMES: Dict[str, ThemeTokens] = {
             "bodyPt": 16,
             "smallPt": 12,
         },
-        spacing={"slidePaddingPx": 56, "gapPx": 18},
+        spacing={
+            "slidePaddingPx": 56, "gapPx": 18,
+            "titleBodyRatio": 1.618, "accentBarWidth": 4,
+            "cardRadius": 12, "cardShadow": "0 2px 12px rgba(0,0,0,0.08)",
+        },
     ),
     "academic_gray": ThemeTokens(
         name="Academic Gray",
@@ -102,7 +114,11 @@ DEFAULT_THEMES: Dict[str, ThemeTokens] = {
             "bodyPt": 16,
             "smallPt": 12,
         },
-        spacing={"slidePaddingPx": 64, "gapPx": 16},
+        spacing={
+            "slidePaddingPx": 64, "gapPx": 16,
+            "titleBodyRatio": 1.618, "accentBarWidth": 3,
+            "cardRadius": 8, "cardShadow": "0 1px 6px rgba(0,0,0,0.06)",
+        },
     ),
     "minimal_black": ThemeTokens(
         name="Minimal Black",
@@ -122,7 +138,11 @@ DEFAULT_THEMES: Dict[str, ThemeTokens] = {
             "bodyPt": 16,
             "smallPt": 12,
         },
-        spacing={"slidePaddingPx": 60, "gapPx": 20},
+        spacing={
+            "slidePaddingPx": 60, "gapPx": 20,
+            "titleBodyRatio": 1.618, "accentBarWidth": 4,
+            "cardRadius": 16, "cardShadow": "0 2px 16px rgba(255,255,255,0.04)",
+        },
     ),
 }
 

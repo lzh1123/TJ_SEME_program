@@ -55,3 +55,8 @@ coverage/
 .cache/
 .temp/
 *.tsbuildinfo
+
+
+# SEME
+
+data/

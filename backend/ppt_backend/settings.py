@@ -29,5 +29,12 @@ class Settings:
     )
     llm_timeout: float = float(os.getenv("LLM_TIMEOUT", "180"))
 
+    # RAG / Milvus
+    milvus_uri: str = os.getenv("MILVUS_URI", "http://localhost:19530")
+    milvus_db: str = os.getenv("MILVUS_DB", "default")
+    embedding_model: str = os.getenv("EMBEDDING_MODEL", "BAAI/bge-small-zh-v1.5")
+    web_search_region: str = os.getenv("WEB_SEARCH_REGION", "wt-wt")
+    rag_enabled: bool = os.getenv("RAG_ENABLED", "true").lower() == "true"
+
 
 settings = Settings()

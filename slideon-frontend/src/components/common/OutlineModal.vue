@@ -49,6 +49,27 @@
                 </div>
               </div>
             </div>
+
+            <div class="form-step">
+              <label class="form-label">
+                <span class="step-number">3</span>
+                AI增强选项
+              </label>
+              <div class="rag-toggle-row">
+                <div class="rag-toggle-label">
+                  <span class="rag-toggle-title">混合RAG增强 (知识库 + 网络搜索)</span>
+                  <span class="rag-toggle-desc">AI将参考知识库和网络资料生成更专业的内容</span>
+                </div>
+                <button
+                  :class="['rag-toggle-switch', { active: useRag }]"
+                  @click="useRag = !useRag"
+                  role="switch"
+                  :aria-checked="useRag"
+                >
+                  <span class="rag-toggle-knob"></span>
+                </button>
+              </div>
+            </div>
           </div>
 
           <div v-else class="step-content outline-editor">
@@ -291,6 +312,8 @@ const form = ref({
   style: 'modern_blue'
 })
 
+const useRag = ref(true)
+
 const outlineData = ref({
   title: '',
   theme: 'modern_blue',
@@ -356,7 +379,7 @@ const generateOutline = async () => {
   isGenerating.value = true
   
   try {
-    const result = await apiService.generateOutline(form.value.topic, form.value.style)
+    const result = await apiService.generateOutline(form.value.topic, form.value.style, useRag.value)
     
     console.log('✅ 生成大纲成功:', result)
     
@@ -774,6 +797,68 @@ const generatePresentation = async () => {
   border-color: var(--primary-500);
   background: var(--primary-500);
   box-shadow: inset 0 0 0 3px white;
+}
+
+.rag-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4);
+  background: var(--gray-50);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  gap: var(--space-4);
+}
+
+.rag-toggle-label {
+  flex: 1;
+}
+
+.rag-toggle-title {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--gray-800);
+  margin-bottom: var(--space-1);
+}
+
+.rag-toggle-desc {
+  display: block;
+  font-size: 12px;
+  color: var(--gray-500);
+  line-height: 1.4;
+}
+
+.rag-toggle-switch {
+  position: relative;
+  width: 48px;
+  height: 28px;
+  background: var(--gray-300);
+  border: none;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  flex-shrink: 0;
+}
+
+.rag-toggle-switch.active {
+  background: var(--primary-500);
+}
+
+.rag-toggle-knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 22px;
+  height: 22px;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.rag-toggle-switch.active .rag-toggle-knob {
+  transform: translateX(20px);
 }
 
 .outline-editor {

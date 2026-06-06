@@ -75,9 +75,10 @@ class ApiService {
   }
 
   // 创建演示文稿
-  async createPresentation(topic) {
+  async createPresentation(topic, useRag = true) {
     const response = await this.post(API_ENDPOINTS.presentations.create, {
-      topic
+      topic,
+      use_rag: useRag
     })
     return response.json()
   }
@@ -127,10 +128,11 @@ class ApiService {
   }
 
   // 重新生成
-  async regenerate(id, topic = null, section = null) {
+  async regenerate(id, topic = null, section = null, useRag = true) {
     const response = await this.post(API_ENDPOINTS.presentations.regenerate(id), {
       topic,
-      section
+      section,
+      use_rag: useRag
     })
     return response.json()
   }
@@ -143,10 +145,11 @@ class ApiService {
   }
 
   // 生成大纲
-  async generateOutline(topic, theme = null) {
+  async generateOutline(topic, theme = null, useRag = true) {
     const response = await this.post(API_ENDPOINTS.dsl, {
       topic,
-      theme
+      theme,
+      use_rag: useRag
     })
     return response.json()
   }

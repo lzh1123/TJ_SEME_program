@@ -50,4 +50,3 @@ class RenderCompiler:
             slides=slides_out,
             meta={"audience": dsl.audience, "tone": dsl.tone},
         )
-

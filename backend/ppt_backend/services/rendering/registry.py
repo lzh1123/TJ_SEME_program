@@ -70,4 +70,3 @@ def build_layout_registry():
     ]:
         reg.register(layout.layout_id, layout)
     return reg
-

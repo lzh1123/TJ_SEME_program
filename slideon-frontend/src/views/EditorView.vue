@@ -408,9 +408,18 @@ const MAX_ZOOM = 200
 // 获取画布样式
 const getCanvasStyle = () => {
   const slide = currentSlide.value
+  const baseHeight = slide.height || 720
+  // Calculate actual needed height from bottommost component
+  let maxBottom = baseHeight
+  for (const c of (slide.components || [])) {
+    const bottom = (c.y || 0) + (c.h || 0)
+    if (bottom > maxBottom) maxBottom = bottom
+  }
+  const contentHeight = Math.max(baseHeight, maxBottom + 56)
   return {
     width: (slide.width || 1280) + 'px',
-    height: (slide.height || 720) + 'px',
+    minHeight: baseHeight + 'px',
+    height: contentHeight + 'px',
     background: slide.background || '#ffffff'
   }
 }
@@ -966,10 +975,11 @@ watch(currentPage, async () => {
 .canvas-wrapper {
   flex: 1;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   padding: 32px;
-  overflow: auto;
+  overflow-y: auto;
+  overflow-x: auto;
   background: #e5e7eb;
   background-image: radial-gradient(circle, #d1d5db 1px, transparent 1px);
   background-size: 20px 20px;
@@ -979,7 +989,7 @@ watch(currentPage, async () => {
   background: white;
   border-radius: 8px;
   box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1), 0 0 0 1px rgba(0,0,0,0.05);
-  overflow: hidden;
+  overflow: visible;
   flex-shrink: 0;
   position: relative;
 }
@@ -1018,7 +1028,9 @@ watch(currentPage, async () => {
 /* 组件通用样式 */
 .slide-component {
   box-sizing: border-box;
-  overflow: hidden;
+  overflow: visible;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .component-title {
@@ -1041,6 +1053,8 @@ watch(currentPage, async () => {
   height: 100%;
   white-space: pre-wrap;
   line-height: 1.6;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .component-bullet-list {
@@ -1049,6 +1063,8 @@ watch(currentPage, async () => {
   display: flex;
   align-items: flex-start;
   padding-top: 8px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .component-bullet-list ul {
@@ -1059,6 +1075,9 @@ watch(currentPage, async () => {
 
 .component-bullet-list li {
   margin-bottom: 8px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: normal;
 }
 
 .component-quote {

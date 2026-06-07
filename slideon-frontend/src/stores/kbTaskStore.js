@@ -62,6 +62,11 @@ function _stopPolling() {
 async function _pollTick() {
   if (state.tasks.length === 0) {
     _stopPolling()
+    // 确保 uploading 状态同步：当所有任务都被移除（如连续失败超限）时，
+    // uploading 应该变为 false，以便组件检测到变更并清理占位条目。
+    if (state.uploading) {
+      state.uploading = false
+    }
     return
   }
 
@@ -105,11 +110,16 @@ async function _pollTick() {
 
   if (allDone && state.tasks.length > 0) {
     _stopPolling()
+    state.tasks = []       // ← 清空任务列表，防止已完成的旧任务被重新持久化
     state.uploading = false
     _clearPersisted()
+    return                 // ← 不调用 _persist()，已完成的任务不应保留
   }
 
-  _persist()
+  // 只在仍有活跃任务时才持久化
+  if (state.tasks.length > 0) {
+    _persist()
+  }
 }
 
 // ── Public API ──

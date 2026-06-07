@@ -116,18 +116,24 @@ class KnowledgeBase:
         metadata: Optional[Dict[str, Any]] = None,
         progress_callback: Optional[Callable[[int, int], None]] = None,
         force: bool = False,
+        source_override: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Ingest a file into the knowledge base with deduplication.
 
         Dedup strategy (two-layer):
-          1. Source-based: checks if the filename already exists in Milvus.
-          2. Content-based: stores SHA256 hash in metadata for future hash-based dedup.
+          1. Content-based: computes SHA256, checks if any existing document has the
+             same hash. If hash matches → skip (same content already exists).
+          2. Source-based: checks if the source name already exists in Milvus.
+             If source exists and force=False → skip.
+             If source exists and force=True → delete old + re-ingest.
 
         Args:
-            file_path: Path to the file.
+            file_path: Path to the temp file on disk.
             metadata: Optional metadata dict.
             progress_callback: Optional progress callback.
             force: If True, delete existing entries and re-ingest even if source exists.
+            source_override: The ORIGINAL user filename (used as source in Milvus).
+                           If not provided, falls back to path.name (temp filename).
 
         Returns:
             Dict with keys: chunks_inserted, dedup_skipped, action_taken, file_hash.
@@ -147,23 +153,75 @@ class KnowledgeBase:
                 "file_hash": "",
             }
 
-        # Compute content hash
+        # ── Use ORIGINAL filename as source, NOT the temp filename ──
+        effective_source = source_override or path.name
+
+        # ── Compute content hash ──
         try:
             file_hash = self._compute_file_hash(path)
         except Exception:
             file_hash = ""
 
+        # ═══════════════════════════════════════════════════════════
+        # Layer 1: Content-based dedup (SHA256 hash)
+        # ═══════════════════════════════════════════════════════════
+        if file_hash:
+            dup_source = self._store.find_by_hash(file_hash)
+            if dup_source is not None:
+                logger.info(
+                    "Content dedup: SHA256 %s... matches existing source=%r — SKIPPING",
+                    file_hash[:12], dup_source,
+                )
+                return {
+                    "chunks_inserted": 0,
+                    "dedup_skipped": True,
+                    "previous_chunks_removed": 0,
+                    "action_taken": "skipped_content_duplicate",
+                    "file_hash": file_hash,
+                    "duplicate_of": dup_source,
+                }
+
+        # ═══════════════════════════════════════════════════════════
+        # Layer 2: Source-based dedup (filename)
+        # ═══════════════════════════════════════════════════════════
+        old_chunks_removed = 0
+        if self._store.source_exists(effective_source):
+            if force:
+                old_chunks_removed = self._store.delete_by_source(effective_source)
+                logger.info(
+                    "Source dedup: replaced source=%r (%d old chunks removed)",
+                    effective_source, old_chunks_removed,
+                )
+            else:
+                existing_count = self._store.count_by_source(effective_source)
+                logger.info(
+                    "Source dedup: source=%r already exists (%d chunks) — SKIPPING",
+                    effective_source, existing_count,
+                )
+                return {
+                    "chunks_inserted": 0,
+                    "dedup_skipped": True,
+                    "previous_chunks_removed": 0,
+                    "action_taken": "skipped",
+                    "file_hash": file_hash,
+                }
+
+        # ── Prepare metadata ──
         meta = metadata or {}
-        meta.setdefault("filename", path.name)
+        meta.setdefault("filename", effective_source)
         meta["sha256"] = file_hash
 
+        # ── Ingest (force=False because source dedup already handled above) ──
         result = self.ingest_text(
             content,
-            source=path.name,
+            source=effective_source,
             metadata=meta,
             progress_callback=progress_callback,
-            force=force,
+            force=False,
         )
+        if old_chunks_removed > 0:
+            result["previous_chunks_removed"] = old_chunks_removed
+            result["action_taken"] = "replaced"
         result["file_hash"] = file_hash
         return result
 

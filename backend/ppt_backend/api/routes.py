@@ -327,7 +327,11 @@ def rag_upload_document(
             tmp.write(file.file.read())
             tmp_path = tmp.name
 
-        result = rag.ingest_document(Path(tmp_path), force=force)
+        result = rag.ingest_document(
+            Path(tmp_path),
+            force=force,
+            source_override=file.filename,  # ← Use ORIGINAL filename, not temp name
+        )
         os.unlink(tmp_path)
         return {
             "filename": file.filename,
@@ -539,41 +543,46 @@ async def rag_upload_documents_batch(
     if not rag:
         raise HTTPException(status_code=503, detail="RAG service not available")
 
-    saved_paths: List[Path] = []
+    # Pair each temp file path with its original filename
+    file_pairs: List[tuple] = []  # (temp_path, original_filename)
     for upload_file in files:
-        file_suffix = Path(upload_file.filename or "upload").suffix or ".txt"
+        original_name = upload_file.filename or "upload"
+        file_suffix = Path(original_name).suffix or ".txt"
         with tempfile.NamedTemporaryFile(delete=False, suffix=file_suffix) as tmp:
             tmp.write(await upload_file.read())
-            saved_paths.append(Path(tmp.name))
+            file_pairs.append((Path(tmp.name), original_name))
 
     queue = get_import_queue()
 
-    async def process_files(paths: List[Path], task: Any) -> None:
+    async def process_files(pairs: List[tuple], task: Any) -> None:
         skipped_count = 0
-        for i, path in enumerate(paths):
+        for i, (temp_path, original_name) in enumerate(pairs):
             try:
-                result = rag.ingest_document(path)
+                result = rag.ingest_document(
+                    temp_path,
+                    source_override=original_name,  # ← Use ORIGINAL filename
+                )
                 if result.get("dedup_skipped"):
                     skipped_count += 1
                     logging.getLogger(__name__).info(
-                        "KB dedup: batch import skipped %s (already exists)", path.name
+                        "KB dedup: batch import skipped %s (already exists)", original_name
                     )
                 task.processed = i + 1
             except Exception as e:
-                task.errors.append(f"{path.name}: {type(e).__name__}: {e}")
+                task.errors.append(f"{original_name}: {type(e).__name__}: {e}")
             finally:
                 try:
-                    os.unlink(path)
+                    os.unlink(temp_path)
                 except Exception:
                     pass
         if skipped_count > 0:
             logging.getLogger(__name__).info(
                 "KB dedup: batch import — %d/%d files skipped (already exist)",
-                skipped_count, len(paths),
+                skipped_count, len(pairs),
             )
 
     queue.set_handler(process_files)
-    task_id = queue.enqueue(saved_paths)
+    task_id = queue.enqueue(file_pairs)
 
     return {"task_id": task_id, "file_count": len(files)}
 

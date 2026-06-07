@@ -121,8 +121,15 @@ class RagService:
         metadata: Optional[Dict[str, Any]] = None,
         progress_callback: Optional[Callable[[int, int], None]] = None,
         force: bool = False,
+        source_override: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Ingest a file into the knowledge base with deduplication.
+
+        Args:
+            file_path: Path to the temp file on disk.
+            source_override: The ORIGINAL user filename. Must be provided to ensure
+                           correct source naming and dedup. If not provided, falls
+                           back to path.name (temp filename — will break dedup).
 
         Returns dict with: chunks_inserted, dedup_skipped, action_taken, file_hash.
         """
@@ -131,6 +138,7 @@ class RagService:
             metadata=metadata,
             progress_callback=progress_callback,
             force=force,
+            source_override=source_override,
         )
 
     def ingest_text(

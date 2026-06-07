@@ -65,13 +65,14 @@ class ImportTaskQueue:
                 pass
             self._worker_task = None
 
-    def enqueue(self, file_paths: List[Path]) -> str:
-        """Enqueue files for import. Returns task_id for status polling."""
+    def enqueue(self, items: List[Any]) -> str:
+        """Enqueue items for import. Each item is typically (temp_path, original_name).
+        Returns task_id for status polling."""
         task_id = new_id("import")
-        task = ImportTask(task_id=task_id, total=len(file_paths))
+        task = ImportTask(task_id=task_id, total=len(items))
         self._tasks[task_id] = task
-        self._queue.put_nowait((task_id, file_paths))
-        logger.info("Enqueued import task %s with %d files", task_id, len(file_paths))
+        self._queue.put_nowait((task_id, items))
+        logger.info("Enqueued import task %s with %d items", task_id, len(items))
         return task_id
 
     def get_task(self, task_id: str) -> Optional[Dict[str, Any]]:

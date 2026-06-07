@@ -254,6 +254,27 @@ class MilvusStore:
         stats = self.client.get_collection_stats(self.COLLECTION_NAME)
         return {"exists": True, "num_entities": stats.get("row_count", 0)}
 
+    def find_by_hash(self, sha256_hash: str) -> Optional[str]:
+        """Check if any entity has this SHA256 hash in metadata.
+        Returns the source name if found, None otherwise."""
+        if not sha256_hash:
+            return None
+        try:
+            # Milvus JSON field LIKE query — sha256 is stored in metadata JSON
+            result = self.client.query(
+                collection_name=self.COLLECTION_NAME,
+                filter=f'metadata like "%{sha256_hash}%"',
+                output_fields=["source", "metadata"],
+                limit=1,
+            )
+            if result:
+                meta = result[0].get("metadata", {})
+                if isinstance(meta, dict) and meta.get("sha256") == sha256_hash:
+                    return result[0].get("source")
+            return None
+        except Exception:
+            return None
+
     def list_sources(self) -> List[Dict[str, Any]]:
         """List distinct sources with their chunk counts and latest metadata."""
         if not self.client.has_collection(self.COLLECTION_NAME):

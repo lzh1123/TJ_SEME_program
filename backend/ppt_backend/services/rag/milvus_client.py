@@ -33,10 +33,13 @@ class MilvusStore:
     def ensure_collection(self, dim: int, drop_if_exists: bool = False) -> bool:
         if self.client.has_collection(self.COLLECTION_NAME):
             if drop_if_exists:
+                logger.info("Dropping existing collection %s", self.COLLECTION_NAME)
                 self.client.drop_collection(self.COLLECTION_NAME)
             else:
+                logger.debug("Collection %s already exists, skipping creation", self.COLLECTION_NAME)
                 return False
 
+        logger.info("Creating collection %s (dim=%d)", self.COLLECTION_NAME, dim)
         schema = self.client.create_schema(
             auto_id=True,
             enable_dynamic_field=False,
@@ -90,20 +93,27 @@ class MilvusStore:
             index_params=index_params,
         )
         self.client.load_collection(self.COLLECTION_NAME)
+        logger.info("Collection %s created and loaded successfully", self.COLLECTION_NAME)
         return True
 
     def insert(self, chunks: List[Dict[str, Any]], embeddings: List[List[float]]) -> List[int]:
         data = []
+        sources = set()
         for chunk, emb in zip(chunks, embeddings):
+            src = chunk.get("source", "")
+            sources.add(src)
             data.append({
                 "text": chunk.get("text", ""),
                 "embedding": emb,
-                "source": chunk.get("source", ""),
+                "source": src,
                 "chunk_index": chunk.get("chunk_index", 0),
                 "metadata": chunk.get("metadata", {}),
             })
+        logger.info("Inserting %d chunks (sources=%s) into %s", len(data), sorted(sources), self.COLLECTION_NAME)
         result = self.client.insert(collection_name=self.COLLECTION_NAME, data=data)
-        return result.get("ids", [])
+        ids = result.get("ids", [])
+        logger.info("Inserted %d chunks, got %d IDs", len(data), len(ids))
+        return ids
 
     def _ensure_loaded(self) -> None:
         """Ensure the collection is loaded into memory (required for queries and deletes)."""
@@ -125,13 +135,17 @@ class MilvusStore:
         self._ensure_loaded()
         try:
             escaped = self._escape_filter_string(source)
+            filter_expr = f'source == "{escaped}"'
+            logger.debug("Querying IDs by source=%r (filter=%s)", source, filter_expr)
             result = self.client.query(
                 collection_name=self.COLLECTION_NAME,
-                filter=f'source == "{escaped}"',
+                filter=filter_expr,
                 output_fields=["id"],
                 limit=10000,
             )
-            return [int(r["id"]) for r in result if "id" in r]
+            ids = [int(r["id"]) for r in result if "id" in r]
+            logger.debug("Found %d ids for source=%r", len(ids), source)
+            return ids
         except Exception:
             logger.exception("Failed to query IDs for source=%r", source)
             return []
@@ -139,11 +153,15 @@ class MilvusStore:
     def source_exists(self, source: str) -> bool:
         """Check if a source already has entries in the collection."""
         ids = self._get_ids_by_source(source)
-        return len(ids) > 0
+        exists = len(ids) > 0
+        logger.debug("source_exists(%r) = %s (%d chunks)", source, exists, len(ids))
+        return exists
 
     def count_by_source(self, source: str) -> int:
         """Count how many chunks exist for a given source."""
-        return len(self._get_ids_by_source(source))
+        count = len(self._get_ids_by_source(source))
+        logger.debug("count_by_source(%r) = %d", source, count)
+        return count
 
     def delete_by_source(self, source: str) -> int:
         """Delete all entries for a given source.
@@ -217,9 +235,16 @@ class MilvusStore:
         top_k: int = 10,
         source_filter: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
+        logger.debug(
+            "hybrid_search: query=%r top_k=%d source_filter=%r",
+            query_text[:80], top_k, source_filter,
+        )
         dense_hits = self._dense_search(query_embedding, top_k * 2, source_filter)
         sparse_hits = self._keyword_search(query_text, top_k * 2, source_filter)
-        return self._rrf_fuse(dense_hits, sparse_hits, top_k)
+        fused = self._rrf_fuse(dense_hits, sparse_hits, top_k)
+        logger.debug("hybrid_search: dense=%d sparse=%d fused=%d final=%d",
+                      len(dense_hits), len(sparse_hits), len(fused), min(top_k, len(fused)))
+        return fused
 
     def vector_search(
         self,
@@ -227,7 +252,10 @@ class MilvusStore:
         top_k: int = 10,
         source_filter: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
-        return self._dense_search(query_embedding, top_k, source_filter)
+        logger.debug("vector_search: top_k=%d source_filter=%r", top_k, source_filter)
+        result = self._dense_search(query_embedding, top_k, source_filter)
+        logger.debug("vector_search: returned %d hits", len(result))
+        return result
 
     def keyword_search(
         self,
@@ -235,7 +263,11 @@ class MilvusStore:
         top_k: int = 10,
         source_filter: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
-        return self._keyword_search(query_text, top_k, source_filter)
+        logger.debug("keyword_search: query=%r top_k=%d source_filter=%r",
+                      query_text[:80], top_k, source_filter)
+        result = self._keyword_search(query_text, top_k, source_filter)
+        logger.debug("keyword_search: returned %d hits", len(result))
+        return result
 
     def _dense_search(
         self,
@@ -248,6 +280,7 @@ class MilvusStore:
             escaped = self._escape_filter_string(source_filter)
             filter_expr = f'source like "%{escaped}%"'
 
+        logger.debug("_dense_search: top_k=%d filter=%r", top_k, filter_expr)
         results = self.client.search(
             collection_name=self.COLLECTION_NAME,
             data=[query_embedding],
@@ -268,6 +301,8 @@ class MilvusStore:
                     "metadata": entity.get("metadata", {}),
                     "score": hit.get("distance", hit.get("score", 0.0)),
                 })
+        logger.debug("_dense_search: returned %d hits (top score=%.4f)",
+                      len(hits), hits[0]["score"] if hits else 0.0)
         return hits
 
     def _keyword_search(
@@ -283,6 +318,8 @@ class MilvusStore:
             filter_parts.append(f'source like "%{escaped_src}%"')
         filter_expr = " and ".join(filter_parts)
 
+        logger.debug("_keyword_search: query=%r filter=%r top_k=%d",
+                      query_text[:80], filter_expr, top_k)
         results = self.client.query(
             collection_name=self.COLLECTION_NAME,
             filter=filter_expr,
@@ -299,6 +336,7 @@ class MilvusStore:
                 "metadata": entity.get("metadata", {}),
                 "score": 1.0,
             })
+        logger.debug("_keyword_search: returned %d hits", len(hits))
         return hits
 
     def _rrf_fuse(
@@ -327,9 +365,12 @@ class MilvusStore:
 
     def get_collection_stats(self) -> Dict[str, Any]:
         if not self.client.has_collection(self.COLLECTION_NAME):
+            logger.debug("get_collection_stats: collection %s does not exist", self.COLLECTION_NAME)
             return {"exists": False, "num_entities": 0}
         stats = self.client.get_collection_stats(self.COLLECTION_NAME)
-        return {"exists": True, "num_entities": stats.get("row_count", 0)}
+        row_count = stats.get("row_count", 0)
+        logger.debug("get_collection_stats: row_count=%s", row_count)
+        return {"exists": True, "num_entities": row_count}
 
     def find_by_hash(self, sha256_hash: str) -> Optional[str]:
         """Check if any entity has this SHA256 hash in metadata.
@@ -337,6 +378,7 @@ class MilvusStore:
         if not sha256_hash:
             return None
         self._ensure_loaded()
+        logger.debug("find_by_hash: searching for hash prefix=%s", sha256_hash[:16])
         try:
             escaped = self._escape_filter_string(sha256_hash)
             result = self.client.query(
@@ -348,7 +390,10 @@ class MilvusStore:
             if result:
                 meta = result[0].get("metadata", {})
                 if isinstance(meta, dict) and meta.get("sha256") == sha256_hash:
-                    return result[0].get("source")
+                    found_source = result[0].get("source")
+                    logger.info("find_by_hash: dedup match — source=%r", found_source)
+                    return found_source
+            logger.debug("find_by_hash: no match for hash prefix=%s", sha256_hash[:16])
             return None
         except Exception:
             logger.exception("Failed to query by hash prefix=%s", sha256_hash[:16])
@@ -357,15 +402,18 @@ class MilvusStore:
     def list_sources(self) -> List[Dict[str, Any]]:
         """List distinct sources with their chunk counts and latest metadata."""
         if not self.client.has_collection(self.COLLECTION_NAME):
+            logger.debug("list_sources: collection %s does not exist", self.COLLECTION_NAME)
             return []
         self._ensure_loaded()
         try:
+            logger.debug("list_sources: querying all entities")
             results = self.client.query(
                 collection_name=self.COLLECTION_NAME,
                 filter="id >= 0",
                 output_fields=["source", "chunk_index", "metadata"],
                 limit=10000,
             )
+            logger.debug("list_sources: got %d raw entities", len(results))
         except Exception:
             logger.exception("Failed to list sources from Milvus")
             return []
@@ -386,7 +434,11 @@ class MilvusStore:
                     sources[source]["filename"] = meta["filename"]
             sources[source]["chunks"] += 1
 
-        return sorted(sources.values(), key=lambda x: x["chunks"], reverse=True)
+        sorted_sources = sorted(sources.values(), key=lambda x: x["chunks"], reverse=True)
+        logger.debug("list_sources: %d distinct sources, total chunks=%d",
+                      len(sorted_sources), sum(s["chunks"] for s in sorted_sources))
+        return sorted_sources
 
     def close(self):
+        logger.debug("Closing MilvusClient")
         self._client = None

@@ -9,9 +9,14 @@
           <p class="page-subtitle">管理已导入的知识文档，上传新文档以增强 AI 生成质量</p>
         </div>
         <div class="header-actions">
-          <button class="btn btn-secondary" @click="clearAll" v-if="importedDocs.length > 0">
-            <IconBase name="trash" :size="14" />
-            清空知识库
+          <button
+            class="btn btn-secondary"
+            @click="clearAll"
+            :disabled="clearingAll"
+            v-if="importedDocs.length > 0"
+          >
+            <IconBase :name="clearingAll ? 'spinner' : 'trash'" :size="14" :class="{ 'animate-spin': clearingAll }" />
+            {{ clearingAll ? '清空中...' : '清空知识库' }}
           </button>
           <button class="btn btn-primary" @click="triggerUpload">
             <IconBase name="plus" :size="14" />
@@ -28,14 +33,14 @@
         </div>
       </div>
 
-      <!-- Upload Progress -->
-      <div v-if="uploading" class="upload-progress-card">
+      <!-- Upload Progress — reads from shared kbTaskState (survives navigation) -->
+      <div v-if="kbTaskState.uploading" class="upload-progress-card">
         <div class="progress-header">
           <IconBase name="spinner" :size="18" class="animate-spin" />
-          <span>{{ progressText }}</span>
+          <span>{{ kbTaskState.progressText || '正在上传...' }}</span>
         </div>
         <div class="progress-bar">
-          <div class="progress-fill" :style="{ width: progressPercent + '%' }"></div>
+          <div class="progress-fill" :style="{ width: (kbTaskState.progressPercent || 0) + '%' }"></div>
         </div>
         <p class="progress-detail">文件正在后台处理中，您可以继续其他操作</p>
       </div>
@@ -47,7 +52,7 @@
           <div class="stat-label">知识条目</div>
         </div>
         <div class="stat-card">
-          <div class="stat-value">{{ loading && !hasCache ? '—' : importedDocs.length }}</div>
+          <div class="stat-value">{{ loading && !hasCache ? '—' : readyDocs.length }}</div>
           <div class="stat-label">已导入文档</div>
         </div>
         <div class="stat-card">
@@ -70,7 +75,7 @@
           </div>
         </div>
 
-        <div v-else-if="importedDocs.length === 0 && !uploading" class="empty-state">
+        <div v-else-if="importedDocs.length === 0 && !kbTaskState.uploading" class="empty-state">
           <div class="empty-icon">
             <IconBase name="database" :size="64" />
           </div>
@@ -99,20 +104,29 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="(doc, i) in importedDocs" :key="i">
+              <tr v-for="(doc, i) in importedDocs" :key="i" :class="{ 'row-deleting': deletingSources.has(doc.source) }">
                 <td>
                   <div class="doc-name-cell">
                     <IconBase name="file" :size="16" />
                     <span>{{ doc.name }}</span>
                   </div>
                 </td>
-                <td>{{ doc.chunks || '—' }}</td>
+                <td>{{ doc.status === 'importing' ? '—' : (doc.chunks || 0) }}</td>
                 <td>
                   <span class="status-badge" :class="doc.status">{{ statusLabel(doc.status) }}</span>
                 </td>
                 <td>
-                  <button class="mini-btn danger" @click="removeDoc(doc)" title="删除">
-                    <IconBase name="trash" :size="14" />
+                  <button
+                    class="mini-btn danger"
+                    @click="removeDoc(doc)"
+                    :disabled="deletingSources.has(doc.source)"
+                    title="删除"
+                  >
+                    <IconBase
+                      :name="deletingSources.has(doc.source) ? 'spinner' : 'trash'"
+                      :size="14"
+                      :class="{ 'animate-spin': deletingSources.has(doc.source) }"
+                    />
                   </button>
                 </td>
               </tr>
@@ -125,13 +139,16 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import AppHeader from '../components/common/AppHeader.vue'
 import IconBase from '../components/icons/IconBase.vue'
 import { useFloatingBall } from '../composables/useFloatingBall.js'
 import { apiService } from '../services/api.js'
+import { useKBTasks } from '../stores/kbTaskStore.js'
 
 const { showModal } = useFloatingBall()
+const kbTasks = useKBTasks()
+const { state: kbTaskState } = kbTasks
 
 const KB_CACHE_KEY = 'slideon_kb_cache'
 
@@ -139,14 +156,22 @@ const loading = ref(true)
 const hasCache = ref(false)
 const stats = ref({ num_entities: 0 })
 const importedDocs = ref([])
-const uploading = ref(false)
-const importingCount = ref(0)
-const progressPercent = ref(0)
-const progressText = ref('')
+const deletingSources = ref(new Set())
+const clearingAll = ref(false)
 const uploadInput = ref(null)
-let pollTimer = null
 
-// Restore cached data instantly to avoid flash
+// Derived: only "ready" docs (exclude importing placeholders from count)
+const readyDocs = computed(() =>
+  importedDocs.value.filter(d => d.status === 'ready')
+)
+
+// Derived: count of active (importing) items
+const importingCount = computed(() =>
+  importedDocs.value.filter(d => d.status === 'importing').length
+)
+
+// ── Cache helpers ──
+
 function restoreCache() {
   try {
     const raw = sessionStorage.getItem(KB_CACHE_KEY)
@@ -163,30 +188,104 @@ function saveCache() {
   try {
     sessionStorage.setItem(KB_CACHE_KEY, JSON.stringify({
       stats: stats.value,
-      importedDocs: importedDocs.value,
+      importedDocs: importedDocs.value.filter(d => d.status !== 'importing'),
       ts: Date.now(),
     }))
   } catch {}
 }
 
-onMounted(() => {
-  restoreCache()
-  loadData()
-})
+// ── Merge placeholders from active tasks into the doc list ──
 
-watch(importingCount, (val) => {
-  if (val === 0 && pollTimer) {
-    clearInterval(pollTimer)
-    pollTimer = null
+function mergeTaskPlaceholders() {
+  if (!kbTaskState.uploading || kbTaskState.tasks.length === 0) return
+
+  // Collect all filenames from active tasks
+  const activeNames = new Set()
+  for (const task of kbTaskState.tasks) {
+    for (const name of task.filenames) {
+      activeNames.add(name)
+    }
+  }
+
+  // Remove stale placeholders (from previous sessions / cache)
+  importedDocs.value = importedDocs.value.filter(d => {
+    if (d.status === 'importing') {
+      return activeNames.has(d.name)
+    }
+    return true
+  })
+
+  // Add any missing placeholders
+  for (const task of kbTaskState.tasks) {
+    for (const name of task.filenames) {
+      if (!importedDocs.value.some(d => d.name === name && d.status === 'importing')) {
+        importedDocs.value.unshift({ name, chunks: '—', source: name, status: 'importing' })
+      }
+    }
+  }
+}
+
+// ── Watch: when tasks complete, reload data ──
+
+let _wasUploading = false
+watch(() => kbTaskState.uploading, (val, oldVal) => {
+  if (oldVal && !val) {
+    // Tasks just completed — reload real data
+    importedDocs.value = importedDocs.value.filter(d => d.status !== 'importing')
+    loadData()
   }
 })
+
+watch(() => kbTaskState.tasks.length, () => {
+  if (kbTaskState.uploading) {
+    mergeTaskPlaceholders()
+  }
+}, { deep: true })
+
+// ── Lifecycle ──
+
+onMounted(() => {
+  restoreCache()
+
+  // Check for active import tasks (from this session or a previous one)
+  const hasActive = kbTasks.resumeFromStorage()
+  if (hasActive) {
+    mergeTaskPlaceholders()
+    // Load server data in background but keep placeholders
+    loading.value = true
+    apiService.getKBDocuments().then(data => {
+      stats.value = { num_entities: data.num_entities || 0 }
+      if (data.documents && data.documents.length > 0) {
+        importedDocs.value = data.documents.map(d => ({
+          name: d.filename || d.source,
+          source: d.source,
+          chunks: d.chunks,
+          status: 'ready'
+        }))
+      } else if (!kbTaskState.uploading) {
+        importedDocs.value = []
+      }
+      mergeTaskPlaceholders() // Re-merge in case loadData wiped them
+      saveCache()
+    }).catch(() => {}).finally(() => { loading.value = false })
+  } else {
+    loadData()
+  }
+})
+
+onUnmounted(() => {
+  // Do NOT stop the module-level pollTimer — it should keep running
+  // so that when the user returns, progress is still visible.
+  // The watch() above will handle state changes on remount.
+})
+
+// ── File upload ──
 
 function triggerUpload() { uploadInput.value?.click() }
 
 function handleFiles(e) {
   const files = Array.from(e.target.files || [])
   if (files.length > 0) startUpload(files)
-  // Reset input so same file can be re-selected
   if (uploadInput.value) uploadInput.value.value = ''
 }
 
@@ -196,15 +295,13 @@ function handleDrop(e) {
 }
 
 async function startUpload(files) {
-  uploading.value = true
-  importingCount.value = files.length
-  progressText.value = '正在上传...'
-  progressPercent.value = 0
+  const filenames = files.map(f => f.name)
 
-  // Add placeholder docs
-  const placeholders = files.map(f => ({
-    name: f.name,
+  // Add placeholder docs immediately
+  const placeholders = filenames.map(name => ({
+    name,
     chunks: '—',
+    source: name,
     status: 'importing'
   }))
   importedDocs.value = [...placeholders, ...importedDocs.value]
@@ -213,50 +310,23 @@ async function startUpload(files) {
     const result = await apiService.uploadDocumentsToKB(files)
     const taskId = result.task_id
 
-    pollTimer = setInterval(async () => {
-      try {
-        const task = await apiService.getImportTaskStatus(taskId)
-        if (task.total > 0) {
-          progressPercent.value = Math.round((task.processed / task.total) * 100)
-        }
-        progressText.value = `处理中 ${task.processed}/${task.total}`
-
-        if (task.status === 'completed' || task.status === 'failed') {
-          clearInterval(pollTimer)
-          pollTimer = null
-          uploading.value = false
-          importingCount.value = 0
-
-          if (task.errors && task.errors.length > 0) {
-            progressText.value = `导入完成（${task.errors.length} 个错误）`
-          } else {
-            progressText.value = '导入完成'
-          }
-
-          // Remove placeholder entries and reload from server
-          importedDocs.value = importedDocs.value.filter(d => d.status !== 'importing')
-          loadData()
-        }
-      } catch {
-        clearInterval(pollTimer)
-        pollTimer = null
-        uploading.value = false
-        importingCount.value = 0
-      }
-    }, 1000)
+    // Register with the module-level task store — this starts background polling
+    // that survives page navigation.
+    kbTasks.addTask(taskId, files.length, filenames)
   } catch (e) {
-    uploading.value = false
-    importingCount.value = 0
-    progressText.value = '上传失败: ' + e.message
+    // Upload failed — clean up placeholders
+    importedDocs.value = importedDocs.value.filter(d => d.status !== 'importing')
+    alert('上传失败: ' + e.message)
   }
 }
+
+// ── Load data ──
 
 async function loadData() {
   loading.value = true
   try {
     const data = await apiService.getKBDocuments()
     stats.value = { num_entities: data.num_entities || 0 }
-    importingCount.value = 0
 
     if (data.documents && data.documents.length > 0) {
       importedDocs.value = data.documents.map(d => ({
@@ -269,9 +339,7 @@ async function loadData() {
       importedDocs.value = []
     }
 
-    progressPercent.value = 0
-    progressText.value = ''
-    uploading.value = false
+    mergeTaskPlaceholders() // Re-add any active placeholders
     saveCache()
   } catch {
     // Keep cached data on error
@@ -280,26 +348,39 @@ async function loadData() {
   }
 }
 
-function removeDoc(doc) {
-  if (confirm(`确定要删除「${doc.name}」吗？此操作不可恢复。`)) {
-    apiService.removeKBDocument(doc.source).then((res) => {
-      if (res.deleted === 0 && res.warning) {
-        alert(res.warning)
-        loadData() // Reload to sync with actual state
-        return
-      }
-      importedDocs.value = importedDocs.value.filter(d => d.source !== doc.source)
-      stats.value.num_entities = Math.max(0, (stats.value.num_entities || 0) - (doc.chunks || 0))
-      saveCache()
+// ── Delete ──
+
+async function removeDoc(doc) {
+  if (!confirm(`确定要删除「${doc.name}」吗？此操作不可恢复。`)) return
+
+  deletingSources.value = new Set([...deletingSources.value, doc.source])
+
+  try {
+    const res = await apiService.removeKBDocument(doc.source)
+    if (res.deleted === 0 && res.warning) {
+      alert(res.warning)
       loadData()
-    }).catch((e) => {
-      alert('删除失败: ' + e.message)
-    })
+      return
+    }
+    importedDocs.value = importedDocs.value.filter(d => d.source !== doc.source)
+    stats.value.num_entities = Math.max(0, (stats.value.num_entities || 0) - (doc.chunks || 0))
+    saveCache()
+    loadData() // Sync with server
+  } catch (e) {
+    alert('删除失败: ' + e.message)
+  } finally {
+    const next = new Set(deletingSources.value)
+    next.delete(doc.source)
+    deletingSources.value = next
   }
 }
 
+// ── Clear all ──
+
 async function clearAll() {
   if (!confirm('确定要清空整个知识库吗？所有已导入的文档将被永久删除，此操作不可恢复。')) return
+
+  clearingAll.value = true
   try {
     const res = await apiService.clearAllKBDocuments()
     importedDocs.value = []
@@ -308,11 +389,15 @@ async function clearAll() {
     alert(`已清空知识库：删除了 ${res.sources_removed} 个文档，共 ${res.total_chunks_deleted} 个条目`)
   } catch (e) {
     alert('清空失败: ' + e.message)
+  } finally {
+    clearingAll.value = false
   }
 }
 
+// ── Helpers ──
+
 function statusLabel(s) {
-  return s === 'ready' ? '就绪' : s === 'importing' ? '导入中' : '错误'
+  return s === 'ready' ? '就绪' : s === 'importing' ? '导入中' : s === 'deleting' ? '删除中' : '错误'
 }
 </script>
 
@@ -469,6 +554,16 @@ function statusLabel(s) {
   color: var(--gray-700);
 }
 
+/* Deleting row styling */
+.row-deleting {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.row-deleting td {
+  color: var(--gray-400);
+}
+
 .doc-name-cell {
   display: flex;
   align-items: center;
@@ -492,6 +587,11 @@ function statusLabel(s) {
 .status-badge.importing {
   background: var(--primary-100);
   color: var(--primary-700);
+}
+
+.status-badge.deleting {
+  background: var(--error-100);
+  color: var(--error-700);
 }
 
 /* Empty state */

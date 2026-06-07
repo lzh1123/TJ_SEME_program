@@ -252,6 +252,13 @@ class ApiService {
     return response.json()
   }
 
+  async clearAllKBDocuments() {
+    const response = await this.request(API_ENDPOINTS.rag.documentsClear, {
+      method: 'DELETE'
+    })
+    return response.json()
+  }
+
   // ── 评估 ──
   async evaluatePresentation(presentationId, options = {}) {
     const response = await this.post(API_ENDPOINTS.eval.single(presentationId), {

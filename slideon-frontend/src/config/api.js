@@ -42,6 +42,7 @@ export const API_ENDPOINTS = {
     documents: '/rag/documents',
     documentsBatch: '/rag/documents/batch',
     documentDelete: (source) => `/rag/documents/${encodeURIComponent(source)}`,
+    documentsClear: '/rag/documents',
     taskStatus: (taskId) => `/rag/tasks/${taskId}`,
     stats: '/rag/stats',
     collectionInit: '/rag/collection/init',

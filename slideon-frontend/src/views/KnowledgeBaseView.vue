@@ -9,6 +9,10 @@
           <p class="page-subtitle">管理已导入的知识文档，上传新文档以增强 AI 生成质量</p>
         </div>
         <div class="header-actions">
+          <button class="btn btn-secondary" @click="clearAll" v-if="importedDocs.length > 0">
+            <IconBase name="trash" :size="14" />
+            清空知识库
+          </button>
           <button class="btn btn-primary" @click="triggerUpload">
             <IconBase name="plus" :size="14" />
             导入文档
@@ -278,12 +282,32 @@ async function loadData() {
 
 function removeDoc(doc) {
   if (confirm(`确定要删除「${doc.name}」吗？此操作不可恢复。`)) {
-    apiService.removeKBDocument(doc.source).then(() => {
+    apiService.removeKBDocument(doc.source).then((res) => {
+      if (res.deleted === 0 && res.warning) {
+        alert(res.warning)
+        loadData() // Reload to sync with actual state
+        return
+      }
       importedDocs.value = importedDocs.value.filter(d => d.source !== doc.source)
       stats.value.num_entities = Math.max(0, (stats.value.num_entities || 0) - (doc.chunks || 0))
       saveCache()
       loadData()
-    }).catch(() => {})
+    }).catch((e) => {
+      alert('删除失败: ' + e.message)
+    })
+  }
+}
+
+async function clearAll() {
+  if (!confirm('确定要清空整个知识库吗？所有已导入的文档将被永久删除，此操作不可恢复。')) return
+  try {
+    const res = await apiService.clearAllKBDocuments()
+    importedDocs.value = []
+    stats.value = { num_entities: 0 }
+    saveCache()
+    alert(`已清空知识库：删除了 ${res.sources_removed} 个文档，共 ${res.total_chunks_deleted} 个条目`)
+  } catch (e) {
+    alert('清空失败: ' + e.message)
   }
 }
 

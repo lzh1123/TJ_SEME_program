@@ -343,12 +343,58 @@ def rag_upload_document(
 
 @router.delete("/rag/documents/{source}")
 def rag_remove_document(source: str, svc: PresentationService = Depends(get_service)):
+    """Delete a specific document from the knowledge base by source name."""
     rag = getattr(svc, "_rag", None)
     if not rag:
         raise HTTPException(status_code=503, detail="RAG service not available")
     try:
+        # Check if source exists before deleting
+        count_before = rag.list_sources()
+        matching = [s for s in count_before if s.get("source") == source]
+        if not matching:
+            # Try to find similar sources to help the user
+            all_names = [s.get("source", "") for s in count_before]
+            return {
+                "source": source,
+                "deleted": 0,
+                "warning": f"Source '{source}' not found in knowledge base.",
+                "available_sources": all_names,
+            }
+
         deleted = rag.remove_document(source)
-        return {"source": source, "deleted": deleted}
+        logging.getLogger(__name__).info(
+            "KB delete: source=%r — %d chunks removed", source, deleted,
+        )
+        return {
+            "source": source,
+            "deleted": deleted,
+            "chunks_before": matching[0].get("chunks", 0) if matching else 0,
+        }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.delete("/rag/documents")
+def rag_clear_all_documents(svc: PresentationService = Depends(get_service)):
+    """Delete ALL documents from the knowledge base. Use with caution."""
+    rag = getattr(svc, "_rag", None)
+    if not rag:
+        raise HTTPException(status_code=503, detail="RAG service not available")
+    try:
+        sources = rag.list_sources()
+        total_deleted = 0
+        for s in sources:
+            source_name = s.get("source", "")
+            if source_name:
+                total_deleted += rag.remove_document(source_name)
+        logging.getLogger(__name__).info(
+            "KB clear: removed all %d sources, %d total chunks",
+            len(sources), total_deleted,
+        )
+        return {
+            "sources_removed": len(sources),
+            "total_chunks_deleted": total_deleted,
+        }
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -445,8 +491,10 @@ async def generate_outline_from_document(
     theme: Optional[str] = Form(None),
     svc: PresentationService = Depends(get_service),
 ):
-    """Upload a document (PDF/DOCX/TXT/MD), parse it, generate an outline,
-    and ingest the document into the knowledge base asynchronously."""
+    """Upload a document (PDF/DOCX/TXT/MD), parse it, and generate an outline.
+
+    NOTE: The document is NOT automatically added to the knowledge base.
+    To add documents to KB, use POST /rag/documents or the KB management page."""
     try:
         suffix = Path(file.filename or "upload").suffix.lower()
         if suffix not in (".pdf", ".docx", ".txt", ".md"):
@@ -501,24 +549,10 @@ async def generate_outline_from_document(
                         s.pop("id", None)
             data["slides"] = slides
 
-            # Fire-and-forget KB ingestion (dedup: skips if already exists)
-            try:
-                result = kb.ingest_text(doc_text, source=file.filename or "uploaded_document")
-                if result.get("dedup_skipped"):
-                    logging.getLogger(__name__).info(
-                        "KB dedup: document %s already exists, skipped ingestion",
-                        file.filename,
-                    )
-                else:
-                    logging.getLogger(__name__).info(
-                        "KB ingestion for document %s: %d chunks inserted",
-                        file.filename, result.get("chunks_inserted", 0),
-                    )
-            except Exception as e:
-                logging.getLogger(__name__).warning(
-                    "KB ingestion for document %s failed (non-blocking): %s",
-                    file.filename, e,
-                )
+            # NOTE: We intentionally do NOT auto-ingest the document into the
+            # knowledge base here. KB is managed exclusively through the
+            # /rag/documents endpoints. Users who want the document in KB
+            # should explicitly upload it via the knowledge base page.
 
             return data
 

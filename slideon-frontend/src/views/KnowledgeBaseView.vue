@@ -36,18 +36,18 @@
         <p class="progress-detail">文件正在后台处理中，您可以继续其他操作</p>
       </div>
 
-      <!-- Stats Overview -->
+      <!-- Stats Overview (always visible once loaded or cached) -->
       <div class="stats-row">
         <div class="stat-card">
-          <div class="stat-value">{{ stats.num_entities || 0 }}</div>
+          <div class="stat-value">{{ loading && !hasCache ? '—' : (stats.num_entities || 0) }}</div>
           <div class="stat-label">知识条目</div>
         </div>
         <div class="stat-card">
-          <div class="stat-value">{{ importedDocs.length }}</div>
+          <div class="stat-value">{{ loading && !hasCache ? '—' : importedDocs.length }}</div>
           <div class="stat-label">已导入文档</div>
         </div>
         <div class="stat-card">
-          <div class="stat-value">{{ importingCount }}</div>
+          <div class="stat-value">{{ importingCount || '—' }}</div>
           <div class="stat-label">处理中</div>
         </div>
       </div>
@@ -56,7 +56,17 @@
       <section class="docs-section">
         <h2>已导入文档</h2>
 
-        <div v-if="importedDocs.length === 0 && !uploading" class="empty-state">
+        <!-- Loading skeleton -->
+        <div v-if="loading && !hasCache" class="loading-skeleton">
+          <div v-for="n in 3" :key="n" class="skeleton-row">
+            <div class="skeleton-cell" style="width:40%"></div>
+            <div class="skeleton-cell" style="width:15%"></div>
+            <div class="skeleton-cell" style="width:20%"></div>
+            <div class="skeleton-cell" style="width:10%"></div>
+          </div>
+        </div>
+
+        <div v-else-if="importedDocs.length === 0 && !uploading" class="empty-state">
           <div class="empty-icon">
             <IconBase name="database" :size="64" />
           </div>
@@ -119,6 +129,10 @@ import { apiService } from '../services/api.js'
 
 const { showModal } = useFloatingBall()
 
+const KB_CACHE_KEY = 'slideon_kb_cache'
+
+const loading = ref(true)
+const hasCache = ref(false)
 const stats = ref({ num_entities: 0 })
 const importedDocs = ref([])
 const uploading = ref(false)
@@ -128,7 +142,33 @@ const progressText = ref('')
 const uploadInput = ref(null)
 let pollTimer = null
 
-onMounted(() => { loadData() })
+// Restore cached data instantly to avoid flash
+function restoreCache() {
+  try {
+    const raw = sessionStorage.getItem(KB_CACHE_KEY)
+    if (raw) {
+      const cached = JSON.parse(raw)
+      if (cached.stats) stats.value = cached.stats
+      if (cached.importedDocs) importedDocs.value = cached.importedDocs
+      hasCache.value = true
+    }
+  } catch {}
+}
+
+function saveCache() {
+  try {
+    sessionStorage.setItem(KB_CACHE_KEY, JSON.stringify({
+      stats: stats.value,
+      importedDocs: importedDocs.value,
+      ts: Date.now(),
+    }))
+  } catch {}
+}
+
+onMounted(() => {
+  restoreCache()
+  loadData()
+})
 
 watch(importingCount, (val) => {
   if (val === 0 && pollTimer) {
@@ -208,12 +248,12 @@ async function startUpload(files) {
 }
 
 async function loadData() {
+  loading.value = true
   try {
     const data = await apiService.getKBDocuments()
     stats.value = { num_entities: data.num_entities || 0 }
     importingCount.value = 0
 
-    // Build document list from the returned sources
     if (data.documents && data.documents.length > 0) {
       importedDocs.value = data.documents.map(d => ({
         name: d.filename || d.source,
@@ -225,20 +265,24 @@ async function loadData() {
       importedDocs.value = []
     }
 
-    // Clear progress after reload
     progressPercent.value = 0
     progressText.value = ''
     uploading.value = false
-  } catch {}
+    saveCache()
+  } catch {
+    // Keep cached data on error
+  } finally {
+    loading.value = false
+  }
 }
 
 function removeDoc(doc) {
   if (confirm(`确定要删除「${doc.name}」吗？此操作不可恢复。`)) {
     apiService.removeKBDocument(doc.source).then(() => {
-      // Remove from local list immediately
       importedDocs.value = importedDocs.value.filter(d => d.source !== doc.source)
       stats.value.num_entities = Math.max(0, (stats.value.num_entities || 0) - (doc.chunks || 0))
-      loadData() // Reload from server to sync
+      saveCache()
+      loadData()
     }).catch(() => {})
   }
 }
@@ -480,6 +524,34 @@ function statusLabel(s) {
 .upload-hint {
   font-size: 12px;
   color: var(--gray-400);
+}
+
+/* Loading skeleton */
+.loading-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.skeleton-row {
+  display: flex;
+  gap: 16px;
+  padding: 14px 16px;
+  background: var(--gray-50);
+  border-radius: var(--radius-md);
+}
+
+.skeleton-cell {
+  height: 16px;
+  background: linear-gradient(90deg, #e5e7eb 25%, #f3f4f6 50%, #e5e7eb 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 4px;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }
 
 /* Responsive */

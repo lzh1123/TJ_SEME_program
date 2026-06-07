@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import logging
 from typing import Any, Dict, List, Optional
 
 from pymilvus import DataType, MilvusClient
+
+logger = logging.getLogger(__name__)
 
 
 class MilvusStore:
@@ -107,20 +110,30 @@ class MilvusStore:
         try:
             self.client.load_collection(self.COLLECTION_NAME)
         except Exception:
-            pass  # Already loaded or not available
+            logger.debug("Collection %s load skipped (already loaded or unavailable)", self.COLLECTION_NAME)
+
+    def _escape_filter_string(self, value: str) -> str:
+        """Escape a string value for safe use in Milvus filter expressions.
+
+        Milvus uses double-quoted strings in filter expressions. We must escape
+        backslashes and double quotes to avoid breaking the expression syntax.
+        """
+        return value.replace("\\", "\\\\").replace('"', '\\"')
 
     def _get_ids_by_source(self, source: str) -> List[int]:
         """Get all entity IDs for a given source. Returns empty list if none found."""
         self._ensure_loaded()
         try:
+            escaped = self._escape_filter_string(source)
             result = self.client.query(
                 collection_name=self.COLLECTION_NAME,
-                filter=f'source == "{source}"',
+                filter=f'source == "{escaped}"',
                 output_fields=["id"],
                 limit=10000,
             )
             return [int(r["id"]) for r in result if "id" in r]
         except Exception:
+            logger.exception("Failed to query IDs for source=%r", source)
             return []
 
     def source_exists(self, source: str) -> bool:
@@ -135,28 +148,67 @@ class MilvusStore:
     def delete_by_source(self, source: str) -> int:
         """Delete all entries for a given source.
         Uses ID-based deletion (query IDs first, then delete by IDs)
-        which is more reliable than filter-based delete in Milvus 3.x."""
+        which is more reliable than filter-based delete in Milvus 3.x.
+
+        Returns the actual number of entities deleted (from Milvus response).
+        """
         self._ensure_loaded()
         ids = self._get_ids_by_source(source)
         if not ids:
+            # Double-check: if source still appears via list_sources-style query,
+            # then _get_ids_by_source failed — log a warning.
+            logger.warning(
+                "No IDs found for source=%r — the source may not exist, "
+                "or the query may have failed (check above for exceptions).",
+                source,
+            )
             return 0
 
+        expected = len(ids)
         try:
-            self.client.delete(
+            result = self.client.delete(
                 collection_name=self.COLLECTION_NAME,
                 ids=ids,
             )
-            return len(ids)
+            delete_count = self._parse_delete_count(result, expected)
+            if delete_count != expected:
+                logger.warning(
+                    "Delete mismatch for source=%r: expected %d, actual delete_count=%d",
+                    source, expected, delete_count,
+                )
+            return delete_count
         except Exception as e:
+            logger.exception("ID-based delete failed for source=%r, trying filter-based fallback", source)
             # Fallback: try filter-based delete
             try:
-                self.client.delete(
+                escaped = self._escape_filter_string(source)
+                result = self.client.delete(
                     collection_name=self.COLLECTION_NAME,
-                    filter=f'source == "{source}"',
+                    filter=f'source == "{escaped}"',
                 )
-                return len(ids)  # Assume success if no exception
+                delete_count = self._parse_delete_count(result, expected)
+                logger.info(
+                    "Filter-based fallback delete for source=%r: delete_count=%d",
+                    source, delete_count,
+                )
+                return delete_count
             except Exception:
+                logger.exception("Filter-based delete also failed for source=%r", source)
                 raise e
+
+    @staticmethod
+    def _parse_delete_count(result: Any, fallback: int) -> int:
+        """Extract delete_count from pymilvus delete result.
+
+        pymilvus 3.x returns a dict like {'delete_count': N, 'cost': ...}.
+        If we can't parse it, fall back to the expected count.
+        """
+        if isinstance(result, dict):
+            count = result.get("delete_count")
+            if isinstance(count, int):
+                return count
+        logger.debug("Could not parse delete_count from result: %r", result)
+        return fallback
 
     def hybrid_search(
         self,
@@ -193,7 +245,8 @@ class MilvusStore:
     ) -> List[Dict[str, Any]]:
         filter_expr = None
         if source_filter:
-            filter_expr = f'source like "%{source_filter}%"'
+            escaped = self._escape_filter_string(source_filter)
+            filter_expr = f'source like "%{escaped}%"'
 
         results = self.client.search(
             collection_name=self.COLLECTION_NAME,
@@ -223,10 +276,11 @@ class MilvusStore:
         top_k: int,
         source_filter: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
-        escaped = query_text.replace('"', '\\"')
+        escaped = self._escape_filter_string(query_text)
         filter_parts = [f'text like "%{escaped}%"']
         if source_filter:
-            filter_parts.append(f'source like "%{source_filter}%"')
+            escaped_src = self._escape_filter_string(source_filter)
+            filter_parts.append(f'source like "%{escaped_src}%"')
         filter_expr = " and ".join(filter_parts)
 
         results = self.client.query(
@@ -284,9 +338,10 @@ class MilvusStore:
             return None
         self._ensure_loaded()
         try:
+            escaped = self._escape_filter_string(sha256_hash)
             result = self.client.query(
                 collection_name=self.COLLECTION_NAME,
-                filter=f'metadata like "%{sha256_hash}%"',
+                filter=f'metadata like "%{escaped}%"',
                 output_fields=["source", "metadata"],
                 limit=1,
             )
@@ -296,6 +351,7 @@ class MilvusStore:
                     return result[0].get("source")
             return None
         except Exception:
+            logger.exception("Failed to query by hash prefix=%s", sha256_hash[:16])
             return None
 
     def list_sources(self) -> List[Dict[str, Any]]:
@@ -311,6 +367,7 @@ class MilvusStore:
                 limit=10000,
             )
         except Exception:
+            logger.exception("Failed to list sources from Milvus")
             return []
 
         # Group by source in Python

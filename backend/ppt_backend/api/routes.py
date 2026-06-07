@@ -385,14 +385,34 @@ def rag_remove_document(source: str, svc: PresentationService = Depends(get_serv
                 "available_sources": all_names,
             }
 
+        chunks_before = matching[0].get("chunks", 0) if matching else 0
         deleted = rag.remove_document(source)
-        logging.getLogger(__name__).info(
-            "KB delete: source=%r — %d chunks removed", source, deleted,
-        )
+
+        if deleted == 0 and chunks_before > 0:
+            # The source existed but deletion returned 0 — something went wrong
+            logging.getLogger(__name__).warning(
+                "KB delete: source=%r — expected %d chunks but deleted 0",
+                source, chunks_before,
+            )
+            return {
+                "source": source,
+                "deleted": 0,
+                "warning": (
+                    f"Document '{source}' was found with {chunks_before} entries, "
+                    f"but deletion removed 0 entries. The knowledge base may be in an "
+                    f"inconsistent state. Please try again or use '清空知识库' to reset."
+                ),
+                "chunks_before": chunks_before,
+            }
+        else:
+            logging.getLogger(__name__).info(
+                "KB delete: source=%r — %d chunks removed", source, deleted,
+            )
+
         return {
             "source": source,
             "deleted": deleted,
-            "chunks_before": matching[0].get("chunks", 0) if matching else 0,
+            "chunks_before": chunks_before,
         }
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -639,9 +659,12 @@ def rag_list_documents(svc: PresentationService = Depends(get_service)):
     try:
         stats = rag.get_kb_stats()
         sources = rag.list_sources()
+        # Use the sum of actual chunk counts from list_sources() instead of
+        # Milvus row_count, which may not immediately reflect deletions due to MVCC.
+        actual_entities = sum(s.get("chunks", 0) for s in sources)
         return {
             "exists": stats.get("exists", False),
-            "num_entities": stats.get("num_entities", 0),
+            "num_entities": actual_entities,
             "documents": sources,
         }
     except Exception as e:

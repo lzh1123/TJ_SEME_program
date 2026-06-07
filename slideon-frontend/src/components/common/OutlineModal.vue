@@ -138,7 +138,7 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue'])
 
 const outlineStore = useOutlineStore()
-const { state: ballState, show: showBall, setSuccess, setError, consumeReopen } = useFloatingBall()
+const { state: ballState, showBall, setSuccess, setError, consumeReopen } = useFloatingBall()
 
 const isGenerating = ref(false)
 let abortController = null

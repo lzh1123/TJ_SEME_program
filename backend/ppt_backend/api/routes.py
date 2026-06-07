@@ -341,39 +341,6 @@ def rag_upload_document(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.delete("/rag/documents/{source}")
-def rag_remove_document(source: str, svc: PresentationService = Depends(get_service)):
-    """Delete a specific document from the knowledge base by source name."""
-    rag = getattr(svc, "_rag", None)
-    if not rag:
-        raise HTTPException(status_code=503, detail="RAG service not available")
-    try:
-        # Check if source exists before deleting
-        count_before = rag.list_sources()
-        matching = [s for s in count_before if s.get("source") == source]
-        if not matching:
-            # Try to find similar sources to help the user
-            all_names = [s.get("source", "") for s in count_before]
-            return {
-                "source": source,
-                "deleted": 0,
-                "warning": f"Source '{source}' not found in knowledge base.",
-                "available_sources": all_names,
-            }
-
-        deleted = rag.remove_document(source)
-        logging.getLogger(__name__).info(
-            "KB delete: source=%r — %d chunks removed", source, deleted,
-        )
-        return {
-            "source": source,
-            "deleted": deleted,
-            "chunks_before": matching[0].get("chunks", 0) if matching else 0,
-        }
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-
 @router.delete("/rag/documents")
 def rag_clear_all_documents(svc: PresentationService = Depends(get_service)):
     """Delete ALL documents from the knowledge base. Use with caution."""
@@ -394,6 +361,38 @@ def rag_clear_all_documents(svc: PresentationService = Depends(get_service)):
         return {
             "sources_removed": len(sources),
             "total_chunks_deleted": total_deleted,
+        }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.delete("/rag/documents/{source}")
+def rag_remove_document(source: str, svc: PresentationService = Depends(get_service)):
+    """Delete a specific document from the knowledge base by source name."""
+    rag = getattr(svc, "_rag", None)
+    if not rag:
+        raise HTTPException(status_code=503, detail="RAG service not available")
+    try:
+        # Check if source exists before deleting
+        count_before = rag.list_sources()
+        matching = [s for s in count_before if s.get("source") == source]
+        if not matching:
+            all_names = [s.get("source", "") for s in count_before]
+            return {
+                "source": source,
+                "deleted": 0,
+                "warning": f"Source '{source}' not found in knowledge base.",
+                "available_sources": all_names,
+            }
+
+        deleted = rag.remove_document(source)
+        logging.getLogger(__name__).info(
+            "KB delete: source=%r — %d chunks removed", source, deleted,
+        )
+        return {
+            "source": source,
+            "deleted": deleted,
+            "chunks_before": matching[0].get("chunks", 0) if matching else 0,
         }
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

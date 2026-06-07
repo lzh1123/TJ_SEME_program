@@ -102,21 +102,16 @@ class MilvusStore:
         result = self.client.insert(collection_name=self.COLLECTION_NAME, data=data)
         return result.get("ids", [])
 
-    def source_exists(self, source: str) -> bool:
-        """Check if a source already has entries in the collection."""
+    def _ensure_loaded(self) -> None:
+        """Ensure the collection is loaded into memory (required for queries and deletes)."""
         try:
-            result = self.client.query(
-                collection_name=self.COLLECTION_NAME,
-                filter=f'source == "{source}"',
-                output_fields=["id"],
-                limit=1,
-            )
-            return len(result) > 0
+            self.client.load_collection(self.COLLECTION_NAME)
         except Exception:
-            return False
+            pass  # Already loaded or not available
 
-    def count_by_source(self, source: str) -> int:
-        """Count how many chunks exist for a given source."""
+    def _get_ids_by_source(self, source: str) -> List[int]:
+        """Get all entity IDs for a given source. Returns empty list if none found."""
+        self._ensure_loaded()
         try:
             result = self.client.query(
                 collection_name=self.COLLECTION_NAME,
@@ -124,16 +119,44 @@ class MilvusStore:
                 output_fields=["id"],
                 limit=10000,
             )
-            return len(result)
+            return [int(r["id"]) for r in result if "id" in r]
         except Exception:
-            return 0
+            return []
+
+    def source_exists(self, source: str) -> bool:
+        """Check if a source already has entries in the collection."""
+        ids = self._get_ids_by_source(source)
+        return len(ids) > 0
+
+    def count_by_source(self, source: str) -> int:
+        """Count how many chunks exist for a given source."""
+        return len(self._get_ids_by_source(source))
 
     def delete_by_source(self, source: str) -> int:
-        res = self.client.delete(
-            collection_name=self.COLLECTION_NAME,
-            filter=f'source == "{source}"',
-        )
-        return res.get("delete_count", 0)
+        """Delete all entries for a given source.
+        Uses ID-based deletion (query IDs first, then delete by IDs)
+        which is more reliable than filter-based delete in Milvus 3.x."""
+        self._ensure_loaded()
+        ids = self._get_ids_by_source(source)
+        if not ids:
+            return 0
+
+        try:
+            self.client.delete(
+                collection_name=self.COLLECTION_NAME,
+                ids=ids,
+            )
+            return len(ids)
+        except Exception as e:
+            # Fallback: try filter-based delete
+            try:
+                self.client.delete(
+                    collection_name=self.COLLECTION_NAME,
+                    filter=f'source == "{source}"',
+                )
+                return len(ids)  # Assume success if no exception
+            except Exception:
+                raise e
 
     def hybrid_search(
         self,
@@ -259,8 +282,8 @@ class MilvusStore:
         Returns the source name if found, None otherwise."""
         if not sha256_hash:
             return None
+        self._ensure_loaded()
         try:
-            # Milvus JSON field LIKE query — sha256 is stored in metadata JSON
             result = self.client.query(
                 collection_name=self.COLLECTION_NAME,
                 filter=f'metadata like "%{sha256_hash}%"',
@@ -279,6 +302,7 @@ class MilvusStore:
         """List distinct sources with their chunk counts and latest metadata."""
         if not self.client.has_collection(self.COLLECTION_NAME):
             return []
+        self._ensure_loaded()
         try:
             results = self.client.query(
                 collection_name=self.COLLECTION_NAME,

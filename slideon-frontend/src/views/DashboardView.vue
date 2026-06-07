@@ -28,10 +28,6 @@
             <option value="30days">最近30天</option>
             <option value="older">更早</option>
           </select>
-          <button class="btn btn-secondary" @click="showKBPanel = true">
-            <IconBase name="database" :size="14" />
-            知识库管理
-          </button>
           <button class="btn btn-primary" @click="showModal()">
             <IconBase name="plus" :size="14" />
             新建大纲
@@ -108,8 +104,6 @@
         </div>
       </div>
     </Teleport>
-
-    <KnowledgeBasePanel v-model:visible="showKBPanel" />
   </div>
 </template>
 
@@ -120,13 +114,11 @@ import AppHeader from '../components/common/AppHeader.vue'
 import IconBase from '../components/icons/IconBase.vue'
 import { useOutlineStore } from '../stores/outlineStore.js'
 import { useFloatingBall } from '../composables/useFloatingBall.js'
-import KnowledgeBasePanel from '../components/common/KnowledgeBasePanel.vue'
 
 const router = useRouter()
 const outlineStore = useOutlineStore()
 const { showModal } = useFloatingBall()
 const deleteTarget = ref(null)
-const showKBPanel = ref(false)
 const searchQuery = ref('')
 const timeFilter = ref('all')
 

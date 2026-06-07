@@ -254,5 +254,37 @@ class MilvusStore:
         stats = self.client.get_collection_stats(self.COLLECTION_NAME)
         return {"exists": True, "num_entities": stats.get("row_count", 0)}
 
+    def list_sources(self) -> List[Dict[str, Any]]:
+        """List distinct sources with their chunk counts and latest metadata."""
+        if not self.client.has_collection(self.COLLECTION_NAME):
+            return []
+        try:
+            results = self.client.query(
+                collection_name=self.COLLECTION_NAME,
+                filter="id >= 0",
+                output_fields=["source", "chunk_index", "metadata"],
+                limit=10000,
+            )
+        except Exception:
+            return []
+
+        # Group by source in Python
+        sources: Dict[str, Dict[str, Any]] = {}
+        for entity in results:
+            source = entity.get("source", "unknown")
+            if source not in sources:
+                sources[source] = {
+                    "source": source,
+                    "chunks": 0,
+                    "filename": source,
+                }
+                # Extract filename from metadata if available
+                meta = entity.get("metadata", {})
+                if isinstance(meta, dict) and meta.get("filename"):
+                    sources[source]["filename"] = meta["filename"]
+            sources[source]["chunks"] += 1
+
+        return sorted(sources.values(), key=lambda x: x["chunks"], reverse=True)
+
     def close(self):
         self._client = None

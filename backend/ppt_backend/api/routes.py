@@ -590,13 +590,18 @@ def rag_task_status(task_id: str):
 
 @router.get("/rag/documents")
 def rag_list_documents(svc: PresentationService = Depends(get_service)):
-    """List documents in the knowledge base."""
+    """List all documents in the knowledge base with per-source chunk counts."""
     rag = getattr(svc, "_rag", None)
     if not rag:
         raise HTTPException(status_code=503, detail="RAG service not available")
     try:
         stats = rag.get_kb_stats()
-        return stats
+        sources = rag.list_sources()
+        return {
+            "exists": stats.get("exists", False),
+            "num_entities": stats.get("num_entities", 0),
+            "documents": sources,
+        }
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 

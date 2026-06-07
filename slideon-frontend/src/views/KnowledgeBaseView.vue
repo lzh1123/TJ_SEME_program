@@ -189,12 +189,9 @@ async function startUpload(files) {
             progressText.value = '导入完成'
           }
 
-          // Reload to get accurate data
-          setTimeout(() => {
-            progressPercent.value = 0
-            progressText.value = ''
-            loadData()
-          }, 1500)
+          // Remove placeholder entries and reload from server
+          importedDocs.value = importedDocs.value.filter(d => d.status !== 'importing')
+          loadData()
         }
       } catch {
         clearInterval(pollTimer)
@@ -212,21 +209,37 @@ async function startUpload(files) {
 
 async function loadData() {
   try {
-    stats.value = await apiService.getKBStats()
-    // Build document list from stats
-    if (stats.value.exists && stats.value.num_entities > 0) {
-      importedDocs.value = [{
-        name: '知识库',
-        chunks: stats.value.num_entities,
+    const data = await apiService.getKBDocuments()
+    stats.value = { num_entities: data.num_entities || 0 }
+    importingCount.value = 0
+
+    // Build document list from the returned sources
+    if (data.documents && data.documents.length > 0) {
+      importedDocs.value = data.documents.map(d => ({
+        name: d.filename || d.source,
+        source: d.source,
+        chunks: d.chunks,
         status: 'ready'
-      }]
+      }))
+    } else {
+      importedDocs.value = []
     }
+
+    // Clear progress after reload
+    progressPercent.value = 0
+    progressText.value = ''
+    uploading.value = false
   } catch {}
 }
 
 function removeDoc(doc) {
-  if (confirm(`确定要删除「${doc.name}」吗？`)) {
-    apiService.removeKBDocument(doc.name).then(() => loadData()).catch(() => {})
+  if (confirm(`确定要删除「${doc.name}」吗？此操作不可恢复。`)) {
+    apiService.removeKBDocument(doc.source).then(() => {
+      // Remove from local list immediately
+      importedDocs.value = importedDocs.value.filter(d => d.source !== doc.source)
+      stats.value.num_entities = Math.max(0, (stats.value.num_entities || 0) - (doc.chunks || 0))
+      loadData() // Reload from server to sync
+    }).catch(() => {})
   }
 }
 

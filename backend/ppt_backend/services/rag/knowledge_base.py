@@ -173,6 +173,10 @@ class KnowledgeBase:
     def get_stats(self) -> Dict[str, Any]:
         return self._store.get_collection_stats()
 
+    def list_sources(self) -> List[Dict[str, Any]]:
+        """List all distinct sources and their chunk counts."""
+        return self._store.list_sources()
+
     def _read_file(self, path: Path, suffix: str) -> str:
         if suffix == ".txt" or suffix == ".md":
             return path.read_text(encoding="utf-8")

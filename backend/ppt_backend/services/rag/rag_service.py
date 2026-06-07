@@ -152,6 +152,10 @@ class RagService:
     def get_kb_stats(self) -> Dict[str, Any]:
         return self._kb.get_stats()
 
+    def list_sources(self) -> List[Dict[str, Any]]:
+        """List all distinct sources in the knowledge base with chunk counts."""
+        return self._kb.list_sources()
+
     def ensure_collection(self, drop_if_exists: bool = False) -> bool:
         return self._kb.ensure_collection(drop_if_exists=drop_if_exists)
 

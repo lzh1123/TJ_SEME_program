@@ -31,6 +31,11 @@ const router = createRouter({
       component: () => import('../views/DashboardView.vue')
     },
     {
+      path: '/knowledge-base',
+      name: 'knowledge-base',
+      component: () => import('../views/KnowledgeBaseView.vue')
+    },
+    {
       path: '/eval',
       name: 'eval',
       component: () => import('../views/BatchEvalView.vue')

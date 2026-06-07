@@ -1,16 +1,22 @@
 from __future__ import annotations
 
+import asyncio
+import logging
+import os
+import tempfile
 from pathlib import Path
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, Body, Depends, HTTPException, Request, UploadFile, File
+from fastapi import APIRouter, Body, Depends, Form, HTTPException, Request, UploadFile, File
 from fastapi.responses import FileResponse
+from openai import APITimeoutError
 from pydantic import BaseModel, Field
 
 from ..domain.presentation import PresentationBundle
 from ..domain.render_tree import ComponentPatch, RenderTree
 from ..services.presentation_service import PresentationService
 from ..services.rag.rag_service import RagService
+from ..services.rag.task_queue import get_import_queue
 
 
 router = APIRouter()
@@ -87,6 +93,29 @@ class RagSearchRequest(BaseModel):
     deep_fetch: bool = True
 
 
+class EvalSingleRequest(BaseModel):
+    model_config = {"extra": "forbid"}
+
+    reference_text: Optional[str] = None
+    enable_llm_judge: bool = True
+    metrics: Optional[List[str]] = None
+
+
+class BatchEvalConfigModel(BaseModel):
+    name: str
+    use_rag: bool = True
+    theme: Optional[str] = None
+
+
+class BatchEvalRequestModel(BaseModel):
+    model_config = {"extra": "forbid"}
+
+    configs: List[BatchEvalConfigModel]
+    topics: List[str]
+    metrics: Optional[List[str]] = None
+    reference_texts: Dict[str, str] = Field(default_factory=dict)
+
+
 @router.get("/health")
 def health():
     return {"ok": True}
@@ -98,9 +127,25 @@ def list_themes(svc: PresentationService = Depends(get_service)):
 
 
 @router.post("/dsl")
-def generate_outline(payload: GenerateOutlineRequest, svc: PresentationService = Depends(get_service)):
+async def generate_outline(payload: GenerateOutlineRequest, request: Request, svc: PresentationService = Depends(get_service)):
     try:
-        return svc.generate_outline(topic=payload.topic, theme=payload.theme, use_rag=payload.use_rag)
+        # Run blocking LLM work in thread pool so we can detect client disconnect
+        loop = asyncio.get_event_loop()
+        future = loop.run_in_executor(
+            None,
+            lambda: svc.generate_outline(topic=payload.topic, theme=payload.theme, use_rag=payload.use_rag),
+        )
+        # Poll until done or client disconnects
+        while not future.done():
+            if await request.is_disconnected():
+                future.cancel()
+                raise HTTPException(status_code=499, detail="Client disconnected")
+            await asyncio.sleep(0.5)
+        return future.result()
+    except HTTPException:
+        raise
+    except APITimeoutError:
+        raise HTTPException(status_code=504, detail="AI generation timed out — the LLM service did not respond in time. Please try again.")
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -115,9 +160,23 @@ def compile_outline(payload: CompileOutlineRequest, svc: PresentationService = D
 
 
 @router.post("/presentations", response_model=CreatePresentationResponse)
-def create_presentation(payload: CreatePresentationRequest, svc: PresentationService = Depends(get_service)):
+async def create_presentation(payload: CreatePresentationRequest, request: Request, svc: PresentationService = Depends(get_service)):
     try:
-        bundle = svc.create(topic=payload.topic, theme=payload.theme, use_rag=payload.use_rag)
+        loop = asyncio.get_event_loop()
+        future = loop.run_in_executor(
+            None,
+            lambda: svc.create(topic=payload.topic, theme=payload.theme, use_rag=payload.use_rag),
+        )
+        while not future.done():
+            if await request.is_disconnected():
+                future.cancel()
+                raise HTTPException(status_code=499, detail="Client disconnected")
+            await asyncio.sleep(0.5)
+        bundle = future.result()
+    except HTTPException:
+        raise
+    except APITimeoutError:
+        raise HTTPException(status_code=504, detail="AI generation timed out — the LLM service did not respond in time. Please try again.")
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
     return CreatePresentationResponse(id=bundle.meta.id, bundle=bundle)
@@ -187,9 +246,23 @@ def switch_theme(presentation_id: str, payload: SwitchThemeRequest, svc: Present
 
 
 @router.post("/presentations/{presentation_id}/regenerate", response_model=PresentationBundle)
-def regenerate(presentation_id: str, payload: RegenerateRequest, svc: PresentationService = Depends(get_service)):
+async def regenerate(presentation_id: str, payload: RegenerateRequest, request: Request, svc: PresentationService = Depends(get_service)):
     try:
-        return svc.regenerate(presentation_id, topic=payload.topic, section=payload.section, use_rag=payload.use_rag)
+        loop = asyncio.get_event_loop()
+        future = loop.run_in_executor(
+            None,
+            lambda: svc.regenerate(presentation_id, topic=payload.topic, section=payload.section, use_rag=payload.use_rag),
+        )
+        while not future.done():
+            if await request.is_disconnected():
+                future.cancel()
+                raise HTTPException(status_code=499, detail="Client disconnected")
+            await asyncio.sleep(0.5)
+        return future.result()
+    except HTTPException:
+        raise
+    except APITimeoutError:
+        raise HTTPException(status_code=504, detail="AI generation timed out — the LLM service did not respond in time. Please try again.")
     except FileNotFoundError:
         raise HTTPException(status_code=404, detail="not found")
     except Exception as e:
@@ -347,3 +420,243 @@ def rag_bootstrap(payload: BootstrapRequest, svc: PresentationService = Depends(
         }
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+# ── Document → Outline endpoint ─────────────────────────────────
+
+@router.post("/dsl/from-document")
+async def generate_outline_from_document(
+    request: Request,
+    file: UploadFile = File(...),
+    theme: Optional[str] = Form(None),
+    svc: PresentationService = Depends(get_service),
+):
+    """Upload a document (PDF/DOCX/TXT/MD), parse it, generate an outline,
+    and ingest the document into the knowledge base asynchronously."""
+    try:
+        suffix = Path(file.filename or "upload").suffix.lower()
+        if suffix not in (".pdf", ".docx", ".txt", ".md"):
+            raise HTTPException(
+                status_code=400,
+                detail=f"Unsupported file type: {suffix}. Supported: .pdf, .docx, .txt, .md",
+            )
+
+        # Save temp file
+        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+            content = await file.read()
+            tmp.write(content)
+            tmp_path = tmp.name
+
+        try:
+            # Parse document (reuse knowledge_base._read_file)
+            from ..services.rag.knowledge_base import KnowledgeBase
+            from ..services.rag.milvus_client import MilvusStore
+            from ..services.rag.embedding import EmbeddingService
+            from ..settings import settings
+
+            store = MilvusStore(uri=settings.milvus_uri, db_name=settings.milvus_db)
+            embedding = EmbeddingService(model_name=settings.embedding_model)
+            kb = KnowledgeBase(store=store, embedding=embedding)
+            doc_text = kb._read_file(Path(tmp_path), suffix)
+
+            if not doc_text:
+                raise HTTPException(status_code=400, detail="Could not extract text from document")
+
+            # Truncate very long documents for the LLM prompt
+            max_chars = 10000
+            if len(doc_text) > max_chars:
+                first = doc_text[:int(max_chars * 0.4)]
+                last = doc_text[-int(max_chars * 0.2):]
+                doc_text_for_llm = first + "\n\n...[content truncated]...\n\n" + last
+            else:
+                doc_text_for_llm = doc_text
+
+            # Generate outline using document text as rag_context
+            from ..services.ai.pipeline import AiPipeline
+            ai = AiPipeline()
+            dsl = ai.generate_dsl(
+                topic=f"Based on document: {file.filename}",
+                theme=theme,
+                rag_context=doc_text_for_llm,
+            )
+            data = dsl.model_dump(by_alias=True)
+            slides = data.get("slides") or []
+            if isinstance(slides, list):
+                for s in slides:
+                    if isinstance(s, dict):
+                        s.pop("id", None)
+            data["slides"] = slides
+
+            # Fire-and-forget KB ingestion
+            try:
+                kb.ingest_text(doc_text, source=file.filename or "uploaded_document")
+            except Exception as e:
+                logging.getLogger(__name__).warning(
+                    "KB ingestion for document %s failed (non-blocking): %s",
+                    file.filename, e,
+                )
+
+            return data
+
+        finally:
+            os.unlink(tmp_path)
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+# ── KB Management endpoints ────────────────────────────────────
+
+@router.post("/rag/documents/batch")
+async def rag_upload_documents_batch(
+    files: List[UploadFile] = File(...),
+    svc: PresentationService = Depends(get_service),
+):
+    """Upload multiple documents for async KB import. Returns task_id."""
+    rag = getattr(svc, "_rag", None)
+    if not rag:
+        raise HTTPException(status_code=503, detail="RAG service not available")
+
+    saved_paths: List[Path] = []
+    for upload_file in files:
+        file_suffix = Path(upload_file.filename or "upload").suffix or ".txt"
+        with tempfile.NamedTemporaryFile(delete=False, suffix=file_suffix) as tmp:
+            tmp.write(await upload_file.read())
+            saved_paths.append(Path(tmp.name))
+
+    queue = get_import_queue()
+
+    async def process_files(paths: List[Path], task: Any) -> None:
+        for i, path in enumerate(paths):
+            try:
+                rag.ingest_document(path)
+                task.processed = i + 1
+            except Exception as e:
+                task.errors.append(f"{path.name}: {type(e).__name__}: {e}")
+            finally:
+                try:
+                    os.unlink(path)
+                except Exception:
+                    pass
+
+    queue.set_handler(process_files)
+    task_id = queue.enqueue(saved_paths)
+
+    return {"task_id": task_id, "file_count": len(files)}
+
+
+@router.get("/rag/tasks/{task_id}")
+def rag_task_status(task_id: str):
+    """Get import task progress."""
+    queue = get_import_queue()
+    task = queue.get_task(task_id)
+    if task is None:
+        raise HTTPException(status_code=404, detail="Task not found")
+    return task
+
+
+@router.get("/rag/documents")
+def rag_list_documents(svc: PresentationService = Depends(get_service)):
+    """List documents in the knowledge base."""
+    rag = getattr(svc, "_rag", None)
+    if not rag:
+        raise HTTPException(status_code=503, detail="RAG service not available")
+    try:
+        stats = rag.get_kb_stats()
+        return stats
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+# ── Evaluation endpoints ───────────────────────────────────────
+
+def _get_evaluator():
+    """Lazy-load evaluator."""
+    from ..services.evaluation.evaluator import Evaluator
+    return Evaluator()
+
+
+@router.post("/eval/single/{presentation_id}")
+def eval_single_presentation(
+    presentation_id: str,
+    payload: EvalSingleRequest = Body(default=EvalSingleRequest()),
+    svc: PresentationService = Depends(get_service),
+):
+    """Evaluate a single presentation's outline quality."""
+    try:
+        bundle = svc.get(presentation_id)
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="Presentation not found")
+
+    slides_raw = bundle.dsl.model_dump(by_alias=True).get("slides", [])
+    topic = bundle.meta.topic
+
+    evaluator = _get_evaluator()
+    result = evaluator.evaluate_single(
+        presentation_id=presentation_id,
+        topic=topic,
+        slides=slides_raw,
+        reference_text=payload.reference_text,
+        enable_llm_judge=payload.enable_llm_judge,
+        requested_metrics=payload.metrics,
+    )
+    return result.model_dump()
+
+
+@router.post("/eval/batch")
+async def eval_batch(
+    payload: BatchEvalRequestModel,
+    request: Request,
+    svc: PresentationService = Depends(get_service),
+):
+    """Batch evaluate multiple configs × topics."""
+    from ..services.evaluation.evaluator import Evaluator
+
+    evaluator = Evaluator()
+    results: List[dict] = []
+
+    for config in payload.configs:
+        for topic in payload.topics:
+            try:
+                loop = asyncio.get_event_loop()
+                future = loop.run_in_executor(
+                    None,
+                    lambda t=topic, c=config: svc.create(
+                        topic=t, theme=c.theme, use_rag=c.use_rag
+                    ),
+                )
+                while not future.done():
+                    if await request.is_disconnected():
+                        future.cancel()
+                        raise HTTPException(status_code=499, detail="Client disconnected")
+                    await asyncio.sleep(0.5)
+                bundle = future.result()
+
+                slides_raw = bundle.dsl.model_dump(by_alias=True).get("slides", [])
+                ref = payload.reference_texts.get(topic)
+
+                eval_result = evaluator.evaluate_single(
+                    presentation_id=bundle.meta.id,
+                    topic=topic,
+                    slides=slides_raw,
+                    reference_text=ref,
+                    enable_llm_judge="llm_judge" in (payload.metrics or []),
+                    requested_metrics=payload.metrics,
+                )
+                result_dict = eval_result.model_dump()
+                result_dict["config"] = config.name
+                results.append(result_dict)
+            except Exception as e:
+                results.append({
+                    "config": config.name,
+                    "topic": topic,
+                    "error": f"{type(e).__name__}: {e}",
+                })
+
+    return {
+        "configs": [c.name for c in payload.configs],
+        "topics": payload.topics,
+        "results": results,
+    }

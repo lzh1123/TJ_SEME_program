@@ -31,8 +31,21 @@ class ApiService {
       clearTimeout(timeoutId)
 
       if (!response.ok) {
-        const errorText = await response.text()
-        throw new Error(`HTTP ${response.status}: ${errorText || response.statusText}`)
+        let errorMessage = `HTTP ${response.status}: ${response.statusText}`
+        try {
+          const errorBody = await response.json()
+          if (errorBody.detail) {
+            errorMessage = errorBody.detail
+          }
+        } catch {
+          // Fall back to raw text if JSON parse fails
+          const errorText = await response.text()
+          if (errorText) errorMessage = errorText
+        }
+        const error = new Error(errorMessage)
+        error.status = response.status
+        error.errorType = response.status === 504 ? 'timeout' : response.status === 503 ? 'server_busy' : 'error'
+        throw error
       }
 
       return response
@@ -179,6 +192,78 @@ class ApiService {
       outline,
       theme
     })
+    return response.json()
+  }
+
+  // ── 文档上传生成大纲 ──
+  async generateOutlineFromDocument(file, theme = null, signal = null) {
+    const formData = new FormData()
+    formData.append('file', file)
+    if (theme) formData.append('theme', theme)
+
+    const response = await fetch(`${this.baseURL}${API_ENDPOINTS.dslFromDocument}`, {
+      method: 'POST',
+      body: formData,
+      signal
+    })
+    if (!response.ok) {
+      let detail = `HTTP ${response.status}`
+      try { const err = await response.json(); detail = err.detail || detail } catch {}
+      throw new Error(detail)
+    }
+    return response.json()
+  }
+
+  // ── 知识库管理 ──
+  async uploadDocumentsToKB(files) {
+    const formData = new FormData()
+    files.forEach(f => formData.append('files', f))
+    const response = await fetch(`${this.baseURL}${API_ENDPOINTS.rag.documentsBatch}`, {
+      method: 'POST',
+      body: formData
+    })
+    if (!response.ok) {
+      let detail = `HTTP ${response.status}`
+      try { const err = await response.json(); detail = err.detail || detail } catch {}
+      throw new Error(detail)
+    }
+    return response.json()
+  }
+
+  async getImportTaskStatus(taskId) {
+    const response = await this.get(API_ENDPOINTS.rag.taskStatus(taskId))
+    return response.json()
+  }
+
+  async getKBDocuments() {
+    const response = await this.get(API_ENDPOINTS.rag.documents)
+    return response.json()
+  }
+
+  async removeKBDocument(source) {
+    const response = await this.request(API_ENDPOINTS.rag.documentDelete(source), {
+      method: 'DELETE'
+    })
+    return response.json()
+  }
+
+  async getKBStats() {
+    const response = await this.get(API_ENDPOINTS.rag.stats)
+    return response.json()
+  }
+
+  // ── 评估 ──
+  async evaluatePresentation(presentationId, options = {}) {
+    const response = await this.post(API_ENDPOINTS.eval.single(presentationId), {
+      reference_text: options.referenceText || null,
+      enable_llm_judge: options.enableLLMJudge !== false,
+      metrics: options.metrics || null
+    })
+    return response.json()
+  }
+
+  async batchEvaluate(config) {
+    const response = await this.post(API_ENDPOINTS.eval.batch, config)
     return response.json()
   }
 }

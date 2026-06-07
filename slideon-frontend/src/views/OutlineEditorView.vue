@@ -41,6 +41,10 @@
           <IconBase name="save" :size="14" />
           {{ isSaving ? '保存中...' : '保存' }}
         </button>
+        <button class="btn btn-secondary" @click="showEval = !showEval" :class="{ active: showEval }">
+          <IconBase name="chart" :size="14" />
+          评估
+        </button>
         <button class="btn btn-primary" @click="generatePPT" :disabled="isGenerating">
           <IconBase v-if="isGenerating" name="spinner" :size="14" class="animate-spin" />
           <IconBase v-else name="magic" :size="14" />
@@ -391,6 +395,11 @@
       </div>
     </div>
 
+    <!-- 评估面板 -->
+    <div v-if="showEval" class="eval-drawer">
+      <EvaluationPanel :presentationId="outlineId" />
+    </div>
+
     <!-- Toast -->
     <Teleport to="body">
       <div v-if="toastMessage" class="toast-overlay" @click="toastMessage=''">
@@ -410,6 +419,7 @@ import IconBase from '../components/icons/IconBase.vue'
 import { useOutlineStore } from '../stores/outlineStore.js'
 import { apiService } from '../services/api.js'
 import { new_id } from '../utils/ids.js'
+import EvaluationPanel from '../components/common/EvaluationPanel.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -423,6 +433,7 @@ const toastMessage = ref('')
 const toastType = ref('success')
 const outlineId = ref(null)
 const showDownloadMenu = ref(false)
+const showEval = ref(false)
 
 const selectedSlide = computed(() => {
   if (dsl.value.slides.length === 0) return null
@@ -826,6 +837,7 @@ onMounted(() => {
 .animate-spin { animation:spin 1s linear infinite; }
 @keyframes slideUp { from{opacity:0;transform:translateY(-10px)} to{opacity:1;transform:translateY(0)} }
 @keyframes spin { to{transform:rotate(360deg)} }
+.eval-drawer { border-top:2px solid #e5e7eb; max-height:50vh; overflow-y:auto; }
 @media(max-width:1024px){ .outline-sidebar{width:220px} .title-input{width:200px} }
 @media(max-width:768px){ .outline-sidebar{width:100%;max-height:200px;border-right:none;border-bottom:1px solid #e5e7eb} .editor-body{flex-direction:column} .edit-area{padding:16px} }
 </style>

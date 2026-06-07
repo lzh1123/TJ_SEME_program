@@ -266,8 +266,15 @@ async function doGenerate() {
     ballEntering.value = true
     setSuccess(result.id)
     ballEntering.value = false
-  } else if (!result.aborted && state.modalVisible) {
-    alert('生成大纲失败: ' + result.error)
+  } else if (!result.aborted) {
+    // Hide modal and show error floating ball so user can see the failure
+    hideModal()
+    const cx = ballState.position.x != null ? ballState.position.x : window.innerWidth - 104
+    const cy = ballState.position.y != null ? ballState.position.y : window.innerHeight - 104
+    ballState.position = { x: cx, y: cy }
+    setError()
+    ballEntering.value = true
+    setTimeout(() => { ballEntering.value = false }, 500)
   }
 }
 

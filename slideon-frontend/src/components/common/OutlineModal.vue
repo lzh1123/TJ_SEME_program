@@ -12,8 +12,23 @@
         </div>
 
         <div class="modal-body">
+          <!-- Mode tabs -->
+          <div class="mode-tabs">
+            <button
+              :class="['mode-tab', { active: inputMode === 'text' }]"
+              @click="inputMode = 'text'"
+              :disabled="isGenerating"
+            >输入主题</button>
+            <button
+              :class="['mode-tab', { active: inputMode === 'file' }]"
+              @click="inputMode = 'file'"
+              :disabled="isGenerating"
+            >导入文档</button>
+          </div>
+
           <div class="step-content">
-            <div class="form-step">
+            <!-- Text mode -->
+            <div v-if="inputMode === 'text'" class="form-step">
               <label class="form-label">
                 <span class="step-number">1</span>
                 输入主题
@@ -28,6 +43,41 @@
                 @input="updateCharCount"
               ></textarea>
               <div class="char-count" :class="{ error: charCount > 500 }">{{ charCount }}/500</div>
+            </div>
+
+            <!-- File mode -->
+            <div v-if="inputMode === 'file'" class="form-step">
+              <label class="form-label">
+                <span class="step-number">1</span>
+                选择文档
+              </label>
+              <div
+                class="upload-zone"
+                :class="{ 'has-file': selectedFile, 'drag-over': isDragOver }"
+                @click="triggerFileInput"
+                @dragover.prevent="isDragOver = true"
+                @dragleave.prevent="isDragOver = false"
+                @drop.prevent="handleFileDrop"
+              >
+                <input
+                  ref="fileInput"
+                  type="file"
+                  accept=".pdf,.docx,.txt,.md"
+                  style="display:none"
+                  @change="handleFileSelect"
+                />
+                <template v-if="!selectedFile">
+                  <IconBase name="upload" :size="32" />
+                  <p class="upload-text">拖拽文件到此处或点击选择</p>
+                  <p class="upload-hint">支持 PDF、Word、TXT、Markdown 格式</p>
+                </template>
+                <template v-else>
+                  <IconBase name="file" :size="24" />
+                  <p class="upload-filename">{{ selectedFile.name }}</p>
+                  <p class="upload-size">{{ formatFileSize(selectedFile.size) }}</p>
+                  <button class="btn btn-sm btn-secondary" @click.stop="clearFile">移除</button>
+                </template>
+              </div>
             </div>
 
             <div class="form-step">
@@ -58,12 +108,12 @@
           <button class="btn btn-secondary" @click="handleCancel">取消</button>
           <button
             class="btn btn-primary"
-            :disabled="isGenerating || !form.topic.trim()"
+            :disabled="isGenerating || (inputMode === 'text' && !form.topic.trim()) || (inputMode === 'file' && !selectedFile)"
             @click="generateOutline"
           >
             <IconBase v-if="isGenerating" name="spinner" :size="14" class="animate-spin" />
             <IconBase v-else name="magic" :size="14" />
-            {{ isGenerating ? '生成大纲中...' : '生成大纲' }}
+            {{ isGenerating ? (inputMode === 'file' ? '解析文档并生成大纲中...' : '生成大纲中...') : '生成大纲' }}
           </button>
         </div>
       </div>
@@ -92,6 +142,10 @@ const { state: ballState, show: showBall, setSuccess, setError, consumeReopen } 
 
 const isGenerating = ref(false)
 let abortController = null
+const inputMode = ref('text')
+const selectedFile = ref(null)
+const isDragOver = ref(false)
+const fileInput = ref(null)
 
 // Watch for reopen request (user clicked ball during generation)
 watch(() => ballState.reopenRequested, (val) => {
@@ -143,6 +197,14 @@ const handleCancel = () => {
 }
 
 const generateOutline = async () => {
+  if (inputMode.value === 'file') {
+    await generateFromDocument()
+  } else {
+    await generateFromTopic()
+  }
+}
+
+const generateFromTopic = async () => {
   if (!form.value.topic.trim()) {
     alert('请输入主题')
     return
@@ -163,12 +225,9 @@ const generateOutline = async () => {
 
     const { id } = outlineStore.createOutline(result)
 
-    // Check if modal was closed (minimized to ball) during generation
     if (!props.modelValue) {
-      // Ball is visible, update to success
       setSuccess(id)
     } else {
-      // Still in modal, close and navigate
       close()
       router.push({ path: '/outline-editor', query: { id } })
     }
@@ -178,15 +237,79 @@ const generateOutline = async () => {
       return
     }
     console.error('❌ 生成大纲失败:', error)
-    if (!props.modelValue) {
-      setError()
-    } else {
-      alert('生成大纲失败: ' + error.message)
-    }
+    emit('update:modelValue', false)
+    setError()
   } finally {
     isGenerating.value = false
     abortController = null
   }
+}
+
+const generateFromDocument = async () => {
+  if (!selectedFile.value) {
+    alert('请选择文档')
+    return
+  }
+
+  isGenerating.value = true
+
+  try {
+    abortController = new AbortController()
+    const result = await apiService.generateOutlineFromDocument(
+      selectedFile.value,
+      form.value.style,
+      abortController.signal
+    )
+
+    console.log('✅ 文档大纲生成成功:', result)
+
+    const { id } = outlineStore.createOutline(result)
+
+    if (!props.modelValue) {
+      setSuccess(id)
+    } else {
+      close()
+      router.push({ path: '/outline-editor', query: { id } })
+    }
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      console.log('⚠️ 生成已取消')
+      return
+    }
+    console.error('❌ 文档大纲生成失败:', error)
+    emit('update:modelValue', false)
+    setError()
+  } finally {
+    isGenerating.value = false
+    abortController = null
+    selectedFile.value = null
+  }
+}
+
+function triggerFileInput() {
+  if (!isGenerating.value) fileInput.value?.click()
+}
+
+function handleFileSelect(e) {
+  const file = e.target.files?.[0]
+  if (file) selectedFile.value = file
+}
+
+function handleFileDrop(e) {
+  isDragOver.value = false
+  const file = e.dataTransfer?.files?.[0]
+  if (file) selectedFile.value = file
+}
+
+function clearFile() {
+  selectedFile.value = null
+  if (fileInput.value) fileInput.value.value = ''
+}
+
+function formatFileSize(bytes) {
+  if (bytes < 1024) return bytes + ' B'
+  if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB'
+  return (bytes / 1048576).toFixed(1) + ' MB'
 }
 
 // Need router for navigation on success when modal is still open
@@ -274,6 +397,88 @@ const router = useRouter()
   padding: var(--space-4) var(--space-8);
   border-top: 1px solid var(--gray-200);
   background: var(--gray-50);
+}
+
+.mode-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--gray-200);
+  margin-bottom: var(--space-4);
+}
+
+.mode-tab {
+  flex: 1;
+  padding: var(--space-3) var(--space-4);
+  border: none;
+  background: transparent;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--gray-500);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.mode-tab.active {
+  color: var(--primary-600);
+  border-bottom-color: var(--primary-500);
+}
+
+.mode-tab:hover:not(.active):not(:disabled) {
+  color: var(--gray-700);
+  background: var(--gray-50);
+}
+
+.mode-tab:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.upload-zone {
+  border: 2px dashed var(--gray-300);
+  border-radius: var(--radius-lg);
+  padding: var(--space-8);
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: var(--gray-50);
+}
+
+.upload-zone:hover,
+.upload-zone.drag-over {
+  border-color: var(--primary-400);
+  background: var(--primary-50);
+}
+
+.upload-zone.has-file {
+  border-style: solid;
+  border-color: var(--primary-300);
+  background: var(--primary-50);
+}
+
+.upload-text {
+  font-size: 14px;
+  color: var(--gray-600);
+  margin: var(--space-2) 0 var(--space-1);
+}
+
+.upload-hint {
+  font-size: 12px;
+  color: var(--gray-400);
+  margin: 0;
+}
+
+.upload-filename {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--gray-800);
+  margin: var(--space-2) 0 0;
+}
+
+.upload-size {
+  font-size: 12px;
+  color: var(--gray-500);
+  margin: var(--space-1) 0 var(--space-2);
 }
 
 .step-content {

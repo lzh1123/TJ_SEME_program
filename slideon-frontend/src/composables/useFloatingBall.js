@@ -98,9 +98,8 @@ export function useFloatingBall() {
         abortController = null
         return { success: false, aborted: true }
       }
-      if (!state.modalVisible) {
-        setError()
-      }
+      // Always show error ball so user knows generation failed
+      setError()
       state.isGenerating = false
       abortController = null
       return { success: false, error: error.message }

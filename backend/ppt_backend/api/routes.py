@@ -306,8 +306,15 @@ def rag_search(payload: RagSearchRequest, svc: PresentationService = Depends(get
 @router.post("/rag/documents")
 def rag_upload_document(
     file: UploadFile = File(...),
+    force: bool = False,
     svc: PresentationService = Depends(get_service),
 ):
+    """Upload a single document to the knowledge base.
+
+    Query params:
+        force: If true, delete existing entries for this filename and re-ingest.
+               If false (default), skip if the filename already exists (dedup).
+    """
     rag = getattr(svc, "_rag", None)
     if not rag:
         raise HTTPException(status_code=503, detail="RAG service not available")
@@ -320,9 +327,12 @@ def rag_upload_document(
             tmp.write(file.file.read())
             tmp_path = tmp.name
 
-        count = rag.ingest_document(Path(tmp_path))
+        result = rag.ingest_document(Path(tmp_path), force=force)
         os.unlink(tmp_path)
-        return {"filename": file.filename, "chunks_inserted": count}
+        return {
+            "filename": file.filename,
+            **result,
+        }
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -487,9 +497,19 @@ async def generate_outline_from_document(
                         s.pop("id", None)
             data["slides"] = slides
 
-            # Fire-and-forget KB ingestion
+            # Fire-and-forget KB ingestion (dedup: skips if already exists)
             try:
-                kb.ingest_text(doc_text, source=file.filename or "uploaded_document")
+                result = kb.ingest_text(doc_text, source=file.filename or "uploaded_document")
+                if result.get("dedup_skipped"):
+                    logging.getLogger(__name__).info(
+                        "KB dedup: document %s already exists, skipped ingestion",
+                        file.filename,
+                    )
+                else:
+                    logging.getLogger(__name__).info(
+                        "KB ingestion for document %s: %d chunks inserted",
+                        file.filename, result.get("chunks_inserted", 0),
+                    )
             except Exception as e:
                 logging.getLogger(__name__).warning(
                     "KB ingestion for document %s failed (non-blocking): %s",
@@ -529,9 +549,15 @@ async def rag_upload_documents_batch(
     queue = get_import_queue()
 
     async def process_files(paths: List[Path], task: Any) -> None:
+        skipped_count = 0
         for i, path in enumerate(paths):
             try:
-                rag.ingest_document(path)
+                result = rag.ingest_document(path)
+                if result.get("dedup_skipped"):
+                    skipped_count += 1
+                    logging.getLogger(__name__).info(
+                        "KB dedup: batch import skipped %s (already exists)", path.name
+                    )
                 task.processed = i + 1
             except Exception as e:
                 task.errors.append(f"{path.name}: {type(e).__name__}: {e}")
@@ -540,6 +566,11 @@ async def rag_upload_documents_batch(
                     os.unlink(path)
                 except Exception:
                     pass
+        if skipped_count > 0:
+            logging.getLogger(__name__).info(
+                "KB dedup: batch import — %d/%d files skipped (already exist)",
+                skipped_count, len(paths),
+            )
 
     queue.set_handler(process_files)
     task_id = queue.enqueue(saved_paths)

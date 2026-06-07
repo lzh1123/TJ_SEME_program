@@ -1,12 +1,16 @@
 from __future__ import annotations
 
+import hashlib
 import json
+import logging
 import re
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
 from .embedding import EmbeddingService
 from .milvus_client import MilvusStore
+
+logger = logging.getLogger(__name__)
 
 
 class KnowledgeBase:
@@ -28,16 +32,69 @@ class KnowledgeBase:
     def ensure_collection(self, drop_if_exists: bool = False) -> bool:
         return self._store.ensure_collection(dim=self._embedding.dim, drop_if_exists=drop_if_exists)
 
+    @staticmethod
+    def _compute_file_hash(file_path: Path) -> str:
+        """Compute SHA256 hash of a file for content-based deduplication."""
+        sha = hashlib.sha256()
+        with open(file_path, "rb") as f:
+            for chunk in iter(lambda: f.read(65536), b""):
+                sha.update(chunk)
+        return sha.hexdigest()
+
     def ingest_text(
         self,
         content: str,
         source: str,
         metadata: Optional[Dict[str, Any]] = None,
         progress_callback: Optional[Callable[[int, int], None]] = None,
-    ) -> int:
+        force: bool = False,
+    ) -> Dict[str, Any]:
+        """Ingest text content into the knowledge base.
+
+        Args:
+            content: Text content to ingest.
+            source: Source identifier (e.g., filename).
+            metadata: Optional metadata dict.
+            progress_callback: Optional (current, total) progress callback.
+            force: If True, delete existing entries for this source before re-ingesting.
+
+        Returns:
+            Dict with keys: chunks_inserted, dedup_skipped, action_taken.
+        """
+        result = {
+            "chunks_inserted": 0,
+            "dedup_skipped": False,
+            "previous_chunks_removed": 0,
+            "action_taken": "inserted",
+        }
+
+        # ── Dedup check ──
+        if self._store.source_exists(source):
+            if force:
+                # Replace mode: delete old entries, then ingest fresh
+                removed = self._store.delete_by_source(source)
+                result["previous_chunks_removed"] = removed
+                result["action_taken"] = "replaced"
+                logger.info(
+                    "Dedup: source=%r already existed with %d chunks — REPLACING (force=True)",
+                    source, removed,
+                )
+            else:
+                # Skip mode: source already exists, do nothing
+                existing_count = self._store.count_by_source(source)
+                result["dedup_skipped"] = True
+                result["action_taken"] = "skipped"
+                logger.info(
+                    "Dedup: source=%r already exists with %d chunks — SKIPPING",
+                    source, existing_count,
+                )
+                return result
+
+        # ── Normal ingestion ──
         chunks = self._split_text(content, source, metadata or {})
         if not chunks:
-            return 0
+            return result
+
         texts = [c["text"] for c in chunks]
         batch_size = 32
         total_inserted = 0
@@ -49,14 +106,32 @@ class KnowledgeBase:
             total_inserted += len(ids)
             if progress_callback:
                 progress_callback(min(i + batch_size, len(texts)), len(texts))
-        return total_inserted
+
+        result["chunks_inserted"] = total_inserted
+        return result
 
     def ingest_file(
         self,
         file_path: Path,
         metadata: Optional[Dict[str, Any]] = None,
         progress_callback: Optional[Callable[[int, int], None]] = None,
-    ) -> int:
+        force: bool = False,
+    ) -> Dict[str, Any]:
+        """Ingest a file into the knowledge base with deduplication.
+
+        Dedup strategy (two-layer):
+          1. Source-based: checks if the filename already exists in Milvus.
+          2. Content-based: stores SHA256 hash in metadata for future hash-based dedup.
+
+        Args:
+            file_path: Path to the file.
+            metadata: Optional metadata dict.
+            progress_callback: Optional progress callback.
+            force: If True, delete existing entries and re-ingest even if source exists.
+
+        Returns:
+            Dict with keys: chunks_inserted, dedup_skipped, action_taken, file_hash.
+        """
         path = Path(file_path)
         if not path.exists():
             raise FileNotFoundError(f"File not found: {file_path}")
@@ -64,11 +139,33 @@ class KnowledgeBase:
         suffix = path.suffix.lower()
         content = self._read_file(path, suffix)
         if not content:
-            return 0
+            return {
+                "chunks_inserted": 0,
+                "dedup_skipped": False,
+                "previous_chunks_removed": 0,
+                "action_taken": "empty_content",
+                "file_hash": "",
+            }
+
+        # Compute content hash
+        try:
+            file_hash = self._compute_file_hash(path)
+        except Exception:
+            file_hash = ""
 
         meta = metadata or {}
         meta.setdefault("filename", path.name)
-        return self.ingest_text(content, source=path.name, metadata=meta, progress_callback=progress_callback)
+        meta["sha256"] = file_hash
+
+        result = self.ingest_text(
+            content,
+            source=path.name,
+            metadata=meta,
+            progress_callback=progress_callback,
+            force=force,
+        )
+        result["file_hash"] = file_hash
+        return result
 
     def remove_source(self, source: str) -> int:
         return self._store.delete_by_source(source)

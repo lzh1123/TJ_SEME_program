@@ -120,16 +120,31 @@ class RagService:
         file_path: Path,
         metadata: Optional[Dict[str, Any]] = None,
         progress_callback: Optional[Callable[[int, int], None]] = None,
-    ) -> int:
-        return self._kb.ingest_file(file_path, metadata=metadata, progress_callback=progress_callback)
+        force: bool = False,
+    ) -> Dict[str, Any]:
+        """Ingest a file into the knowledge base with deduplication.
+
+        Returns dict with: chunks_inserted, dedup_skipped, action_taken, file_hash.
+        """
+        return self._kb.ingest_file(
+            file_path,
+            metadata=metadata,
+            progress_callback=progress_callback,
+            force=force,
+        )
 
     def ingest_text(
         self,
         content: str,
         source: str,
         metadata: Optional[Dict[str, Any]] = None,
-    ) -> int:
-        return self._kb.ingest_text(content, source, metadata=metadata)
+        force: bool = False,
+    ) -> Dict[str, Any]:
+        """Ingest text into the knowledge base with deduplication.
+
+        Returns dict with: chunks_inserted, dedup_skipped, action_taken.
+        """
+        return self._kb.ingest_text(content, source, metadata=metadata, force=force)
 
     def remove_document(self, source: str) -> int:
         return self._kb.remove_source(source)

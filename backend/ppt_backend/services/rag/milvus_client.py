@@ -102,6 +102,32 @@ class MilvusStore:
         result = self.client.insert(collection_name=self.COLLECTION_NAME, data=data)
         return result.get("ids", [])
 
+    def source_exists(self, source: str) -> bool:
+        """Check if a source already has entries in the collection."""
+        try:
+            result = self.client.query(
+                collection_name=self.COLLECTION_NAME,
+                filter=f'source == "{source}"',
+                output_fields=["id"],
+                limit=1,
+            )
+            return len(result) > 0
+        except Exception:
+            return False
+
+    def count_by_source(self, source: str) -> int:
+        """Count how many chunks exist for a given source."""
+        try:
+            result = self.client.query(
+                collection_name=self.COLLECTION_NAME,
+                filter=f'source == "{source}"',
+                output_fields=["id"],
+                limit=10000,
+            )
+            return len(result)
+        except Exception:
+            return 0
+
     def delete_by_source(self, source: str) -> int:
         res = self.client.delete(
             collection_name=self.COLLECTION_NAME,

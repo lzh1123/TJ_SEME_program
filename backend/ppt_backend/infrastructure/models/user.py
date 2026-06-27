@@ -11,7 +11,6 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from ..database import Base
 
 if TYPE_CHECKING:
-    from .presentation import Presentation
     from .refresh_token import RefreshToken
 
 
@@ -41,9 +40,7 @@ class User(Base):
         DateTime(timezone=True), default=None
     )
 
-    presentations: Mapped[List["Presentation"]] = relationship(
-        "Presentation", back_populates="owner", cascade="all, delete-orphan"
-    )
+    # presentations queried via user_id directly in service layer
     refresh_tokens: Mapped[List["RefreshToken"]] = relationship(
         "RefreshToken", back_populates="user", cascade="all, delete-orphan"
     )

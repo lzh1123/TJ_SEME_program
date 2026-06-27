@@ -29,62 +29,58 @@ async def get_auth_service(db: AsyncSession = Depends(get_db)) -> AuthService:
     return AuthService(db=db)
 
 
-async def get_optional_current_user(
-    credentials: Optional[HTTPAuthorizationCredentials] = Depends(bearer_scheme),
-    auth: AuthService = Depends(get_auth_service),
-) -> Optional[dict]:
-    """Return current user dict if a valid token is provided, else None."""
-    if credentials is None:
-        return None
-    payload = decode_token(credentials.credentials)
+def _decode_user_id_from_token(token: str) -> Optional[str]:
+    """Extract user_id from a JWT access token without DB query."""
+    payload = decode_token(token)
     if payload is None or payload.get("type") != "access":
         return None
-    user_id = payload.get("sub")
-    if user_id is None:
-        return None
-    user = await auth.get_user_by_id(user_id)
-    if user is None or not user.is_active:
-        return None
-    return {
-        "id": str(user.id),
-        "username": user.username,
-        "email": user.email,
-        "display_name": user.display_name,
-    }
+    return payload.get("sub")
 
 
-async def get_current_user(
+async def get_optional_current_user_id(
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(bearer_scheme),
-    auth: AuthService = Depends(get_auth_service),
-) -> dict:
-    """Require a valid access token. Returns user dict or 401."""
+) -> Optional[str]:
+    """Return user_id string if a valid access token is provided, else None.
+    No DB query is performed — the user is identified solely from the JWT claims.
+    """
+    if credentials is None:
+        return None
+    return _decode_user_id_from_token(credentials.credentials)
+
+
+async def get_current_user_id(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(bearer_scheme),
+) -> str:
+    """Require a valid access token and return user_id string.
+    Raises 401 if token is missing or invalid.
+    """
     if credentials is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Not authenticated",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    payload = decode_token(credentials.credentials)
-    if payload is None or payload.get("type") != "access":
+    user_id = _decode_user_id_from_token(credentials.credentials)
+    if user_id is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired token",
         )
-    user_id = payload.get("sub")
-    if user_id is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token payload",
-        )
-    user = await auth.get_user_by_id(user_id)
-    if user is None or not user.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User not found or inactive",
-        )
-    return {
-        "id": str(user.id),
-        "username": user.username,
-        "email": user.email,
-        "display_name": user.display_name,
-    }
+    return user_id
+
+
+# Kept for backward compatibility with routes that expect dict-style user
+async def get_optional_current_user(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(bearer_scheme),
+) -> Optional[dict]:
+    uid = await get_optional_current_user_id(credentials)
+    if uid is None:
+        return None
+    return {"id": uid}
+
+
+async def get_current_user(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(bearer_scheme),
+) -> dict:
+    uid = await get_current_user_id(credentials)
+    return {"id": uid}

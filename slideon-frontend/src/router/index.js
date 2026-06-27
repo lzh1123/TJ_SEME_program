@@ -8,7 +8,7 @@ const routes = [
     path: '/',
     name: 'home',
     component: HomeView,
-    meta: { requiresAuth: false }
+    meta: { requiresAuth: true }
   },
   {
     path: '/login',
@@ -38,13 +38,25 @@ const routes = [
     path: '/outline-editor',
     name: 'outline-editor',
     component: () => import('../views/OutlineEditorView.vue'),
-    meta: { requiresAuth: false }
+    meta: { requiresAuth: true }
   },
   {
     path: '/dashboard',
     name: 'dashboard',
     component: () => import('../views/DashboardView.vue'),
-    meta: { requiresAuth: false }
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/knowledge-base',
+    name: 'knowledge-base',
+    component: () => import('../views/KnowledgeBaseView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/batch-eval',
+    name: 'batch-eval',
+    component: () => import('../views/BatchEvalView.vue'),
+    meta: { requiresAuth: true }
   }
 ]
 

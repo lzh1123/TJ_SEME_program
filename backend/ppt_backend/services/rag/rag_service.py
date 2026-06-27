@@ -1,16 +1,18 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional
 
 from langchain_core.prompts import ChatPromptTemplate
 
-from .embedding import EmbeddingService
 from .knowledge_base import KnowledgeBase
-from .milvus_client import MilvusStore
 from .rag_graph import build_rag_graph
 from .retrieval import HybridRetriever
 from .web_search import WebSearchService
+
+if TYPE_CHECKING:
+    from .embedding import EmbeddingService
+    from .milvus_client import MilvusStore
 
 
 class RagService:
@@ -120,22 +122,49 @@ class RagService:
         file_path: Path,
         metadata: Optional[Dict[str, Any]] = None,
         progress_callback: Optional[Callable[[int, int], None]] = None,
-    ) -> int:
-        return self._kb.ingest_file(file_path, metadata=metadata, progress_callback=progress_callback)
+        force: bool = False,
+        source_override: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Ingest a file into the knowledge base with deduplication.
+
+        Args:
+            file_path: Path to the temp file on disk.
+            source_override: The ORIGINAL user filename. Must be provided to ensure
+                           correct source naming and dedup. If not provided, falls
+                           back to path.name (temp filename — will break dedup).
+
+        Returns dict with: chunks_inserted, dedup_skipped, action_taken, file_hash.
+        """
+        return self._kb.ingest_file(
+            file_path,
+            metadata=metadata,
+            progress_callback=progress_callback,
+            force=force,
+            source_override=source_override,
+        )
 
     def ingest_text(
         self,
         content: str,
         source: str,
         metadata: Optional[Dict[str, Any]] = None,
-    ) -> int:
-        return self._kb.ingest_text(content, source, metadata=metadata)
+        force: bool = False,
+    ) -> Dict[str, Any]:
+        """Ingest text into the knowledge base with deduplication.
+
+        Returns dict with: chunks_inserted, dedup_skipped, action_taken.
+        """
+        return self._kb.ingest_text(content, source, metadata=metadata, force=force)
 
     def remove_document(self, source: str) -> int:
         return self._kb.remove_source(source)
 
     def get_kb_stats(self) -> Dict[str, Any]:
         return self._kb.get_stats()
+
+    def list_sources(self) -> List[Dict[str, Any]]:
+        """List all distinct sources in the knowledge base with chunk counts."""
+        return self._kb.list_sources()
 
     def ensure_collection(self, drop_if_exists: bool = False) -> bool:
         return self._kb.ensure_collection(drop_if_exists=drop_if_exists)

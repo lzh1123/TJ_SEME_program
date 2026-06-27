@@ -1,12 +1,17 @@
 from __future__ import annotations
 
+import logging
 import time
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional
 
 from .content_fetcher import ContentFetcher
-from .embedding import EmbeddingService
 from .knowledge_base import KnowledgeBase
+
+if TYPE_CHECKING:
+    from .embedding import EmbeddingService
+
+logger = logging.getLogger(__name__)
 
 
 # ── 种子知识主题定义 ──────────────────────────────────────────
@@ -205,11 +210,14 @@ class SeedBootstrapper:
                         "title": doc["title"],
                     }
                     try:
-                        n = self._kb.ingest_text(
+                        result = self._kb.ingest_text(
                             content=doc["content"],
                             source=source,
                             metadata=metadata,
                         )
+                        n = result.get("chunks_inserted", 0)
+                        if result.get("dedup_skipped"):
+                            logger.info("Seed KB dedup: %s already exists, skipped", source)
                         self._emit(chunks_ingested=self._progress.chunks_ingested + n)
                         self._emit(documents_ingested=self._progress.documents_ingested + 1)
                     except Exception as e:

@@ -41,8 +41,20 @@ class ApiService {
       clearTimeout(timeoutId)
 
       if (!response.ok) {
-        const errorText = await response.text()
-        throw new Error(`HTTP ${response.status}: ${errorText || response.statusText}`)
+        let errorMessage = `HTTP ${response.status}: ${response.statusText}`
+        try {
+          const errorBody = await response.json()
+          if (errorBody.detail) {
+            errorMessage = errorBody.detail
+          }
+        } catch {
+          const errorText = await response.text()
+          if (errorText) errorMessage = errorText
+        }
+        const error = new Error(errorMessage)
+        error.status = response.status
+        error.errorType = response.status === 504 ? 'timeout' : response.status === 503 ? 'server_busy' : 'error'
+        throw error
       }
 
       return response
@@ -87,6 +99,10 @@ class ApiService {
       method: 'PATCH',
       body: data ? JSON.stringify(data) : undefined
     })
+  }
+
+  async delete(url) {
+    return this.request(url, { method: 'DELETE' })
   }
 
   // 健康检查
@@ -194,6 +210,102 @@ class ApiService {
   // 获取用户演示文稿列表
   async listPresentations() {
     const response = await this.get(API_ENDPOINTS.presentations.list)
+    return response.json()
+  }
+
+  // ── RAG 知识库相关 ──
+
+  async ragSearch(query, topK = 5, enableWeb = true, enableLocal = true, deepFetch = true) {
+    const response = await this.post(API_ENDPOINTS.rag.search, {
+      query, top_k: topK, enable_web: enableWeb, enable_local: enableLocal, deep_fetch: deepFetch
+    })
+    return response.json()
+  }
+
+  async ragEnhance(query, topK = 5, enableWeb = true, enableLocal = true, deepFetch = true) {
+    const response = await this.post(API_ENDPOINTS.rag.enhance, {
+      query, top_k: topK, enable_web: enableWeb, enable_local: enableLocal, deep_fetch: deepFetch
+    })
+    return response.json()
+  }
+
+  async ragUploadDocument(file, force = false) {
+    const formData = new FormData()
+    formData.append('file', file)
+    if (force) formData.append('force', 'true')
+    const response = await this.request(API_ENDPOINTS.rag.documents, {
+      method: 'POST',
+      headers: { ...this._getAuthHeaders() },
+      body: formData
+    })
+    return response.json()
+  }
+
+  async ragListSources() {
+    const response = await this.get(API_ENDPOINTS.rag.sources)
+    return response.json()
+  }
+
+  async ragDeleteDocument(source) {
+    const response = await this.delete(API_ENDPOINTS.rag.documentDelete(source))
+    return response.json()
+  }
+
+  async ragClearAll() {
+    const response = await this.delete(API_ENDPOINTS.rag.documentsClear)
+    return response.json()
+  }
+
+  async ragStats() {
+    const response = await this.get(API_ENDPOINTS.rag.stats)
+    return response.json()
+  }
+
+  async ragInitCollection() {
+    const response = await this.post(API_ENDPOINTS.rag.collectionInit)
+    return response.json()
+  }
+
+  async ragResetCollection() {
+    const response = await this.post(API_ENDPOINTS.rag.collectionReset)
+    return response.json()
+  }
+
+  async ragBootstrap(maxArticlesPerTopic = 3, maxTopics = 0) {
+    const response = await this.post(API_ENDPOINTS.rag.bootstrap, {
+      max_articles_per_topic: maxArticlesPerTopic,
+      max_topics: maxTopics
+    })
+    return response.json()
+  }
+
+  async getTaskStatus(taskId) {
+    const response = await this.get(API_ENDPOINTS.rag.taskStatus(taskId))
+    return response.json()
+  }
+
+  // ── 评估相关 ──
+
+  async evalSingle(presentationId, referenceText = null, enableLlmJudge = true, metrics = null) {
+    const response = await this.post(API_ENDPOINTS.eval.single(presentationId), {
+      reference_text: referenceText,
+      enable_llm_judge: enableLlmJudge,
+      metrics
+    })
+    return response.json()
+  }
+
+  async evalBatch(configs, topics, metrics = null, referenceTexts = {}) {
+    const response = await this.post(API_ENDPOINTS.eval.batch, {
+      configs, topics, metrics, reference_texts: referenceTexts
+    })
+    return response.json()
+  }
+
+  // ── 文档导入生成大纲 ──
+
+  async dslFromDocument(filename, content) {
+    const response = await this.post(API_ENDPOINTS.dslFromDocument, { filename, content })
     return response.json()
   }
 }

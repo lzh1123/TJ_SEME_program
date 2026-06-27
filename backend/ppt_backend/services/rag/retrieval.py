@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import time
-from typing import Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from .content_fetcher import ContentFetcher
-from .embedding import EmbeddingService
-from .milvus_client import MilvusStore
 from .web_search import WebSearchService
+
+if TYPE_CHECKING:
+    from .embedding import EmbeddingService
+    from .milvus_client import MilvusStore
 
 
 class HybridRetriever:

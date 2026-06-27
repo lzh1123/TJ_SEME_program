@@ -40,7 +40,8 @@ const scrollY = ref(0)
 
 const navItems = [
   { name: '首页', path: '/' },
-  { name: '我的大纲', path: '/dashboard' }
+  { name: '我的大纲', path: '/dashboard' },
+  { name: '知识库', path: '/knowledge-base' }
 ]
 
 const userAvatar = 'https://api.dicebear.com/7.x/avataaars/svg?seed=user'

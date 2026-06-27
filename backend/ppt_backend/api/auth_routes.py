@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, EmailStr, Field
 
 from ..services.auth_service import AuthService
-from .deps import get_auth_service, get_current_user
+from .deps import get_auth_service, get_current_user_id
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -131,22 +131,26 @@ async def refresh(
 
 @router.get("/me")
 async def get_me(
-    current_user: dict = Depends(get_current_user),
+    current_user_id: str = Depends(get_current_user_id),
+    auth: AuthService = Depends(get_auth_service),
 ) -> UserResponse:
     """Return the currently authenticated user's profile."""
+    user = await auth.get_user_by_id(current_user_id)
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     return UserResponse(
-        id=current_user["id"],
-        username=current_user["username"],
-        email=current_user["email"],
-        displayName=current_user["display_name"],
+        id=str(user.id),
+        username=user.username,
+        email=user.email,
+        displayName=user.display_name,
     )
 
 
 @router.post("/logout")
 async def logout(
-    current_user: dict = Depends(get_current_user),
+    current_user_id: str = Depends(get_current_user_id),
     auth: AuthService = Depends(get_auth_service),
 ) -> dict:
     """Revoke all refresh tokens for the current user."""
-    await auth.logout(current_user["id"])
+    await auth.logout(current_user_id)
     return {"message": "Logged out successfully"}

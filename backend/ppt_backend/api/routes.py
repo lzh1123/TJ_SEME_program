@@ -9,8 +9,10 @@ from pydantic import BaseModel, Field
 
 from ..domain.presentation import PresentationBundle
 from ..domain.render_tree import ComponentPatch, RenderTree
+from ..infrastructure.database import async_session_factory
+from ..infrastructure.models import Presentation as PresentationModel
 from ..services.presentation_service import PresentationService
-from ..services.rag.rag_service import RagService
+from .deps import get_optional_current_user
 
 
 router = APIRouter()
@@ -22,6 +24,7 @@ def get_service(req: Request) -> PresentationService:
 
 def get_rag_service(req: Request):
     svc = req.app.state.presentation_service
+    # _rag is None when RAG is disabled, so we don't need the type import at module level
     return getattr(svc, "_rag", None)
 
 
@@ -114,12 +117,69 @@ def compile_outline(payload: CompileOutlineRequest, svc: PresentationService = D
     return bundle.render_tree
 
 
+@router.get("/presentations", response_model=List[dict])
+async def list_presentations(
+    svc: PresentationService = Depends(get_service),
+    current_user: Optional[dict] = Depends(get_optional_current_user),
+):
+    """List presentations. If authenticated, returns user's presentations only."""
+    if current_user is None:
+        return []
+
+    async with async_session_factory() as db:
+        from sqlalchemy import select
+
+        result = await db.execute(
+            select(PresentationModel)
+            .where(
+                PresentationModel.user_id == current_user["id"],
+                PresentationModel.deleted_at.is_(None),
+            )
+            .order_by(PresentationModel.updated_at.desc())
+        )
+        rows = result.scalars().all()
+        return [
+            {
+                "id": str(r.id),
+                "title": r.title,
+                "topic": r.topic,
+                "theme": r.theme,
+                "status": r.status,
+                "createdAt": r.created_at.isoformat() if r.created_at else None,
+                "updatedAt": r.updated_at.isoformat() if r.updated_at else None,
+            }
+            for r in rows
+        ]
+
+
 @router.post("/presentations", response_model=CreatePresentationResponse)
-def create_presentation(payload: CreatePresentationRequest, svc: PresentationService = Depends(get_service)):
+async def create_presentation(
+    payload: CreatePresentationRequest,
+    svc: PresentationService = Depends(get_service),
+    current_user: Optional[dict] = Depends(get_optional_current_user),
+):
     try:
         bundle = svc.create(topic=payload.topic, theme=payload.theme, use_rag=payload.use_rag)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+    # Link presentation to user in DB if authenticated
+    if current_user:
+        async with async_session_factory() as db:
+            pres = PresentationModel(
+                id=bundle.meta.id,
+                user_id=current_user["id"],
+                title=bundle.meta.topic,
+                topic=bundle.meta.topic,
+                theme=bundle.dsl.theme if bundle.dsl else None,
+                status="completed",
+                bundle_path=str(
+                    Path(svc._repo._base_dir) / "presentations" / bundle.meta.id / "bundle.json"
+                ),
+            )
+            db.add(pres)
+            await db.commit()
+
     return CreatePresentationResponse(id=bundle.meta.id, bundle=bundle)
 
 

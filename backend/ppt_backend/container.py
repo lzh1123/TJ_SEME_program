@@ -7,13 +7,6 @@ from .exporters.pptx_exporter import PptxExporter
 from .repos.presentation_repo import FilePresentationRepository
 from .services.ai.pipeline import AiPipeline
 from .services.presentation_service import PresentationService
-from .services.rag.content_fetcher import ContentFetcher
-from .services.rag.embedding import EmbeddingService
-from .services.rag.knowledge_base import KnowledgeBase
-from .services.rag.milvus_client import MilvusStore
-from .services.rag.rag_service import RagService
-from .services.rag.retrieval import HybridRetriever
-from .services.rag.web_search import WebSearchService
 from .services.rendering.compiler import RenderCompiler
 from .services.rendering.registry import build_layout_registry, build_slide_composer_registry
 from .settings import settings
@@ -38,8 +31,18 @@ def build_presentation_service() -> PresentationService:
     )
 
 
-def _build_rag_service() -> RagService | None:
+def _build_rag_service() -> "RagService | None":
+    # Deferred imports: RAG dependencies (sentence-transformers, pymilvus, etc.)
+    # are heavy and only needed when RAG is enabled.
     try:
+        from .services.rag.content_fetcher import ContentFetcher
+        from .services.rag.embedding import EmbeddingService
+        from .services.rag.knowledge_base import KnowledgeBase
+        from .services.rag.milvus_client import MilvusStore
+        from .services.rag.rag_service import RagService
+        from .services.rag.retrieval import HybridRetriever
+        from .services.rag.web_search import WebSearchService
+
         store = MilvusStore(uri=settings.milvus_uri, db_name=settings.milvus_db)
         embedding = EmbeddingService(model_name=settings.embedding_model)
         web_search = WebSearchService(region=settings.web_search_region)

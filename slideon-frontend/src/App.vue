@@ -118,16 +118,23 @@
 </template>
 
 <script setup>
-import { ref, computed, nextTick, watch } from 'vue'
+import { ref, computed, nextTick, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useFloatingBall } from './composables/useFloatingBall.js'
 import { apiService } from './services/api.js'
 import { useOutlineStore } from './stores/outlineStore.js'
+import { useAuthStore } from './stores/authStore.js'
 import IconBase from './components/icons/IconBase.vue'
 
 const router = useRouter()
 const outlineStore = useOutlineStore()
+const authStore = useAuthStore()
 const { state, showBall, hideBall, setSuccess, showModal, hideModal, cancelGeneration, generateOutline, onDragStart } = useFloatingBall()
+
+// 初始化认证状态
+onMounted(() => {
+  authStore.init()
+})
 
 const ballState = state
 const ballEntering = ref(false)

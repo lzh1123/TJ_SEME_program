@@ -22,8 +22,18 @@ export const API_ENDPOINTS = {
   dsl: '/dsl',
   renderTree: '/render-tree',
 
+  // 认证相关
+  auth: {
+    register: '/auth/register',
+    login: '/auth/login',
+    refresh: '/auth/refresh',
+    me: '/auth/me',
+    logout: '/auth/logout'
+  },
+
   // 演示文稿相关
   presentations: {
+    list: '/presentations',
     create: '/presentations',
     get: (id) => `/presentations/${id}`,
     getDsl: (id) => `/presentations/${id}/dsl`,

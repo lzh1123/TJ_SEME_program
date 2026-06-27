@@ -1,9 +1,15 @@
 import { API_CONFIG, API_ENDPOINTS } from '../config/api.js'
+import { authService } from './auth.js'
 
 class ApiService {
   constructor() {
     this.baseURL = API_CONFIG.baseURL
     this.timeout = API_CONFIG.timeout
+  }
+
+  _getAuthHeaders() {
+    const token = authService.accessToken
+    return token ? { 'Authorization': `Bearer ${token}` } : {}
   }
 
   async request(url, options = {}) {
@@ -18,13 +24,17 @@ class ApiService {
 
     delete options.signal
 
+    // Merge headers including auth
+    const headers = {
+      ...API_CONFIG.headers,
+      ...this._getAuthHeaders(),
+      ...options.headers
+    }
+
     try {
       const response = await fetch(`${this.baseURL}${url}`, {
         ...options,
-        headers: {
-          ...API_CONFIG.headers,
-          ...options.headers
-        },
+        headers,
         signal
       })
 
@@ -39,7 +49,6 @@ class ApiService {
     } catch (error) {
       clearTimeout(timeoutId)
       if (error.name === 'AbortError') {
-        // Re-throw AbortError so callers can distinguish cancel from timeout
         throw error
       }
       throw error
@@ -179,6 +188,12 @@ class ApiService {
       outline,
       theme
     })
+    return response.json()
+  }
+
+  // 获取用户演示文稿列表
+  async listPresentations() {
+    const response = await this.get(API_ENDPOINTS.presentations.list)
     return response.json()
   }
 }

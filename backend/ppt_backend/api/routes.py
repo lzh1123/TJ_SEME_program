@@ -14,6 +14,7 @@ from pydantic import BaseModel, Field
 from ..domain.presentation import PresentationBundle
 from ..domain.render_tree import ComponentPatch, RenderTree
 from ..infrastructure.database import async_session_factory
+from ..infrastructure.models import Outline as OutlineModel
 from ..infrastructure.models import Presentation as PresentationModel
 from ..services.presentation_service import PresentationService
 from ..services.rag.task_queue import get_import_queue
@@ -370,10 +371,14 @@ async def rag_upload_document(
     file: UploadFile = File(...),
     force: bool = False,
     svc: PresentationService = Depends(get_service),
+    current_user: Optional[dict] = Depends(get_optional_current_user),
 ):
     rag = getattr(svc, "_rag", None)
     if not rag:
         raise HTTPException(status_code=503, detail="RAG service not available")
+    if not current_user:
+        raise HTTPException(status_code=401, detail="请先登录再上传文档")
+    user_id = current_user["id"] if isinstance(current_user, dict) else current_user
     try:
         suffix = Path(file.filename or "upload").suffix or ".txt"
         with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
@@ -384,6 +389,7 @@ async def rag_upload_document(
             Path(tmp_path),
             force=force,
             source_override=file.filename,
+            user_id=user_id,
         )
         os.unlink(tmp_path)
         return {
@@ -397,12 +403,18 @@ async def rag_upload_document(
 
 
 @router.get("/rag/sources")
-def rag_list_sources(svc: PresentationService = Depends(get_service)):
+def rag_list_sources(
+    svc: PresentationService = Depends(get_service),
+    current_user: Optional[dict] = Depends(get_optional_current_user),
+):
     rag = getattr(svc, "_rag", None)
     if not rag:
         raise HTTPException(status_code=503, detail="RAG service not available")
+    if not current_user:
+        return []
+    user_id = current_user["id"] if isinstance(current_user, dict) else current_user
     try:
-        return rag.list_sources()
+        return rag.list_sources(user_id=user_id)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -423,13 +435,26 @@ def rag_clear_all(svc: PresentationService = Depends(get_service)):
 
 
 @router.delete("/rag/documents/{source}")
-def rag_remove_document(source: str, svc: PresentationService = Depends(get_service)):
+def rag_remove_document(
+    source: str,
+    svc: PresentationService = Depends(get_service),
+    current_user: Optional[dict] = Depends(get_optional_current_user),
+):
     rag = getattr(svc, "_rag", None)
     if not rag:
         raise HTTPException(status_code=503, detail="RAG service not available")
+    if not current_user:
+        raise HTTPException(status_code=401, detail="请先登录")
+    user_id = current_user["id"] if isinstance(current_user, dict) else current_user
     try:
+        # Verify the source belongs to the current user
+        sources = rag.list_sources(user_id=user_id)
+        if not any(s.get("source") == source for s in sources):
+            raise HTTPException(status_code=404, detail="Source not found or not owned by you")
         deleted = rag.remove_document(source)
         return {"source": source, "deleted": deleted}
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -615,3 +640,175 @@ def get_task_status(task_id: str):
     if task is None:
         raise HTTPException(status_code=404, detail="Task not found")
     return task
+
+
+# ── Outline endpoints (cloud sync for logged-in users) ─────────
+
+class OutlineCreateRequest(BaseModel):
+    model_config = {"extra": "forbid"}
+
+    id: str
+    title: str = Field(..., max_length=500)
+    dsl: str
+    slide_count: int = 0
+
+
+class OutlineUpdateRequest(BaseModel):
+    model_config = {"extra": "forbid"}
+
+    title: Optional[str] = Field(None, max_length=500)
+    dsl: Optional[str] = None
+    slide_count: Optional[int] = None
+
+
+@router.get("/outlines")
+async def list_outlines(
+    current_user: Optional[dict] = Depends(get_optional_current_user),
+):
+    if not current_user:
+        return []
+    user_id = current_user["id"] if isinstance(current_user, dict) else current_user
+    async with async_session_factory() as db:
+        from sqlalchemy import select
+        result = await db.execute(
+            select(OutlineModel)
+            .where(OutlineModel.user_id == user_id)
+            .order_by(OutlineModel.updated_at.desc())
+        )
+        rows = result.scalars().all()
+        return [
+            {
+                "id": r.id,
+                "title": r.title,
+                "slideCount": r.slide_count,
+                "createdAt": r.created_at.isoformat() if r.created_at else None,
+                "updatedAt": r.updated_at.isoformat() if r.updated_at else None,
+            }
+            for r in rows
+        ]
+
+
+@router.post("/outlines")
+async def create_outline(
+    payload: OutlineCreateRequest,
+    current_user: Optional[dict] = Depends(get_optional_current_user),
+):
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    user_id = current_user["id"] if isinstance(current_user, dict) else current_user
+    async with async_session_factory() as db:
+        outline = OutlineModel(
+            id=payload.id,
+            user_id=user_id,
+            title=payload.title,
+            dsl=payload.dsl,
+            slide_count=payload.slide_count,
+        )
+        db.add(outline)
+        await db.commit()
+        return {
+            "id": outline.id,
+            "title": outline.title,
+            "slideCount": outline.slide_count,
+            "createdAt": outline.created_at.isoformat() if outline.created_at else None,
+            "updatedAt": outline.updated_at.isoformat() if outline.updated_at else None,
+        }
+
+
+@router.get("/outlines/{outline_id}")
+async def get_outline(
+    outline_id: str,
+    current_user: Optional[dict] = Depends(get_optional_current_user),
+):
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    user_id = current_user["id"] if isinstance(current_user, dict) else current_user
+    async with async_session_factory() as db:
+        from sqlalchemy import select
+        result = await db.execute(
+            select(OutlineModel).where(
+                OutlineModel.id == outline_id,
+                OutlineModel.user_id == user_id,
+            )
+        )
+        outline = result.scalar_one_or_none()
+        if outline is None:
+            raise HTTPException(status_code=404, detail="Outline not found")
+        return {
+            "id": outline.id,
+            "title": outline.title,
+            "dsl": outline.dsl,
+            "slideCount": outline.slide_count,
+            "createdAt": outline.created_at.isoformat() if outline.created_at else None,
+            "updatedAt": outline.updated_at.isoformat() if outline.updated_at else None,
+        }
+
+
+@router.put("/outlines/{outline_id}")
+async def update_outline(
+    outline_id: str,
+    payload: OutlineUpdateRequest,
+    current_user: Optional[dict] = Depends(get_optional_current_user),
+):
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    user_id = current_user["id"] if isinstance(current_user, dict) else current_user
+    from datetime import datetime, timezone
+    from sqlalchemy import text
+    now = datetime.now(timezone.utc)
+    sets = ["updated_at = :now"]
+    params = {"oid": outline_id, "uid": user_id, "now": now}
+    if payload.title is not None:
+        sets.append("title = :title")
+        params["title"] = payload.title
+    if payload.dsl is not None:
+        sets.append("dsl = :dsl")
+        params["dsl"] = payload.dsl
+    if payload.slide_count is not None:
+        sets.append("slide_count = :sc")
+        params["sc"] = payload.slide_count
+    async with async_session_factory() as db:
+        await db.execute(
+            text(f"UPDATE outlines SET {', '.join(sets)} WHERE id = :oid AND user_id = :uid"),
+            params
+        )
+        await db.commit()
+        # Fetch updated record
+        from sqlalchemy import select
+        result = await db.execute(
+            select(OutlineModel).where(OutlineModel.id == outline_id)
+        )
+        outline = result.scalar_one_or_none()
+        if outline is None:
+            raise HTTPException(status_code=404, detail="Outline not found")
+        return {
+            "id": outline.id,
+            "title": outline.title,
+            "slideCount": outline.slide_count,
+            "createdAt": outline.created_at.isoformat() if outline.created_at else None,
+            "updatedAt": outline.updated_at.isoformat() if outline.updated_at else None,
+        }
+
+
+@router.delete("/outlines/{outline_id}")
+async def delete_outline(
+    outline_id: str,
+    current_user: Optional[dict] = Depends(get_optional_current_user),
+):
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    user_id = current_user["id"] if isinstance(current_user, dict) else current_user
+    from sqlalchemy import select
+    async with async_session_factory() as db:
+        result = await db.execute(
+            select(OutlineModel).where(
+                OutlineModel.id == outline_id,
+                OutlineModel.user_id == user_id,
+            )
+        )
+        outline = result.scalar_one_or_none()
+        if outline is None:
+            raise HTTPException(status_code=404, detail="Outline not found")
+        await db.delete(outline)
+        await db.commit()
+        return {"message": "Deleted"}

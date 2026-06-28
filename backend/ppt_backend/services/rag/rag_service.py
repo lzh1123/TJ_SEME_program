@@ -43,6 +43,7 @@ class RagService:
         enable_web: bool = True,
         enable_local: bool = True,
         deep_fetch: bool = True,
+        user_id: Optional[str] = None,
     ) -> Dict[str, Any]:
         return self._retriever.retrieve(
             query=query,
@@ -50,6 +51,7 @@ class RagService:
             enable_web=enable_web,
             enable_local=enable_local,
             deep_fetch=deep_fetch,
+            user_id=user_id,
         )
 
     def retrieve_context(
@@ -59,6 +61,7 @@ class RagService:
         enable_web: bool = True,
         enable_local: bool = True,
         deep_fetch: bool = True,
+        user_id: Optional[str] = None,
     ) -> str:
         return self._retriever.retrieve_context(
             query=query,
@@ -66,6 +69,7 @@ class RagService:
             enable_web=enable_web,
             enable_local=enable_local,
             deep_fetch=deep_fetch,
+            user_id=user_id,
         )
 
     async def enhance_topic(self, topic: str, llm=None) -> Dict[str, Any]:
@@ -124,20 +128,14 @@ class RagService:
         progress_callback: Optional[Callable[[int, int], None]] = None,
         force: bool = False,
         source_override: Optional[str] = None,
+        user_id: Optional[str] = None,
     ) -> Dict[str, Any]:
-        """Ingest a file into the knowledge base with deduplication.
-
-        Args:
-            file_path: Path to the temp file on disk.
-            source_override: The ORIGINAL user filename. Must be provided to ensure
-                           correct source naming and dedup. If not provided, falls
-                           back to path.name (temp filename — will break dedup).
-
-        Returns dict with: chunks_inserted, dedup_skipped, action_taken, file_hash.
-        """
+        meta = dict(metadata or {})
+        if user_id:
+            meta["user_id"] = user_id
         return self._kb.ingest_file(
             file_path,
-            metadata=metadata,
+            metadata=meta,
             progress_callback=progress_callback,
             force=force,
             source_override=source_override,
@@ -149,12 +147,12 @@ class RagService:
         source: str,
         metadata: Optional[Dict[str, Any]] = None,
         force: bool = False,
+        user_id: Optional[str] = None,
     ) -> Dict[str, Any]:
-        """Ingest text into the knowledge base with deduplication.
-
-        Returns dict with: chunks_inserted, dedup_skipped, action_taken.
-        """
-        return self._kb.ingest_text(content, source, metadata=metadata, force=force)
+        meta = dict(metadata or {})
+        if user_id:
+            meta["user_id"] = user_id
+        return self._kb.ingest_text(content, source, metadata=meta, force=force)
 
     def remove_document(self, source: str) -> int:
         return self._kb.remove_source(source)
@@ -162,9 +160,9 @@ class RagService:
     def get_kb_stats(self) -> Dict[str, Any]:
         return self._kb.get_stats()
 
-    def list_sources(self) -> List[Dict[str, Any]]:
-        """List all distinct sources in the knowledge base with chunk counts."""
-        return self._kb.list_sources()
+    def list_sources(self, user_id: Optional[str] = None) -> List[Dict[str, Any]]:
+        """List distinct sources, optionally filtered by user."""
+        return self._kb.list_sources(user_id=user_id)
 
     def ensure_collection(self, drop_if_exists: bool = False) -> bool:
         return self._kb.ensure_collection(drop_if_exists=drop_if_exists)

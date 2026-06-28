@@ -241,19 +241,33 @@ class MilvusStore:
         logger.debug("Could not parse delete_count from result: %r", result)
         return fallback
 
+    def _build_filter(
+        self,
+        source_filter: Optional[str] = None,
+        user_id: Optional[str] = None,
+    ) -> Optional[str]:
+        """Build a combined Milvus filter expression from source_filter and user_id."""
+        parts = []
+        if source_filter:
+            escaped = self._escape_filter_string(source_filter)
+            parts.append(f'source like "%{escaped}%"')
+        if user_id:
+            escaped_uid = self._escape_filter_string(user_id)
+            parts.append(f'metadata["user_id"] == "{escaped_uid}"')
+        return " and ".join(parts) if parts else None
+
     def hybrid_search(
         self,
         query_embedding: List[float],
         query_text: str,
         top_k: int = 10,
         source_filter: Optional[str] = None,
+        user_id: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
-        logger.debug(
-            "hybrid_search: query=%r top_k=%d source_filter=%r",
-            query_text[:80], top_k, source_filter,
-        )
-        dense_hits = self._dense_search(query_embedding, top_k * 2, source_filter)
-        sparse_hits = self._keyword_search(query_text, top_k * 2, source_filter)
+        expr = self._build_filter(source_filter, user_id)
+        logger.debug("hybrid_search: query=%r top_k=%d filter=%r", query_text[:80], top_k, expr)
+        dense_hits = self._dense_search(query_embedding, top_k * 2, expr)
+        sparse_hits = self._keyword_search(query_text, top_k * 2, expr)
         fused = self._rrf_fuse(dense_hits, sparse_hits, top_k)
         logger.debug("hybrid_search: dense=%d sparse=%d fused=%d final=%d",
                       len(dense_hits), len(sparse_hits), len(fused), min(top_k, len(fused)))
@@ -264,9 +278,11 @@ class MilvusStore:
         query_embedding: List[float],
         top_k: int = 10,
         source_filter: Optional[str] = None,
+        user_id: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
-        logger.debug("vector_search: top_k=%d source_filter=%r", top_k, source_filter)
-        result = self._dense_search(query_embedding, top_k, source_filter)
+        expr = self._build_filter(source_filter, user_id)
+        logger.debug("vector_search: top_k=%d filter=%r", top_k, expr)
+        result = self._dense_search(query_embedding, top_k, expr)
         logger.debug("vector_search: returned %d hits", len(result))
         return result
 
@@ -275,10 +291,11 @@ class MilvusStore:
         query_text: str,
         top_k: int = 10,
         source_filter: Optional[str] = None,
+        user_id: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
-        logger.debug("keyword_search: query=%r top_k=%d source_filter=%r",
-                      query_text[:80], top_k, source_filter)
-        result = self._keyword_search(query_text, top_k, source_filter)
+        expr = self._build_filter(source_filter, user_id)
+        logger.debug("keyword_search: query=%r top_k=%d filter=%r", query_text[:80], top_k, expr)
+        result = self._keyword_search(query_text, top_k, expr)
         logger.debug("keyword_search: returned %d hits", len(result))
         return result
 
@@ -286,13 +303,8 @@ class MilvusStore:
         self,
         query_embedding: List[float],
         top_k: int,
-        source_filter: Optional[str] = None,
+        filter_expr: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
-        filter_expr = None
-        if source_filter:
-            escaped = self._escape_filter_string(source_filter)
-            filter_expr = f'source like "%{escaped}%"'
-
         logger.debug("_dense_search: top_k=%d filter=%r", top_k, filter_expr)
         results = self.client.search(
             collection_name=self.COLLECTION_NAME,
@@ -322,13 +334,12 @@ class MilvusStore:
         self,
         query_text: str,
         top_k: int,
-        source_filter: Optional[str] = None,
+        extra_filter: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
         escaped = self._escape_filter_string(query_text)
         filter_parts = [f'text like "%{escaped}%"']
-        if source_filter:
-            escaped_src = self._escape_filter_string(source_filter)
-            filter_parts.append(f'source like "%{escaped_src}%"')
+        if extra_filter:
+            filter_parts.append(f"({extra_filter})")
         filter_expr = " and ".join(filter_parts)
 
         logger.debug("_keyword_search: query=%r filter=%r top_k=%d",
@@ -412,17 +423,26 @@ class MilvusStore:
             logger.exception("Failed to query by hash prefix=%s", sha256_hash[:16])
             return None
 
-    def list_sources(self) -> List[Dict[str, Any]]:
-        """List distinct sources with their chunk counts and latest metadata."""
+    def list_sources(
+        self,
+        user_id: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        """List distinct sources with their chunk counts and latest metadata.
+        If user_id is provided, only return sources belonging to that user.
+        """
         if not self.client.has_collection(self.COLLECTION_NAME):
             logger.debug("list_sources: collection %s does not exist", self.COLLECTION_NAME)
             return []
         self._ensure_loaded()
         try:
-            logger.debug("list_sources: querying all entities")
+            filter_expr = "id >= 0"
+            if user_id:
+                escaped = self._escape_filter_string(user_id)
+                filter_expr = f'{filter_expr} and metadata["user_id"] == "{escaped}"'
+            logger.debug("list_sources: filter=%s", filter_expr)
             results = self.client.query(
                 collection_name=self.COLLECTION_NAME,
-                filter="id >= 0",
+                filter=filter_expr,
                 output_fields=["source", "chunk_index", "metadata"],
                 limit=10000,
             )

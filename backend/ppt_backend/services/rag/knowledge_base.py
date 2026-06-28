@@ -232,9 +232,9 @@ class KnowledgeBase:
     def get_stats(self) -> Dict[str, Any]:
         return self._store.get_collection_stats()
 
-    def list_sources(self) -> List[Dict[str, Any]]:
-        """List all distinct sources and their chunk counts."""
-        return self._store.list_sources()
+    def list_sources(self, user_id: Optional[str] = None) -> List[Dict[str, Any]]:
+        """List distinct sources, optionally filtered by user_id."""
+        return self._store.list_sources(user_id=user_id)
 
     def _read_file(self, path: Path, suffix: str) -> str:
         if suffix == ".txt" or suffix == ".md":

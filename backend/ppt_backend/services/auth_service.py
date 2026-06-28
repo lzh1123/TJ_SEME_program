@@ -198,6 +198,26 @@ class AuthService:
         result = await self.db.execute(select(User).where(User.id == uid))
         return result.scalar_one_or_none()
 
+    # ── Update profile ──
+
+    async def update_profile(
+        self,
+        user_id: str,
+        display_name: Optional[str] = None,
+    ) -> Optional[User]:
+        try:
+            uid = uuid.UUID(user_id)
+        except ValueError:
+            return None
+        result = await self.db.execute(select(User).where(User.id == uid))
+        user = result.scalar_one_or_none()
+        if user is None or not user.is_active:
+            return None
+        if display_name is not None:
+            user.display_name = display_name
+        await self.db.flush()
+        return user
+
     # ── Logout (revoke all refresh tokens) ──
 
     async def logout(self, user_id: str) -> None:

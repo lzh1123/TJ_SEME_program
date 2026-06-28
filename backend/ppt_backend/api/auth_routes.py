@@ -51,6 +51,13 @@ class UserResponse(BaseModel):
     username: str
     email: str
     display_name: Optional[str] = Field(None, alias="displayName")
+    last_login_at: Optional[str] = Field(None, alias="lastLoginAt")
+
+
+class UpdateProfileRequest(BaseModel):
+    model_config = {"extra": "forbid"}
+
+    display_name: Optional[str] = Field(None, max_length=100, alias="displayName")
 
 
 # ── Endpoints ──────────────────────────────────────────────
@@ -143,6 +150,29 @@ async def get_me(
         username=user.username,
         email=user.email,
         displayName=user.display_name,
+        lastLoginAt=user.last_login_at.isoformat() if user.last_login_at else None,
+    )
+
+
+@router.put("/me")
+async def update_me(
+    payload: UpdateProfileRequest,
+    current_user_id: str = Depends(get_current_user_id),
+    auth: AuthService = Depends(get_auth_service),
+) -> UserResponse:
+    """Update the current user's profile."""
+    user = await auth.update_profile(
+        user_id=current_user_id,
+        display_name=payload.display_name,
+    )
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    return UserResponse(
+        id=str(user.id),
+        username=user.username,
+        email=user.email,
+        displayName=user.display_name,
+        lastLoginAt=user.last_login_at.isoformat() if user.last_login_at else None,
     )
 
 

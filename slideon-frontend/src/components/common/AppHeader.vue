@@ -22,9 +22,9 @@
           <IconBase name="plus" :size="14" />
           新建大纲
         </button>
-        <div class="user-avatar">
-          <img :src="userAvatar" alt="用户头像">
-        </div>
+        <router-link to="/profile" class="user-avatar">
+          <img :src="userAvatar" alt="个人信息">
+        </router-link>
       </div>
     </div>
   </header>

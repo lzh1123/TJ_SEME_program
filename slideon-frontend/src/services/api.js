@@ -31,6 +31,11 @@ class ApiService {
       ...options.headers
     }
 
+    // FormData upload: let browser set Content-Type (with boundary)
+    if (options.body instanceof FormData) {
+      delete headers['Content-Type']
+    }
+
     try {
       const response = await fetch(`${this.baseURL}${url}`, {
         ...options,

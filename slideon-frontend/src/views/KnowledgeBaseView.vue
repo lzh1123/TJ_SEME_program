@@ -18,10 +18,11 @@
             <IconBase :name="clearingAll ? 'spinner' : 'trash'" :size="14" :class="{ 'animate-spin': clearingAll }" />
             {{ clearingAll ? '清空中...' : '清空知识库' }}
           </button>
-          <button class="btn btn-primary" @click="triggerUpload">
+          <button v-if="authStore.isAuthenticated" class="btn btn-primary" @click="triggerUpload">
             <IconBase name="plus" :size="14" />
             导入文档
           </button>
+          <router-link v-else to="/login" class="btn btn-ghost">登录后上传文档</router-link>
           <input
             ref="uploadInput"
             type="file"
@@ -145,10 +146,12 @@ import IconBase from '../components/icons/IconBase.vue'
 import { useFloatingBall } from '../composables/useFloatingBall.js'
 import { apiService } from '../services/api.js'
 import { useKBTasks } from '../stores/kbTaskStore.js'
+import { useAuthStore } from '../stores/authStore.js'
 
 const { showModal } = useFloatingBall()
 const kbTasks = useKBTasks()
 const { state: kbTaskState } = kbTasks
+const authStore = useAuthStore()
 
 const KB_CACHE_KEY = 'slideon_kb_cache'
 
@@ -295,6 +298,11 @@ function handleDrop(e) {
 }
 
 async function startUpload(files) {
+  if (!authStore.isAuthenticated) {
+    alert('请先登录后再上传文档')
+    return
+  }
+
   const filenames = files.map(f => f.name)
 
   // Add placeholder docs immediately
@@ -316,7 +324,12 @@ async function startUpload(files) {
   } catch (e) {
     // Upload failed — clean up placeholders
     importedDocs.value = importedDocs.value.filter(d => d.status !== 'importing')
-    alert('上传失败: ' + e.message)
+
+    // Better error message extraction
+    const msg = typeof e.message === 'string' ? e.message :
+                typeof e === 'string' ? e :
+                (e.detail || e.error || JSON.stringify(e))
+    alert('上传失败: ' + msg)
   }
 }
 

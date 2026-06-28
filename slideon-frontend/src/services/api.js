@@ -308,6 +308,74 @@ class ApiService {
     const response = await this.post(API_ENDPOINTS.dslFromDocument, { filename, content })
     return response.json()
   }
+
+  // ── 大纲云端同步 ──
+
+  async listOutlines() {
+    const response = await this.get(API_ENDPOINTS.outlines.list)
+    return response.json()
+  }
+
+  async getOutline(id) {
+    const response = await this.get(API_ENDPOINTS.outlines.get(id))
+    return response.json()
+  }
+
+  async createOutline(data) {
+    const response = await this.post(API_ENDPOINTS.outlines.create, data)
+    return response.json()
+  }
+
+  async updateOutline(id, data) {
+    const response = await this.put(API_ENDPOINTS.outlines.update(id), data)
+    return response.json()
+  }
+
+  async deleteOutline(id) {
+    const response = await this.delete(API_ENDPOINTS.outlines.delete(id))
+    return response.json()
+  }
+
+  // ── 知识库别名方法（兼容 KnowledgeBaseView 调用） ──
+
+  /** 获取知识库文档列表 + 统计（组合 rag/sources + rag/stats） */
+  async getKBDocuments() {
+    const [sourcesRes, statsRes] = await Promise.all([
+      this.get(API_ENDPOINTS.rag.sources),
+      this.get(API_ENDPOINTS.rag.stats),
+    ])
+    const sources = await sourcesRes.json()
+    const stats = await statsRes.json()
+    return {
+      num_entities: stats.num_entities || 0,
+      documents: sources.map(s => ({
+        filename: s.filename || s.source,
+        source: s.source,
+        chunks: s.chunks,
+      }))
+    }
+  }
+
+  /** 上传文件到知识库（支持批量） */
+  async uploadDocumentsToKB(files) {
+    const results = []
+    for (const file of files) {
+      const result = await this.ragUploadDocument(file)
+      results.push(result)
+    }
+    // 返回 task_id 格式（兼容 KnowledgeBaseView 的 task polling）
+    return { task_id: `batch_${Date.now()}_${files.length}`, results }
+  }
+
+  /** 删除知识库中的文档 */
+  async removeKBDocument(source) {
+    return this.ragDeleteDocument(source)
+  }
+
+  /** 清空知识库 */
+  async clearAllKBDocuments() {
+    return this.ragClearAll()
+  }
 }
 
 export const apiService = new ApiService()

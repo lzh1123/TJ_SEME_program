@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/authStore.js'
 import { authService } from '../services/auth.js'
 import { apiService } from '../services/api.js'
+import AppHeader from '../components/common/AppHeader.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -63,6 +64,7 @@ async function handleLogout() {
 </script>
 
 <template>
+  <AppHeader />
   <div class="profile-page">
     <div class="profile-container">
       <h1 class="page-title">个人信息</h1>
@@ -151,7 +153,7 @@ async function handleLogout() {
 .profile-page {
   min-height: 100vh;
   background: var(--gray-50);
-  padding: var(--space-8);
+  padding: calc(72px + var(--space-8)) var(--space-8) var(--space-8);
 }
 
 .profile-container {

@@ -22,7 +22,15 @@
           <IconBase name="plus" :size="14" />
           新建大纲
         </button>
-        <router-link to="/profile" class="user-avatar">
+
+        <!-- 未登录：显示登录/注册按钮 -->
+        <template v-if="!isLoggedIn">
+          <router-link to="/login" class="btn btn-ghost">登录</router-link>
+          <router-link to="/register" class="btn btn-outline">注册</router-link>
+        </template>
+
+        <!-- 已登录：显示头像 -->
+        <router-link v-else to="/profile" class="user-avatar">
           <img :src="userAvatar" alt="个人信息">
         </router-link>
       </div>
@@ -33,10 +41,13 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
+import { useAuthStore } from '../../stores/authStore.js'
 import IconBase from '../icons/IconBase.vue'
 
 const route = useRoute()
+const authStore = useAuthStore()
 const scrollY = ref(0)
+const isLoggedIn = computed(() => authStore.isAuthenticated)
 
 const navItems = [
   { name: '首页', path: '/' },
@@ -147,6 +158,42 @@ defineEmits(['create-outline'])
   display: flex;
   align-items: center;
   gap: var(--space-4);
+}
+
+.btn-ghost {
+  padding: 6px 14px;
+  border: none;
+  border-radius: var(--radius-lg);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--gray-600);
+  background: transparent;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.2s;
+}
+
+.btn-ghost:hover {
+  background: var(--gray-100);
+  color: var(--gray-900);
+}
+
+.btn-outline {
+  padding: 6px 14px;
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-lg);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--primary-600);
+  background: white;
+  cursor: pointer;
+  text-decoration: none;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.btn-outline:hover {
+  border-color: var(--primary-500);
+  background: var(--primary-50);
 }
 
 .user-avatar {

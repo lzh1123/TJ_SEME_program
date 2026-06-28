@@ -62,6 +62,10 @@ export const useAuthStore = defineStore('auth', () => {
   async function logout() {
     await authService.logout()
     user.value = null
+    // 登出时清除本地大纲缓存
+    localStorage.removeItem('slideon_outlines_index')
+    const keys = Object.keys(localStorage).filter(k => k.startsWith('slideon_outline_'))
+    keys.forEach(k => localStorage.removeItem(k))
   }
 
   return {

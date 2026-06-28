@@ -497,12 +497,13 @@ function normalizeSlide(slide) {
 function loadOutline(id) {
   outlineId.value = id
   if (id) {
-    const loaded = outlineStore.getOutline(id)
-    if (loaded) {
-      loaded.slides = (loaded.slides||[]).map(normalizeSlide)
-      dsl.value = loaded
-      selectedIndex.value = dsl.value.slides.length > 0 ? 0 : 0
-    }
+    outlineStore.getOutline(id).then(loaded => {
+      if (loaded) {
+        loaded.slides = (loaded.slides||[]).map(normalizeSlide)
+        dsl.value = loaded
+        selectedIndex.value = dsl.value.slides.length > 0 ? 0 : 0
+      }
+    })
   }
 }
 

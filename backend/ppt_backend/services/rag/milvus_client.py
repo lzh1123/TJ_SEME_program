@@ -20,6 +20,19 @@ class MilvusStore:
     def client(self) -> MilvusClient:
         if self._client is None:
             self._client = MilvusClient(uri=self._uri, db_name=self._db_name)
+            logger.info("Created new MilvusClient (uri=%s)", self._uri)
+        else:
+            # Health check: lazy reconnection if the connection was closed
+            try:
+                self._client.list_collections()
+            except Exception:
+                logger.warning("MilvusClient connection appears closed, reconnecting...")
+                try:
+                    self._client.close()
+                except Exception:
+                    pass
+                self._client = MilvusClient(uri=self._uri, db_name=self._db_name)
+                logger.info("Reconnected MilvusClient (uri=%s)", self._uri)
         return self._client
 
     @property

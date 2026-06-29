@@ -122,6 +122,16 @@ class ApiService {
     return response.json()
   }
 
+  async getLLMConfig() {
+    const response = await this.get(API_ENDPOINTS.auth.llmConfig)
+    return response.json()
+  }
+
+  async updateLLMConfig(data) {
+    const response = await this.put(API_ENDPOINTS.auth.llmConfig, data)
+    return response.json()
+  }
+
   // 创建演示文稿
   async createPresentation(topic, useRag = true) {
     const response = await this.post(API_ENDPOINTS.presentations.create, {

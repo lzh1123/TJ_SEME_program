@@ -11,12 +11,23 @@ const authStore = useAuthStore()
 
 const loading = ref(true)
 const saving = ref(false)
+const savingLLM = ref(false)
 const error = ref('')
 const success = ref('')
 const user = ref(null)
+const llmMessage = ref('')
+const llmProviders = ref([])
 
 const form = reactive({
   displayName: ''
+})
+
+const llmForm = reactive({
+  provider: 'deepseek',
+  model: '',
+  apiBase: '',
+  apiKey: '',
+  hasApiKey: false
 })
 
 onMounted(async () => {
@@ -29,6 +40,7 @@ onMounted(async () => {
     const data = await authService.getMe()
     user.value = data
     form.displayName = data.displayName || ''
+    await loadLLMConfig()
   } catch (e) {
     error.value = '获取用户信息失败'
   } finally {
@@ -54,6 +66,47 @@ async function handleSubmit() {
     error.value = e.message || '更新失败'
   } finally {
     saving.value = false
+  }
+}
+
+async function loadLLMConfig() {
+  const data = await apiService.getLLMConfig()
+  llmProviders.value = data.providers || []
+  const first = llmProviders.value[0]
+  llmForm.provider = data.provider || first?.provider || 'deepseek'
+  const current = llmProviders.value.find(p => p.provider === llmForm.provider) || first
+  llmForm.model = data.model || current?.model || ''
+  llmForm.apiBase = data.apiBase || current?.apiBase || ''
+  llmForm.apiKey = ''
+  llmForm.hasApiKey = !!data.hasApiKey
+}
+
+function handleProviderChange() {
+  const selected = llmProviders.value.find(p => p.provider === llmForm.provider)
+  if (!selected) return
+  llmForm.model = selected.model
+  llmForm.apiBase = selected.apiBase
+}
+
+async function saveLLMConfig() {
+  error.value = ''
+  llmMessage.value = ''
+  savingLLM.value = true
+  try {
+    const data = await apiService.updateLLMConfig({
+      provider: llmForm.provider,
+      model: llmForm.model,
+      apiBase: llmForm.apiBase,
+      apiKey: llmForm.apiKey || undefined
+    })
+    llmForm.hasApiKey = !!data.hasApiKey
+    llmForm.apiKey = ''
+    llmMessage.value = '大模型配置已保存'
+    setTimeout(() => { llmMessage.value = '' }, 3000)
+  } catch (e) {
+    error.value = e.message || '保存大模型配置失败'
+  } finally {
+    savingLLM.value = false
   }
 }
 
@@ -135,6 +188,46 @@ async function handleLogout() {
             @click="handleSubmit"
           >
             {{ saving ? '保存中...' : '保存修改' }}
+          </button>
+        </div>
+
+        <div class="card model-card">
+          <h3 class="card-title">大模型配置</h3>
+
+          <div class="form-group">
+            <label for="llmProvider">模型供应商</label>
+            <select id="llmProvider" v-model="llmForm.provider" @change="handleProviderChange">
+              <option v-for="item in llmProviders" :key="item.provider" :value="item.provider">
+                {{ item.label }}
+              </option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="llmModel">模型名称</label>
+            <input id="llmModel" v-model="llmForm.model" type="text" />
+          </div>
+
+          <div class="form-group">
+            <label for="llmApiBase">API Base</label>
+            <input id="llmApiBase" v-model="llmForm.apiBase" type="text" />
+          </div>
+
+          <div class="form-group">
+            <label for="llmApiKey">API Key</label>
+            <input
+              id="llmApiKey"
+              v-model="llmForm.apiKey"
+              type="password"
+              :placeholder="llmForm.hasApiKey ? '已配置，留空则不修改' : '请输入 API Key'"
+            />
+            <p class="form-hint">{{ llmForm.hasApiKey ? '当前账号已保存 API Key。' : '生成大纲前必须保存 API Key。' }}</p>
+          </div>
+
+          <div v-if="llmMessage" class="msg msg-success">{{ llmMessage }}</div>
+
+          <button class="btn btn-primary" :disabled="savingLLM" @click="saveLLMConfig">
+            {{ savingLLM ? '保存中...' : '保存大模型配置' }}
           </button>
         </div>
 
@@ -283,7 +376,8 @@ async function handleLogout() {
   margin-bottom: var(--space-2);
 }
 
-.form-group input {
+.form-group input,
+.form-group select {
   width: 100%;
   padding: var(--space-3) var(--space-4);
   border: 1px solid var(--gray-300);
@@ -296,7 +390,8 @@ async function handleLogout() {
   box-sizing: border-box;
 }
 
-.form-group input:focus {
+.form-group input:focus,
+.form-group select:focus {
   border-color: var(--primary-500);
   box-shadow: 0 0 0 3px var(--primary-100);
 }

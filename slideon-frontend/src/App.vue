@@ -317,6 +317,19 @@ async function doGenerate() {
     return
   }
 
+  try {
+    const llmConfig = await apiService.getLLMConfig()
+    if (!llmConfig?.provider || !llmConfig?.hasApiKey) {
+      alert('请先在个人资料页配置大模型和 API Key')
+      router.push('/profile')
+      return
+    }
+  } catch (error) {
+    alert('请先登录并配置大模型')
+    router.push('/profile')
+    return
+  }
+
   const result = await generateOutline(apiService, outlineStore)
 
   if (result.success) {

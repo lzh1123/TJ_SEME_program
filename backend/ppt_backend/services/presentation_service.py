@@ -14,6 +14,7 @@ from ..exporters.pptx_exporter import PptxExporter
 from ..repos.presentation_repo import PresentationRepository
 from ..settings import settings
 from .ai.pipeline import AiPipeline
+from .ai.model_config import UserLLMConfig
 from .rendering.compiler import RenderCompiler
 from .rendering.theme_engine import apply_theme_to_tree
 
@@ -70,7 +71,13 @@ class PresentationService:
         self._repo.save(bundle)
         return bundle
 
-    def generate_outline(self, topic: str, theme: Optional[str] = None, use_rag: bool = True) -> dict:
+    def generate_outline(
+        self,
+        topic: str,
+        theme: Optional[str] = None,
+        use_rag: bool = True,
+        llm_config: Optional[UserLLMConfig] = None,
+    ) -> dict:
         rag_context = ""
         rag_enabled = use_rag and self._rag is not None
         if rag_enabled:
@@ -92,7 +99,8 @@ class PresentationService:
                 rag_context = ""
         else:
             logger.info("RAG DISABLED for generate_outline topic=%r (use_rag=%s, _rag=%s)", topic[:80], use_rag, self._rag is not None)
-        dsl = self._ai.generate_dsl(topic=topic, theme=theme, rag_context=rag_context)
+        ai = AiPipeline(llm_config=llm_config) if llm_config is not None else self._ai
+        dsl = ai.generate_dsl(topic=topic, theme=theme, rag_context=rag_context)
         data = dsl.model_dump(by_alias=True)
         slides = data.get("slides") or []
         if isinstance(slides, list):

@@ -4,6 +4,7 @@ import asyncio
 import logging
 import os
 import tempfile
+import uuid
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -17,7 +18,9 @@ from ..domain.render_tree import ComponentPatch, RenderTree
 from ..infrastructure.database import async_session_factory
 from ..infrastructure.models import Outline as OutlineModel
 from ..infrastructure.models import Presentation as PresentationModel
+from ..infrastructure.models import User as UserModel
 from ..services.presentation_service import PresentationService
+from ..services.ai.model_config import UserLLMConfig
 from ..services.rag.document_parser import (
     SUPPORTED_DOCUMENT_SUFFIXES,
     compact_document_text,
@@ -28,6 +31,30 @@ from .deps import get_optional_current_user
 
 
 router = APIRouter()
+
+
+async def get_user_llm_config(current_user: Optional[dict]) -> UserLLMConfig:
+    if not current_user:
+        raise HTTPException(status_code=401, detail="请先登录并在个人资料页配置大模型")
+    user_id = current_user["id"] if isinstance(current_user, dict) else current_user
+    try:
+        uid = uuid.UUID(str(user_id))
+    except ValueError:
+        raise HTTPException(status_code=401, detail="Invalid user")
+    from sqlalchemy import select
+    async with async_session_factory() as db:
+        result = await db.execute(select(UserModel).where(UserModel.id == uid))
+        user = result.scalar_one_or_none()
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    if not user.llm_provider or not user.llm_api_key:
+        raise HTTPException(status_code=400, detail="请先在个人资料页配置大模型和 API Key")
+    return UserLLMConfig(
+        provider=user.llm_provider,
+        model=user.llm_model,
+        api_base=user.llm_api_base,
+        api_key=user.llm_api_key,
+    )
 
 
 def get_service(req: Request) -> PresentationService:
@@ -136,12 +163,23 @@ def list_themes(svc: PresentationService = Depends(get_service)):
 
 
 @router.post("/dsl")
-async def generate_outline(payload: GenerateOutlineRequest, request: Request, svc: PresentationService = Depends(get_service)):
+async def generate_outline(
+    payload: GenerateOutlineRequest,
+    request: Request,
+    svc: PresentationService = Depends(get_service),
+    current_user: Optional[dict] = Depends(get_optional_current_user),
+):
     try:
+        llm_config = await get_user_llm_config(current_user)
         loop = asyncio.get_event_loop()
         future = loop.run_in_executor(
             None,
-            lambda: svc.generate_outline(topic=payload.topic, theme=payload.theme, use_rag=payload.use_rag),
+            lambda: svc.generate_outline(
+                topic=payload.topic,
+                theme=payload.theme,
+                use_rag=payload.use_rag,
+                llm_config=llm_config,
+            ),
         )
         while not future.done():
             if await request.is_disconnected():
@@ -747,6 +785,7 @@ class DocToOutlineRequest(BaseModel):
 async def dsl_from_document(
     request: Request,
     svc: PresentationService = Depends(get_service),
+    current_user: Optional[dict] = Depends(get_optional_current_user),
 ):
     """Generate an outline from uploaded document file or extracted document text."""
     tmp_path: Optional[str] = None
@@ -784,7 +823,8 @@ async def dsl_from_document(
 
         from ..services.ai.pipeline import AiPipeline
 
-        ai = AiPipeline()
+        llm_config = await get_user_llm_config(current_user)
+        ai = AiPipeline(llm_config=llm_config)
         dsl = ai.generate_dsl(
             topic=f"Based on document: {filename}",
             theme=theme,

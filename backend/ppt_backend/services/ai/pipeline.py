@@ -34,15 +34,17 @@ from ...domain.dsl import (
 from ...domain.ids import new_id
 from ...domain.theme import get_theme_tokens
 from .client import invoke_llm_text, make_llm, parse_json, parse_model
+from .model_config import UserLLMConfig
+from .prompts import dsl_generation_prompt, intent_analysis_prompt, presentation_plan_prompt
 from .schemas import IntentAnalysis, PresentationPlan
 
 
 class AiPipeline:
-    def __init__(self):
+    def __init__(self, llm_config: Optional[UserLLMConfig] = None):
         self._llm = None
         self._init_error: Optional[str] = None
         try:
-            self._llm = make_llm()
+            self._llm = make_llm(llm_config)
         except Exception as e:
             self._init_error = f"{type(e).__name__}: {e}"
             self._llm = None
@@ -50,7 +52,8 @@ class AiPipeline:
     def analyze_intent(self, topic: str) -> IntentAnalysis:
         if not self._llm:
             raise RuntimeError("LLM not configured")
-        prompt = ChatPromptTemplate.from_messages(
+        prompt = intent_analysis_prompt()
+        legacy_prompt = ChatPromptTemplate.from_messages(
             [
                 (
                     "system",
@@ -242,6 +245,7 @@ class AiPipeline:
                 data = parse_json(raw)
                 repaired = self._repair_dsl_dict(data, topic=topic, analysis=analysis, theme_name=theme_name)
                 dsl = PresentationDSL.model_validate(repaired)
+                dsl = self._normalize_generated_dsl(dsl)
                 dsl.theme = theme_name
                 if not dsl.title:
                     dsl.title = plan.title or topic
@@ -267,6 +271,7 @@ class AiPipeline:
         dsl.theme = theme_name
         if not dsl.title:
             dsl.title = plan.title or topic
+        dsl = self._normalize_generated_dsl(dsl)
         if not dsl.slides:
             return (
                 self._fallback(topic, theme_name),
@@ -286,6 +291,30 @@ class AiPipeline:
                 "error": None,
             },
         )
+
+    def _normalize_generated_dsl(self, dsl: PresentationDSL) -> PresentationDSL:
+        for slide in dsl.slides:
+            if getattr(slide, "intent", "") != "text":
+                continue
+            paragraphs = list(getattr(slide, "paragraphs", []) or [])
+            bullets = [b.strip() for b in (getattr(slide, "bullets", []) or []) if isinstance(b, str) and b.strip()]
+            if paragraphs:
+                slide.paragraphs = paragraphs
+                slide.bullets = bullets
+                continue
+
+            title = getattr(slide, "title", "") or "本页内容"
+            if bullets:
+                head = "、".join(bullets[:2])
+                tail = "；".join(bullets[2:5])
+                generated = f"{title}的核心在于{head}。这些要点共同说明了该主题的关键背景、约束条件与实践方向，需要结合实际场景进行系统分析。"
+                if tail:
+                    generated += f"进一步来看，{tail}，这些内容可以帮助听众从问题、方法和落地效果三个层面建立完整理解。"
+                slide.paragraphs = [generated]
+            else:
+                slide.paragraphs = [f"{title}需要从背景、关键问题、解决方法和预期价值四个维度展开说明，帮助听众理解该部分在整体大纲中的作用。"]
+                slide.bullets = ["梳理背景与核心问题", "说明关键方法与实践路径", "总结该部分对整体目标的价值"]
+        return dsl
 
     def _repair_dsl_dict(self, data: dict, *, topic: str, analysis: IntentAnalysis, theme_name: str) -> dict:
         title = data.get("title") or topic
@@ -855,4 +884,3 @@ class AiPipeline:
                 ),
             ],
         )
-

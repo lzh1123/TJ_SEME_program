@@ -1,16 +1,18 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional
 
 from langchain_core.prompts import ChatPromptTemplate
 
-from .embedding import EmbeddingService
 from .knowledge_base import KnowledgeBase
-from .milvus_client import MilvusStore
 from .rag_graph import build_rag_graph
 from .retrieval import HybridRetriever
 from .web_search import WebSearchService
+
+if TYPE_CHECKING:
+    from .embedding import EmbeddingService
+    from .milvus_client import MilvusStore
 
 
 class RagService:
@@ -41,6 +43,7 @@ class RagService:
         enable_web: bool = True,
         enable_local: bool = True,
         deep_fetch: bool = True,
+        user_id: Optional[str] = None,
     ) -> Dict[str, Any]:
         return self._retriever.retrieve(
             query=query,
@@ -48,6 +51,7 @@ class RagService:
             enable_web=enable_web,
             enable_local=enable_local,
             deep_fetch=deep_fetch,
+            user_id=user_id,
         )
 
     def retrieve_context(
@@ -57,6 +61,7 @@ class RagService:
         enable_web: bool = True,
         enable_local: bool = True,
         deep_fetch: bool = True,
+        user_id: Optional[str] = None,
     ) -> str:
         return self._retriever.retrieve_context(
             query=query,
@@ -64,6 +69,7 @@ class RagService:
             enable_web=enable_web,
             enable_local=enable_local,
             deep_fetch=deep_fetch,
+            user_id=user_id,
         )
 
     async def enhance_topic(self, topic: str, llm=None) -> Dict[str, Any]:
@@ -120,22 +126,51 @@ class RagService:
         file_path: Path,
         metadata: Optional[Dict[str, Any]] = None,
         progress_callback: Optional[Callable[[int, int], None]] = None,
-    ) -> int:
-        return self._kb.ingest_file(file_path, metadata=metadata, progress_callback=progress_callback)
+        force: bool = False,
+        source_override: Optional[str] = None,
+        user_id: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        meta = dict(metadata or {})
+        if user_id:
+            meta["user_id"] = user_id
+        return self._kb.ingest_file(
+            file_path,
+            metadata=meta,
+            progress_callback=progress_callback,
+            force=force,
+            source_override=source_override,
+        )
 
     def ingest_text(
         self,
         content: str,
         source: str,
         metadata: Optional[Dict[str, Any]] = None,
-    ) -> int:
-        return self._kb.ingest_text(content, source, metadata=metadata)
+        force: bool = False,
+        user_id: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        meta = dict(metadata or {})
+        if user_id:
+            meta["user_id"] = user_id
+        return self._kb.ingest_text(content, source, metadata=meta, force=force)
 
-    def remove_document(self, source: str) -> int:
-        return self._kb.remove_source(source)
+    def remove_document(self, source: str, user_id: Optional[str] = None) -> int:
+        return self._kb.remove_source(source, user_id=user_id)
 
     def get_kb_stats(self) -> Dict[str, Any]:
         return self._kb.get_stats()
+
+    def list_sources(self, user_id: Optional[str] = None) -> List[Dict[str, Any]]:
+        """List distinct sources, optionally filtered by user."""
+        return self._kb.list_sources(user_id=user_id)
+
+    def preview_document(
+        self,
+        source: str,
+        user_id: Optional[str] = None,
+        max_chunks: int = 20,
+    ) -> Dict[str, Any]:
+        return self._kb.preview_source(source, user_id=user_id, max_chunks=max_chunks)
 
     def ensure_collection(self, drop_if_exists: bool = False) -> bool:
         return self._kb.ensure_collection(drop_if_exists=drop_if_exists)

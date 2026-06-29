@@ -23,6 +23,15 @@ export const search = {
   }
 }
 
+export const eye = {
+  render() {
+    return [
+      createPath('M2 12C4.5 7.5 7.8 5.25 12 5.25C16.2 5.25 19.5 7.5 22 12C19.5 16.5 16.2 18.75 12 18.75C7.8 18.75 4.5 16.5 2 12Z', defaultStroke),
+      createCircle('12', '12', '3', defaultStroke)
+    ]
+  }
+}
+
 export const plus = {
   render() {
     return [createPath('M12 5V19M5 12H19', defaultStroke)]

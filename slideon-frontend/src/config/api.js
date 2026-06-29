@@ -1,10 +1,10 @@
 // API 配置
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? ''
 
 export const API_CONFIG = {
   baseURL: API_BASE_URL,
-  timeout: 180000,
+  timeout: 600000,
   headers: {
     'Content-Type': 'application/json'
   }
@@ -21,9 +21,26 @@ export const API_ENDPOINTS = {
   // 大纲相关
   dsl: '/dsl',
   renderTree: '/render-tree',
+  outlines: {
+    list: '/outlines',
+    create: '/outlines',
+    get: (id) => `/outlines/${id}`,
+    update: (id) => `/outlines/${id}`,
+    delete: (id) => `/outlines/${id}`
+  },
+
+  // 认证相关
+  auth: {
+    register: '/auth/register',
+    login: '/auth/login',
+    refresh: '/auth/refresh',
+    me: '/auth/me',
+    logout: '/auth/logout'
+  },
 
   // 演示文稿相关
   presentations: {
+    list: '/presentations',
     create: '/presentations',
     get: (id) => `/presentations/${id}`,
     getDsl: (id) => `/presentations/${id}/dsl`,
@@ -33,6 +50,32 @@ export const API_ENDPOINTS = {
     switchTheme: (id) => `/presentations/${id}/theme`,
     regenerate: (id) => `/presentations/${id}/regenerate`,
     exportPptx: (id) => `/presentations/${id}/export/pptx`
+  },
+
+  // 知识库相关
+  rag: {
+    search: '/rag/search',
+    enhance: '/rag/enhance',
+    documents: '/rag/documents',
+    documentsBatch: '/rag/documents/batch',
+    documentPreview: (source) => `/rag/documents/${encodeURIComponent(source)}/preview`,
+    documentDelete: (source) => `/rag/documents/${encodeURIComponent(source)}`,
+    documentsClear: '/rag/documents',
+    sources: '/rag/sources',
+    taskStatus: (taskId) => `/rag/tasks/${taskId}`,
+    stats: '/rag/stats',
+    collectionInit: '/rag/collection/init',
+    collectionReset: '/rag/collection/reset',
+    bootstrap: '/rag/bootstrap'
+  },
+
+  // 文档导入生成大纲
+  dslFromDocument: '/dsl/from-document',
+
+  // 评估相关
+  eval: {
+    single: (presentationId) => `/eval/single/${presentationId}`,
+    batch: '/eval/batch'
   }
 }
 

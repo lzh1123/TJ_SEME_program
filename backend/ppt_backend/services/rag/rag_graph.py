@@ -1,13 +1,15 @@
 from __future__ import annotations
 
-from typing import Annotated, Any, Dict, List, Optional, TypedDict
+from typing import TYPE_CHECKING, Annotated, Any, Dict, List, Optional, TypedDict
 
 from langgraph.graph import END, StateGraph
 from langgraph.graph.message import add_messages
 
-from .embedding import EmbeddingService
-from .milvus_client import MilvusStore
 from .retrieval import HybridRetriever
+
+if TYPE_CHECKING:
+    from .embedding import EmbeddingService
+    from .milvus_client import MilvusStore
 
 
 class RAGState(TypedDict):

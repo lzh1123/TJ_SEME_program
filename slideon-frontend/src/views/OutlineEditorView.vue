@@ -497,12 +497,13 @@ function normalizeSlide(slide) {
 function loadOutline(id) {
   outlineId.value = id
   if (id) {
-    const loaded = outlineStore.getOutline(id)
-    if (loaded) {
-      loaded.slides = (loaded.slides||[]).map(normalizeSlide)
-      dsl.value = loaded
-      selectedIndex.value = dsl.value.slides.length > 0 ? 0 : 0
-    }
+    outlineStore.getOutline(id).then(loaded => {
+      if (loaded) {
+        loaded.slides = (loaded.slides||[]).map(normalizeSlide)
+        dsl.value = loaded
+        selectedIndex.value = dsl.value.slides.length > 0 ? 0 : 0
+      }
+    })
   }
 }
 
@@ -682,13 +683,13 @@ function downloadOutline(format) {
   }
 }
 
-function saveOutline() {
+async function saveOutline() {
   isSaving.value = true
   try {
     if (outlineId.value) {
-      outlineStore.saveOutline(outlineId.value, dsl.value)
+      await outlineStore.saveOutline(outlineId.value, dsl.value)
     } else {
-      const { id } = outlineStore.createOutline(dsl.value)
+      const { id } = await outlineStore.createOutline(dsl.value)
       outlineId.value = id
       router.replace({ path: '/outline-editor', query: { id } })
     }
@@ -699,8 +700,8 @@ function saveOutline() {
 
 async function generatePPT() {
   if (!dsl.value.title.trim()) { showToast('请先输入大纲标题','error'); return }
-  if (outlineId.value) outlineStore.saveOutline(outlineId.value, dsl.value)
-  else { const { id } = outlineStore.createOutline(dsl.value); outlineId.value = id; router.replace({ path:'/outline-editor', query:{ id } }) }
+  if (outlineId.value) await outlineStore.saveOutline(outlineId.value, dsl.value)
+  else { const { id } = await outlineStore.createOutline(dsl.value); outlineId.value = id; router.replace({ path:'/outline-editor', query:{ id } }) }
 
   isGenerating.value = true
   try {

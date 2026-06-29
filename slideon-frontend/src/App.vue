@@ -46,12 +46,32 @@
 
           <div class="modal-body">
             <div class="step-content">
+              <div class="mode-tabs">
+                <button
+                  :class="['mode-tab', { active: state.inputMode === 'topic' }]"
+                  :disabled="state.isGenerating"
+                  @click="state.inputMode = 'topic'"
+                >
+                  <IconBase name="magic" :size="14" />
+                  主题生成
+                </button>
+                <button
+                  :class="['mode-tab', { active: state.inputMode === 'document' }]"
+                  :disabled="state.isGenerating"
+                  @click="state.inputMode = 'document'"
+                >
+                  <IconBase name="paperclip" :size="14" />
+                  文档生成
+                </button>
+              </div>
+
               <div class="form-step">
                 <label class="form-label">
                   <span class="step-number">1</span>
-                  输入主题
+                  {{ state.inputMode === 'topic' ? '输入主题' : '上传文档' }}
                 </label>
                 <textarea
+                  v-if="state.inputMode === 'topic'"
                   class="input textarea"
                   placeholder="描述你的PPT主题、目标受众和主要内容...
 
@@ -60,10 +80,28 @@
                   :disabled="state.isGenerating"
                   @input="onTopicInput"
                 ></textarea>
-                <div class="char-count" :class="{ error: charCount > 500 }">{{ charCount }}/500</div>
+                <div v-if="state.inputMode === 'topic'" class="char-count" :class="{ error: charCount > 500 }">{{ charCount }}/500</div>
+                <template v-else>
+                  <input
+                    ref="documentInput"
+                    type="file"
+                    accept=".pdf,.docx,.txt,.md,.pptx"
+                    style="display: none"
+                    @change="handleDocumentSelected"
+                  >
+                  <button
+                    class="document-upload"
+                    :disabled="state.isGenerating"
+                    @click="documentInput?.click()"
+                  >
+                    <IconBase name="cloudUpload" :size="28" />
+                    <span>{{ state.selectedDocument ? state.selectedDocument.name : '选择 PDF、Word、TXT、Markdown 或 PPTX 文档' }}</span>
+                    <small v-if="state.selectedDocument">{{ formatFileSize(state.selectedDocument.size) }}</small>
+                  </button>
+                </template>
               </div>
 
-              <div class="form-step">
+              <div v-if="state.inputMode === 'topic'" class="form-step">
                 <label class="form-label">
                   <span class="step-number">2</span>
                   AI增强选项
@@ -91,7 +129,7 @@
             <button class="btn btn-secondary" @click="handleCancel">取消</button>
             <button
               class="btn btn-primary"
-              :disabled="state.isGenerating || !state.formTopic.trim()"
+              :disabled="state.isGenerating || !canGenerate"
               @click="doGenerate"
             >
               <IconBase v-if="state.isGenerating" name="spinner" :size="14" class="animate-spin" />
@@ -118,21 +156,29 @@
 </template>
 
 <script setup>
-import { ref, computed, nextTick, watch } from 'vue'
+import { ref, computed, nextTick, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useFloatingBall } from './composables/useFloatingBall.js'
 import { apiService } from './services/api.js'
 import { useOutlineStore } from './stores/outlineStore.js'
+import { useAuthStore } from './stores/authStore.js'
 import IconBase from './components/icons/IconBase.vue'
 
 const router = useRouter()
 const outlineStore = useOutlineStore()
+const authStore = useAuthStore()
 const { state, showBall, hideBall, setSuccess, showModal, hideModal, cancelGeneration, generateOutline, onDragStart } = useFloatingBall()
+
+// 初始化认证状态
+onMounted(() => {
+  authStore.init()
+})
 
 const ballState = state
 const ballEntering = ref(false)
 const ballExpanding = ref(false)
 const modalContentRef = ref(null)
+const documentInput = ref(null)
 
 const ballStyle = computed(() => ({
   left: ballState.position.x != null ? ballState.position.x + 'px' : undefined,
@@ -148,6 +194,11 @@ const expandBallStyle = computed(() => ({
 }))
 
 const charCount = computed(() => state.formTopic.length)
+const canGenerate = computed(() => (
+  state.inputMode === 'topic'
+    ? !!state.formTopic.trim()
+    : !!state.selectedDocument
+))
 
 let dragMoved = false
 
@@ -249,9 +300,20 @@ function onTopicInput() {
   }
 }
 
+function handleDocumentSelected(event) {
+  state.selectedDocument = event.target.files?.[0] || null
+}
+
+function formatFileSize(bytes) {
+  if (!Number.isFinite(bytes) || bytes <= 0) return '0 B'
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`
+}
+
 async function doGenerate() {
-  if (!state.formTopic.trim()) {
-    alert('请输入主题')
+  if (!canGenerate.value) {
+    alert(state.inputMode === 'topic' ? '请输入主题' : '请选择文档')
     return
   }
 
@@ -402,6 +464,34 @@ watch(() => ballState.status, (val) => {
 }
 
 .step-content { animation: fadeIn 0.3s ease; }
+.mode-tabs {
+  display: flex;
+  gap: 8px;
+  padding: 4px;
+  margin-bottom: 20px;
+  background: #f3f4f6;
+  border-radius: 8px;
+}
+.mode-tab {
+  flex: 1;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #4b5563;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.mode-tab.active {
+  background: white;
+  color: #2563eb;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+}
 .form-step { margin-bottom: 24px; }
 .form-label {
   display: flex; align-items: center; gap: 8px;
@@ -414,6 +504,34 @@ watch(() => ballState.status, (val) => {
 }
 .char-count { text-align: right; font-size: 12px; color: #9ca3af; margin-top: 8px; }
 .char-count.error { color: #ef4444; }
+
+.document-upload {
+  width: 100%;
+  min-height: 132px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 24px;
+  border: 2px dashed #d1d5db;
+  border-radius: 8px;
+  background: #f9fafb;
+  color: #4b5563;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+.document-upload:hover {
+  border-color: #60a5fa;
+  background: #eff6ff;
+  color: #2563eb;
+}
+.document-upload:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+.document-upload small { color: #9ca3af; }
 
 .textarea {
   min-height: 120px; padding: 12px 16px; resize: vertical;

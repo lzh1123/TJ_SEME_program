@@ -29,6 +29,31 @@ class Settings:
     )
     llm_timeout: float = float(os.getenv("LLM_TIMEOUT", "180"))
 
+    # Database (PostgreSQL)
+    database_url: str = os.getenv(
+        "DATABASE_URL",
+        "postgresql+asyncpg://myuser:qwer1234@119.3.125.141:5432/slideon",
+    )
+    database_echo: bool = os.getenv("DATABASE_ECHO", "false").lower() == "true"
+
+    @property
+    def database_url_sync(self) -> str:
+        """Return a sync-style URL (asyncpg → psycopg2) for Alembic / sync engine."""
+        return self.database_url.replace("+asyncpg", "")
+
+    # JWT
+    jwt_secret_key: str = os.getenv(
+        "JWT_SECRET_KEY",
+        "slideon-jwt-secret-change-in-production-please",
+    )
+    jwt_algorithm: str = "HS256"
+    jwt_access_token_expire_minutes: int = int(
+        os.getenv("JWT_ACCESS_TOKEN_EXPIRE_MINUTES", "30")
+    )
+    jwt_refresh_token_expire_days: int = int(
+        os.getenv("JWT_REFRESH_TOKEN_EXPIRE_DAYS", "7")
+    )
+
     # RAG / Milvus
     milvus_uri: str = os.getenv("MILVUS_URI", "http://localhost:19530")
     milvus_db: str = os.getenv("MILVUS_DB", "default")

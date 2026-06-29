@@ -1,9 +1,15 @@
 import { API_CONFIG, API_ENDPOINTS } from '../config/api.js'
+import { authService } from './auth.js'
 
 class ApiService {
   constructor() {
     this.baseURL = API_CONFIG.baseURL
     this.timeout = API_CONFIG.timeout
+  }
+
+  _getAuthHeaders() {
+    const token = authService.accessToken
+    return token ? { 'Authorization': `Bearer ${token}` } : {}
   }
 
   async request(url, options = {}) {
@@ -18,28 +24,48 @@ class ApiService {
 
     delete options.signal
 
+    // Merge headers including auth
+    const headers = {
+      ...API_CONFIG.headers,
+      ...this._getAuthHeaders(),
+      ...options.headers
+    }
+
+    // FormData upload: let browser set Content-Type (with boundary)
+    if (options.body instanceof FormData) {
+      delete headers['Content-Type']
+    }
+
     try {
       const response = await fetch(`${this.baseURL}${url}`, {
         ...options,
-        headers: {
-          ...API_CONFIG.headers,
-          ...options.headers
-        },
+        headers,
         signal
       })
 
       clearTimeout(timeoutId)
 
       if (!response.ok) {
-        const errorText = await response.text()
-        throw new Error(`HTTP ${response.status}: ${errorText || response.statusText}`)
+        let errorMessage = `HTTP ${response.status}: ${response.statusText}`
+        try {
+          const errorBody = await response.json()
+          if (errorBody.detail) {
+            errorMessage = errorBody.detail
+          }
+        } catch {
+          const errorText = await response.text()
+          if (errorText) errorMessage = errorText
+        }
+        const error = new Error(errorMessage)
+        error.status = response.status
+        error.errorType = response.status === 504 ? 'timeout' : response.status === 503 ? 'server_busy' : 'error'
+        throw error
       }
 
       return response
     } catch (error) {
       clearTimeout(timeoutId)
       if (error.name === 'AbortError') {
-        // Re-throw AbortError so callers can distinguish cancel from timeout
         throw error
       }
       throw error
@@ -78,6 +104,10 @@ class ApiService {
       method: 'PATCH',
       body: data ? JSON.stringify(data) : undefined
     })
+  }
+
+  async delete(url) {
+    return this.request(url, { method: 'DELETE' })
   }
 
   // 健康检查
@@ -180,6 +210,186 @@ class ApiService {
       theme
     })
     return response.json()
+  }
+
+  // 获取用户演示文稿列表
+  async listPresentations() {
+    const response = await this.get(API_ENDPOINTS.presentations.list)
+    return response.json()
+  }
+
+  // ── RAG 知识库相关 ──
+
+  async ragSearch(query, topK = 5, enableWeb = true, enableLocal = true, deepFetch = true) {
+    const response = await this.post(API_ENDPOINTS.rag.search, {
+      query, top_k: topK, enable_web: enableWeb, enable_local: enableLocal, deep_fetch: deepFetch
+    })
+    return response.json()
+  }
+
+  async ragEnhance(query, topK = 5, enableWeb = true, enableLocal = true, deepFetch = true) {
+    const response = await this.post(API_ENDPOINTS.rag.enhance, {
+      query, top_k: topK, enable_web: enableWeb, enable_local: enableLocal, deep_fetch: deepFetch
+    })
+    return response.json()
+  }
+
+  async ragUploadDocument(file, force = false) {
+    const formData = new FormData()
+    formData.append('file', file)
+    if (force) formData.append('force', 'true')
+    const response = await this.request(API_ENDPOINTS.rag.documents, {
+      method: 'POST',
+      headers: { ...this._getAuthHeaders() },
+      body: formData
+    })
+    return response.json()
+  }
+
+  async ragListSources() {
+    const response = await this.get(API_ENDPOINTS.rag.sources)
+    return response.json()
+  }
+
+  async ragDeleteDocument(source) {
+    const response = await this.delete(API_ENDPOINTS.rag.documentDelete(source))
+    return response.json()
+  }
+
+  async ragClearAll() {
+    const response = await this.delete(API_ENDPOINTS.rag.documentsClear)
+    return response.json()
+  }
+
+  async ragStats() {
+    const response = await this.get(API_ENDPOINTS.rag.stats)
+    return response.json()
+  }
+
+  async ragInitCollection() {
+    const response = await this.post(API_ENDPOINTS.rag.collectionInit)
+    return response.json()
+  }
+
+  async ragResetCollection() {
+    const response = await this.post(API_ENDPOINTS.rag.collectionReset)
+    return response.json()
+  }
+
+  async ragBootstrap(maxArticlesPerTopic = 3, maxTopics = 0) {
+    const response = await this.post(API_ENDPOINTS.rag.bootstrap, {
+      max_articles_per_topic: maxArticlesPerTopic,
+      max_topics: maxTopics
+    })
+    return response.json()
+  }
+
+  async getTaskStatus(taskId) {
+    const response = await this.get(API_ENDPOINTS.rag.taskStatus(taskId))
+    return response.json()
+  }
+
+  async getImportTaskStatus(taskId) {
+    return this.getTaskStatus(taskId)
+  }
+
+  // ── 评估相关 ──
+
+  async evalSingle(presentationId, referenceText = null, enableLlmJudge = true, metrics = null) {
+    const response = await this.post(API_ENDPOINTS.eval.single(presentationId), {
+      reference_text: referenceText,
+      enable_llm_judge: enableLlmJudge,
+      metrics
+    })
+    return response.json()
+  }
+
+  async evalBatch(configs, topics, metrics = null, referenceTexts = {}) {
+    const response = await this.post(API_ENDPOINTS.eval.batch, {
+      configs, topics, metrics, reference_texts: referenceTexts
+    })
+    return response.json()
+  }
+
+  // ── 文档导入生成大纲 ──
+
+  async dslFromDocument(filename, content) {
+    const response = await this.post(API_ENDPOINTS.dslFromDocument, { filename, content })
+    return response.json()
+  }
+
+  async generateOutlineFromDocument(file, theme = null, signal = null) {
+    const formData = new FormData()
+    formData.append('file', file)
+    if (theme) formData.append('theme', theme)
+    const response = await this.request(API_ENDPOINTS.dslFromDocument, {
+      method: 'POST',
+      body: formData,
+      signal
+    })
+    return response.json()
+  }
+
+  // ── 大纲云端同步 ──
+
+  async listOutlines() {
+    const response = await this.get(API_ENDPOINTS.outlines.list)
+    return response.json()
+  }
+
+  async getOutline(id) {
+    const response = await this.get(API_ENDPOINTS.outlines.get(id))
+    return response.json()
+  }
+
+  async createOutline(data) {
+    const response = await this.post(API_ENDPOINTS.outlines.create, data)
+    return response.json()
+  }
+
+  async updateOutline(id, data) {
+    const response = await this.put(API_ENDPOINTS.outlines.update(id), data)
+    return response.json()
+  }
+
+  async deleteOutline(id) {
+    const response = await this.delete(API_ENDPOINTS.outlines.delete(id))
+    return response.json()
+  }
+
+  // ── 知识库别名方法（兼容 KnowledgeBaseView 调用） ──
+
+  /** 获取知识库文档列表 + 统计（组合 rag/sources + rag/stats） */
+  async getKBDocuments() {
+    const response = await this.get(API_ENDPOINTS.rag.documents)
+    return response.json()
+  }
+
+  /** 上传文件到知识库（支持批量） */
+  async uploadDocumentsToKB(files) {
+    const formData = new FormData()
+    files.forEach(file => formData.append('files', file))
+    const response = await this.request(API_ENDPOINTS.rag.documentsBatch, {
+      method: 'POST',
+      body: formData
+    })
+    return response.json()
+  }
+
+  /** 预览知识库中的文档内容片段 */
+  async previewKBDocument(source) {
+    const response = await this.get(API_ENDPOINTS.rag.documentPreview(source))
+    return response.json()
+  }
+
+  /** 删除知识库中的文档 */
+  async removeKBDocument(source) {
+    return this.ragDeleteDocument(source)
+  }
+
+  /** 清空知识库 */
+  async clearAllKBDocuments() {
+    return this.ragClearAll()
   }
 }
 

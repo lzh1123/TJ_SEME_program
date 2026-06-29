@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Optional
@@ -14,6 +16,13 @@ from ..settings import settings
 from .ai.pipeline import AiPipeline
 from .rendering.compiler import RenderCompiler
 from .rendering.theme_engine import apply_theme_to_tree
+
+try:
+    from .evaluation.rag_eval import log_retrieval
+except ImportError:
+    log_retrieval = None
+
+logger = logging.getLogger(__name__)
 
 
 class PresentationService:
@@ -35,7 +44,20 @@ class PresentationService:
         presentation_id = new_id("pres")
         rag_context = ""
         if use_rag and self._rag:
-            rag_context = self._rag.retrieve_context(topic, top_k=8)
+            t0 = time.time()
+            try:
+                rag_context = self._rag.retrieve_context(topic, top_k=8)
+                logger.info("RAG retrieve_context for create topic=%r: %d chars in %.1fs", topic[:80], len(rag_context), time.time() - t0)
+                if log_retrieval is not None and rag_context:
+                    try:
+                        result = self._rag.search(topic, top_k=8)
+                        log_retrieval(presentation_id, topic,
+                            result.get("fused_results", []) if isinstance(result, dict) else [])
+                    except Exception:
+                        pass
+            except Exception as e:
+                logger.warning("RAG retrieve_context FAILED for create topic=%r: %s: %s", topic[:80], type(e).__name__, e)
+                rag_context = ""
         dsl, ai_debug = self._ai.generate_dsl_with_debug(
             topic=topic, theme=theme, rag_context=rag_context
         )
@@ -50,8 +72,26 @@ class PresentationService:
 
     def generate_outline(self, topic: str, theme: Optional[str] = None, use_rag: bool = True) -> dict:
         rag_context = ""
-        if use_rag and self._rag:
-            rag_context = self._rag.retrieve_context(topic, top_k=8)
+        rag_enabled = use_rag and self._rag is not None
+        if rag_enabled:
+            t0 = time.time()
+            try:
+                rag_context = self._rag.retrieve_context(topic, top_k=8)
+                elapsed = time.time() - t0
+                ctx_len = len(rag_context)
+                logger.info("RAG retrieve_context for topic=%r: %d chars in %.1fs", topic[:80], ctx_len, elapsed)
+                if log_retrieval is not None and rag_context:
+                    try:
+                        result = self._rag.search(topic, top_k=8)
+                        log_retrieval(f"outline_{topic[:50]}", topic,
+                            result.get("fused_results", []) if isinstance(result, dict) else [])
+                    except Exception:
+                        pass
+            except Exception as e:
+                logger.warning("RAG retrieve_context FAILED for topic=%r: %s: %s", topic[:80], type(e).__name__, e)
+                rag_context = ""
+        else:
+            logger.info("RAG DISABLED for generate_outline topic=%r (use_rag=%s, _rag=%s)", topic[:80], use_rag, self._rag is not None)
         dsl = self._ai.generate_dsl(topic=topic, theme=theme, rag_context=rag_context)
         data = dsl.model_dump(by_alias=True)
         slides = data.get("slides") or []

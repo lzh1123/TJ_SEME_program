@@ -1,127 +1,193 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { new_id } from '../utils/ids.js'
+import { authService } from '../services/auth.js'
+import { apiService } from '../services/api.js'
 
 const INDEX_KEY = 'slideon_outlines_index'
 const OUTLINE_PREFIX = 'slideon_outline_'
 
 export const useOutlineStore = defineStore('outline', () => {
-  // ── state ──
-  const outlines = ref([]) // index list: [{id, title, slideCount, createdAt, updatedAt}, ...]
+  const outlines = ref([])
 
-  // ── private helpers ──
-  function loadIndex() {
+  function isLoggedIn() {
+    return authService.isAuthenticated
+  }
+
+  function loadLocalIndex() {
     try {
       const raw = localStorage.getItem(INDEX_KEY)
-      if (raw) {
-        outlines.value = JSON.parse(raw)
-      }
+      return raw ? JSON.parse(raw) : []
     } catch (e) {
-      console.error('加载大纲索引失败:', e)
-      outlines.value = []
+      console.error('Failed to load local outline index:', e)
+      return []
     }
   }
 
-  function saveIndex() {
+  function saveLocalIndex() {
     try {
       localStorage.setItem(INDEX_KEY, JSON.stringify(outlines.value))
     } catch (e) {
-      console.error('保存大纲索引失败:', e)
+      console.error('Failed to save local outline index:', e)
     }
   }
 
-  // ── actions ──
+  function cacheOutline(id, dsl) {
+    try {
+      localStorage.setItem(OUTLINE_PREFIX + id, JSON.stringify(dsl))
+    } catch (e) {
+      console.error('Failed to cache outline:', e)
+    }
+  }
 
-  /** 加载所有大纲元数据 */
-  function loadOutlines() {
-    loadIndex()
+  function removeCachedOutline(id) {
+    try {
+      localStorage.removeItem(OUTLINE_PREFIX + id)
+    } catch {}
+  }
+
+  function normalizeEntry(entry, fallbackDsl = null) {
+    const slideCount = entry.slideCount ?? entry.slide_count ?? fallbackDsl?.slides?.length ?? 0
+    return {
+      id: entry.id,
+      title: entry.title || fallbackDsl?.title || '未命名大纲',
+      slideCount,
+      createdAt: entry.createdAt ?? entry.created_at ?? new Date().toISOString(),
+      updatedAt: entry.updatedAt ?? entry.updated_at ?? new Date().toISOString(),
+    }
+  }
+
+  function ensureSlideIds(dsl) {
+    const copy = JSON.parse(JSON.stringify(dsl || {}))
+    if (copy.slides) {
+      copy.slides = copy.slides.map((slide) => ({
+        ...slide,
+        id: slide.id || new_id('slide'),
+        section: slide.section || ''
+      }))
+    }
+    return copy
+  }
+
+  function upsertLocalEntry(entry) {
+    const normalized = normalizeEntry(entry)
+    const index = outlines.value.findIndex(o => o.id === normalized.id)
+    if (index === -1) {
+      outlines.value.unshift(normalized)
+    } else {
+      outlines.value[index] = { ...outlines.value[index], ...normalized }
+    }
+    saveLocalIndex()
+    return normalized
+  }
+
+  async function loadOutlines() {
+    if (isLoggedIn()) {
+      const data = await apiService.listOutlines()
+      outlines.value = data.map(item => normalizeEntry(item))
+      saveLocalIndex()
+      return outlines.value
+    }
+
+    outlines.value = loadLocalIndex()
     return outlines.value
   }
 
-  /** 根据 ID 获取单个大纲完整 DSL */
-  function getOutline(id) {
+  async function getOutline(id) {
+    if (isLoggedIn()) {
+      const data = await apiService.getOutline(id)
+      const dsl = typeof data.dsl === 'string' ? JSON.parse(data.dsl) : data.dsl
+      cacheOutline(id, dsl)
+      upsertLocalEntry(data)
+      return dsl
+    }
+
     try {
       const raw = localStorage.getItem(OUTLINE_PREFIX + id)
-      if (raw) {
-        return JSON.parse(raw)
-      }
+      return raw ? JSON.parse(raw) : null
     } catch (e) {
-      console.error('加载大纲失败:', id, e)
+      console.error('Failed to load local outline:', id, e)
+      return null
     }
-    return null
   }
 
-  /** 创建新大纲并保存到 localStorage */
-  function createOutline(dsl) {
-    const id = new_id('outline')
+  async function createOutline(dsl) {
+    const normalizedDsl = ensureSlideIds(dsl)
+    const localId = new_id('outline')
     const now = new Date().toISOString()
-
-    const entry = {
-      id,
-      title: dsl.title || '未命名大纲',
-      slideCount: (dsl.slides && dsl.slides.length) || 0,
+    const localEntry = {
+      id: localId,
+      title: normalizedDsl.title || '未命名大纲',
+      slideCount: normalizedDsl.slides?.length || 0,
       createdAt: now,
-      updatedAt: now
+      updatedAt: now,
     }
 
-    // 确保 slides 中每个 slide 都有 id
-    if (dsl.slides) {
-      dsl.slides = dsl.slides.map((slide, idx) => ({
-        ...slide,
-        id: slide.id || new_id('slide'),
-        section: slide.section || ''
-      }))
+    if (isLoggedIn()) {
+      const saved = await apiService.createOutline({
+        id: localId,
+        title: localEntry.title,
+        dsl: JSON.stringify(normalizedDsl),
+        slide_count: localEntry.slideCount
+      })
+      const entry = upsertLocalEntry(saved)
+      cacheOutline(entry.id, normalizedDsl)
+      return { id: entry.id, entry }
     }
 
-    outlines.value.unshift(entry)
-    saveIndex()
-    localStorage.setItem(OUTLINE_PREFIX + id, JSON.stringify(dsl))
-
-    return { id, entry }
+    outlines.value.unshift(localEntry)
+    saveLocalIndex()
+    cacheOutline(localId, normalizedDsl)
+    return { id: localId, entry: localEntry }
   }
 
-  /** 保存（更新）已有大纲 */
-  function saveOutline(id, dsl) {
+  async function saveOutline(id, dsl) {
+    const normalizedDsl = ensureSlideIds(dsl)
+    const payload = {
+      title: normalizedDsl.title || '未命名大纲',
+      dsl: JSON.stringify(normalizedDsl),
+      slide_count: normalizedDsl.slides?.length || 0
+    }
+
+    if (isLoggedIn()) {
+      const saved = await apiService.updateOutline(id, payload)
+      upsertLocalEntry(saved)
+      cacheOutline(id, normalizedDsl)
+      return true
+    }
+
     const now = new Date().toISOString()
     const index = outlines.value.findIndex(o => o.id === id)
-
-    if (index !== -1) {
-      outlines.value[index] = {
-        ...outlines.value[index],
-        title: dsl.title || outlines.value[index].title,
-        slideCount: (dsl.slides && dsl.slides.length) || 0,
-        updatedAt: now
-      }
-      saveIndex()
+    const entry = {
+      id,
+      title: payload.title,
+      slideCount: payload.slide_count,
+      createdAt: index !== -1 ? outlines.value[index].createdAt : now,
+      updatedAt: now
     }
-
-    // 确保 slides 中每个 slide 都有 id
-    if (dsl.slides) {
-      dsl.slides = dsl.slides.map((slide, idx) => ({
-        ...slide,
-        id: slide.id || new_id('slide'),
-        section: slide.section || ''
-      }))
-    }
-
-    localStorage.setItem(OUTLINE_PREFIX + id, JSON.stringify(dsl))
+    if (index !== -1) outlines.value[index] = entry
+    else outlines.value.unshift(entry)
+    saveLocalIndex()
+    cacheOutline(id, normalizedDsl)
     return true
   }
 
-  /** 删除大纲 */
-  function deleteOutline(id) {
+  async function deleteOutline(id) {
+    if (isLoggedIn()) {
+      await apiService.deleteOutline(id)
+    }
+
     outlines.value = outlines.value.filter(o => o.id !== id)
-    saveIndex()
-    localStorage.removeItem(OUTLINE_PREFIX + id)
+    saveLocalIndex()
+    removeCachedOutline(id)
   }
 
-  /** 检查大纲是否存在 */
   function hasOutline(id) {
+    if (isLoggedIn()) return outlines.value.some(o => o.id === id)
     return localStorage.getItem(OUTLINE_PREFIX + id) !== null
   }
 
-  // 初始化加载
-  loadIndex()
+  outlines.value = loadLocalIndex()
 
   return {
     outlines,

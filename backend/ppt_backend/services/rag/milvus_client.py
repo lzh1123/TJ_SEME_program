@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import logging
 from typing import Any, Dict, List, Optional
 
 from pymilvus import DataType, MilvusClient
+
+logger = logging.getLogger(__name__)
 
 
 class MilvusStore:
@@ -17,6 +20,19 @@ class MilvusStore:
     def client(self) -> MilvusClient:
         if self._client is None:
             self._client = MilvusClient(uri=self._uri, db_name=self._db_name)
+            logger.info("Created new MilvusClient (uri=%s)", self._uri)
+        else:
+            # Health check: lazy reconnection if the connection was closed
+            try:
+                self._client.list_collections()
+            except Exception:
+                logger.warning("MilvusClient connection appears closed, reconnecting...")
+                try:
+                    self._client.close()
+                except Exception:
+                    pass
+                self._client = MilvusClient(uri=self._uri, db_name=self._db_name)
+                logger.info("Reconnected MilvusClient (uri=%s)", self._uri)
         return self._client
 
     @property
@@ -30,10 +46,13 @@ class MilvusStore:
     def ensure_collection(self, dim: int, drop_if_exists: bool = False) -> bool:
         if self.client.has_collection(self.COLLECTION_NAME):
             if drop_if_exists:
+                logger.info("Dropping existing collection %s", self.COLLECTION_NAME)
                 self.client.drop_collection(self.COLLECTION_NAME)
             else:
+                logger.debug("Collection %s already exists, skipping creation", self.COLLECTION_NAME)
                 return False
 
+        logger.info("Creating collection %s (dim=%d)", self.COLLECTION_NAME, dim)
         schema = self.client.create_schema(
             auto_id=True,
             enable_dynamic_field=False,
@@ -87,27 +106,162 @@ class MilvusStore:
             index_params=index_params,
         )
         self.client.load_collection(self.COLLECTION_NAME)
+        logger.info("Collection %s created and loaded successfully", self.COLLECTION_NAME)
         return True
 
     def insert(self, chunks: List[Dict[str, Any]], embeddings: List[List[float]]) -> List[int]:
         data = []
+        sources = set()
         for chunk, emb in zip(chunks, embeddings):
+            src = chunk.get("source", "")
+            sources.add(src)
             data.append({
                 "text": chunk.get("text", ""),
                 "embedding": emb,
-                "source": chunk.get("source", ""),
+                "source": src,
                 "chunk_index": chunk.get("chunk_index", 0),
                 "metadata": chunk.get("metadata", {}),
             })
+        logger.info("Inserting %d chunks (sources=%s) into %s", len(data), sorted(sources), self.COLLECTION_NAME)
         result = self.client.insert(collection_name=self.COLLECTION_NAME, data=data)
-        return result.get("ids", [])
+        ids = result.get("ids", [])
+        logger.info("Inserted %d chunks, got %d IDs", len(data), len(ids))
+        return ids
 
-    def delete_by_source(self, source: str) -> int:
-        res = self.client.delete(
-            collection_name=self.COLLECTION_NAME,
-            filter=f'source == "{source}"',
-        )
-        return res.get("delete_count", 0)
+    def _ensure_loaded(self) -> None:
+        """Ensure the collection is loaded into memory (required for queries and deletes)."""
+        try:
+            self.client.load_collection(self.COLLECTION_NAME)
+        except Exception:
+            logger.debug("Collection %s load skipped (already loaded or unavailable)", self.COLLECTION_NAME)
+
+    def _escape_filter_string(self, value: str) -> str:
+        """Escape a string value for safe use in Milvus filter expressions.
+
+        Milvus uses double-quoted strings in filter expressions. We must escape
+        backslashes and double quotes to avoid breaking the expression syntax.
+        """
+        return value.replace("\\", "\\\\").replace('"', '\\"')
+
+    def _get_ids_by_source(self, source: str, user_id: Optional[str] = None) -> List[int]:
+        """Get all entity IDs for a given source. Returns empty list if none found."""
+        self._ensure_loaded()
+        try:
+            escaped = self._escape_filter_string(source)
+            filter_expr = f'source == "{escaped}"'
+            if user_id:
+                escaped_uid = self._escape_filter_string(user_id)
+                filter_expr = f'{filter_expr} and metadata["user_id"] == "{escaped_uid}"'
+            logger.debug("Querying IDs by source=%r (filter=%s)", source, filter_expr)
+            result = self.client.query(
+                collection_name=self.COLLECTION_NAME,
+                filter=filter_expr,
+                output_fields=["id"],
+                limit=10000,
+            )
+            ids = [int(r["id"]) for r in result if "id" in r]
+            logger.debug("Found %d ids for source=%r", len(ids), source)
+            return ids
+        except Exception:
+            logger.exception("Failed to query IDs for source=%r", source)
+            return []
+
+    def source_exists(self, source: str, user_id: Optional[str] = None) -> bool:
+        """Check if a source already has entries in the collection."""
+        ids = self._get_ids_by_source(source, user_id=user_id)
+        exists = len(ids) > 0
+        logger.debug("source_exists(%r) = %s (%d chunks)", source, exists, len(ids))
+        return exists
+
+    def count_by_source(self, source: str, user_id: Optional[str] = None) -> int:
+        """Count how many chunks exist for a given source."""
+        count = len(self._get_ids_by_source(source, user_id=user_id))
+        logger.debug("count_by_source(%r) = %d", source, count)
+        return count
+
+    def delete_by_source(self, source: str, user_id: Optional[str] = None) -> int:
+        """Delete all entries for a given source.
+        Uses ID-based deletion (query IDs first, then delete by IDs)
+        which is more reliable than filter-based delete in Milvus 3.x.
+
+        Returns the actual number of entities deleted (from Milvus response).
+        """
+        self._ensure_loaded()
+        ids = self._get_ids_by_source(source, user_id=user_id)
+        if not ids:
+            # Double-check: if source still appears via list_sources-style query,
+            # then _get_ids_by_source failed — log a warning.
+            logger.warning(
+                "No IDs found for source=%r — the source may not exist, "
+                "or the query may have failed (check above for exceptions).",
+                source,
+            )
+            return 0
+
+        expected = len(ids)
+        try:
+            result = self.client.delete(
+                collection_name=self.COLLECTION_NAME,
+                ids=ids,
+            )
+            delete_count = self._parse_delete_count(result, expected)
+            if delete_count != expected:
+                logger.warning(
+                    "Delete mismatch for source=%r: expected %d, actual delete_count=%d",
+                    source, expected, delete_count,
+                )
+            return delete_count
+        except Exception as e:
+            logger.exception("ID-based delete failed for source=%r, trying filter-based fallback", source)
+            # Fallback: try filter-based delete
+            try:
+                escaped = self._escape_filter_string(source)
+                filter_expr = f'source == "{escaped}"'
+                if user_id:
+                    escaped_uid = self._escape_filter_string(user_id)
+                    filter_expr = f'{filter_expr} and metadata["user_id"] == "{escaped_uid}"'
+                result = self.client.delete(
+                    collection_name=self.COLLECTION_NAME,
+                    filter=filter_expr,
+                )
+                delete_count = self._parse_delete_count(result, expected)
+                logger.info(
+                    "Filter-based fallback delete for source=%r: delete_count=%d",
+                    source, delete_count,
+                )
+                return delete_count
+            except Exception:
+                logger.exception("Filter-based delete also failed for source=%r", source)
+                raise e
+
+    @staticmethod
+    def _parse_delete_count(result: Any, fallback: int) -> int:
+        """Extract delete_count from pymilvus delete result.
+
+        pymilvus 3.x returns a dict like {'delete_count': N, 'cost': ...}.
+        If we can't parse it, fall back to the expected count.
+        """
+        if isinstance(result, dict):
+            count = result.get("delete_count")
+            if isinstance(count, int):
+                return count
+        logger.debug("Could not parse delete_count from result: %r", result)
+        return fallback
+
+    def _build_filter(
+        self,
+        source_filter: Optional[str] = None,
+        user_id: Optional[str] = None,
+    ) -> Optional[str]:
+        """Build a combined Milvus filter expression from source_filter and user_id."""
+        parts = []
+        if source_filter:
+            escaped = self._escape_filter_string(source_filter)
+            parts.append(f'source like "%{escaped}%"')
+        if user_id:
+            escaped_uid = self._escape_filter_string(user_id)
+            parts.append(f'metadata["user_id"] == "{escaped_uid}"')
+        return " and ".join(parts) if parts else None
 
     def hybrid_search(
         self,
@@ -115,37 +269,50 @@ class MilvusStore:
         query_text: str,
         top_k: int = 10,
         source_filter: Optional[str] = None,
+        user_id: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
-        dense_hits = self._dense_search(query_embedding, top_k * 2, source_filter)
-        sparse_hits = self._keyword_search(query_text, top_k * 2, source_filter)
-        return self._rrf_fuse(dense_hits, sparse_hits, top_k)
+        expr = self._build_filter(source_filter, user_id)
+        logger.debug("hybrid_search: query=%r top_k=%d filter=%r", query_text[:80], top_k, expr)
+        dense_hits = self._dense_search(query_embedding, top_k * 2, expr)
+        sparse_hits = self._keyword_search(query_text, top_k * 2, expr)
+        fused = self._rrf_fuse(dense_hits, sparse_hits, top_k)
+        logger.debug("hybrid_search: dense=%d sparse=%d fused=%d final=%d",
+                      len(dense_hits), len(sparse_hits), len(fused), min(top_k, len(fused)))
+        return fused
 
     def vector_search(
         self,
         query_embedding: List[float],
         top_k: int = 10,
         source_filter: Optional[str] = None,
+        user_id: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
-        return self._dense_search(query_embedding, top_k, source_filter)
+        expr = self._build_filter(source_filter, user_id)
+        logger.debug("vector_search: top_k=%d filter=%r", top_k, expr)
+        result = self._dense_search(query_embedding, top_k, expr)
+        logger.debug("vector_search: returned %d hits", len(result))
+        return result
 
     def keyword_search(
         self,
         query_text: str,
         top_k: int = 10,
         source_filter: Optional[str] = None,
+        user_id: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
-        return self._keyword_search(query_text, top_k, source_filter)
+        expr = self._build_filter(source_filter, user_id)
+        logger.debug("keyword_search: query=%r top_k=%d filter=%r", query_text[:80], top_k, expr)
+        result = self._keyword_search(query_text, top_k, expr)
+        logger.debug("keyword_search: returned %d hits", len(result))
+        return result
 
     def _dense_search(
         self,
         query_embedding: List[float],
         top_k: int,
-        source_filter: Optional[str] = None,
+        filter_expr: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
-        filter_expr = None
-        if source_filter:
-            filter_expr = f'source like "%{source_filter}%"'
-
+        logger.debug("_dense_search: top_k=%d filter=%r", top_k, filter_expr)
         results = self.client.search(
             collection_name=self.COLLECTION_NAME,
             data=[query_embedding],
@@ -166,20 +333,24 @@ class MilvusStore:
                     "metadata": entity.get("metadata", {}),
                     "score": hit.get("distance", hit.get("score", 0.0)),
                 })
+        logger.debug("_dense_search: returned %d hits (top score=%.4f)",
+                      len(hits), hits[0]["score"] if hits else 0.0)
         return hits
 
     def _keyword_search(
         self,
         query_text: str,
         top_k: int,
-        source_filter: Optional[str] = None,
+        extra_filter: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
-        escaped = query_text.replace('"', '\\"')
+        escaped = self._escape_filter_string(query_text)
         filter_parts = [f'text like "%{escaped}%"']
-        if source_filter:
-            filter_parts.append(f'source like "%{source_filter}%"')
+        if extra_filter:
+            filter_parts.append(f"({extra_filter})")
         filter_expr = " and ".join(filter_parts)
 
+        logger.debug("_keyword_search: query=%r filter=%r top_k=%d",
+                      query_text[:80], filter_expr, top_k)
         results = self.client.query(
             collection_name=self.COLLECTION_NAME,
             filter=filter_expr,
@@ -196,6 +367,7 @@ class MilvusStore:
                 "metadata": entity.get("metadata", {}),
                 "score": 1.0,
             })
+        logger.debug("_keyword_search: returned %d hits", len(hits))
         return hits
 
     def _rrf_fuse(
@@ -224,9 +396,116 @@ class MilvusStore:
 
     def get_collection_stats(self) -> Dict[str, Any]:
         if not self.client.has_collection(self.COLLECTION_NAME):
+            logger.debug("get_collection_stats: collection %s does not exist", self.COLLECTION_NAME)
             return {"exists": False, "num_entities": 0}
         stats = self.client.get_collection_stats(self.COLLECTION_NAME)
-        return {"exists": True, "num_entities": stats.get("row_count", 0)}
+        row_count = stats.get("row_count", 0)
+        logger.debug("get_collection_stats: row_count=%s", row_count)
+        return {"exists": True, "num_entities": row_count}
+
+    def find_by_hash(self, sha256_hash: str, user_id: Optional[str] = None) -> Optional[str]:
+        """Check if any entity has this SHA256 hash in metadata.
+        Returns the source name if found, None otherwise."""
+        if not sha256_hash:
+            return None
+        self._ensure_loaded()
+        logger.debug("find_by_hash: searching for hash prefix=%s", sha256_hash[:16])
+        try:
+            escaped = self._escape_filter_string(sha256_hash)
+            filter_expr = f'metadata like "%{escaped}%"'
+            if user_id:
+                escaped_uid = self._escape_filter_string(user_id)
+                filter_expr = f'{filter_expr} and metadata["user_id"] == "{escaped_uid}"'
+            result = self.client.query(
+                collection_name=self.COLLECTION_NAME,
+                filter=filter_expr,
+                output_fields=["source", "metadata"],
+                limit=1,
+            )
+            if result:
+                meta = result[0].get("metadata", {})
+                if isinstance(meta, dict) and meta.get("sha256") == sha256_hash:
+                    found_source = result[0].get("source")
+                    logger.info("find_by_hash: dedup match — source=%r", found_source)
+                    return found_source
+            logger.debug("find_by_hash: no match for hash prefix=%s", sha256_hash[:16])
+            return None
+        except Exception:
+            logger.exception("Failed to query by hash prefix=%s", sha256_hash[:16])
+            return None
+
+    def list_sources(
+        self,
+        user_id: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        """List distinct sources with their chunk counts and latest metadata.
+        If user_id is provided, only return sources belonging to that user.
+        """
+        if not self.client.has_collection(self.COLLECTION_NAME):
+            logger.debug("list_sources: collection %s does not exist", self.COLLECTION_NAME)
+            return []
+        self._ensure_loaded()
+        try:
+            filter_expr = "id >= 0"
+            if user_id:
+                escaped = self._escape_filter_string(user_id)
+                filter_expr = f'{filter_expr} and metadata["user_id"] == "{escaped}"'
+            logger.debug("list_sources: filter=%s", filter_expr)
+            results = self.client.query(
+                collection_name=self.COLLECTION_NAME,
+                filter=filter_expr,
+                output_fields=["source", "chunk_index", "metadata"],
+                limit=10000,
+            )
+            logger.debug("list_sources: got %d raw entities", len(results))
+        except Exception:
+            logger.exception("Failed to list sources from Milvus")
+            return []
+
+        # Group by source in Python
+        sources: Dict[str, Dict[str, Any]] = {}
+        for entity in results:
+            source = entity.get("source", "unknown")
+            if source not in sources:
+                sources[source] = {
+                    "source": source,
+                    "chunks": 0,
+                    "filename": source,
+                }
+                # Extract filename from metadata if available
+                meta = entity.get("metadata", {})
+                if isinstance(meta, dict) and meta.get("filename"):
+                    sources[source]["filename"] = meta["filename"]
+            sources[source]["chunks"] += 1
+
+        sorted_sources = sorted(sources.values(), key=lambda x: x["chunks"], reverse=True)
+        logger.debug("list_sources: %d distinct sources, total chunks=%d",
+                      len(sorted_sources), sum(s["chunks"] for s in sorted_sources))
+        return sorted_sources
+
+    def get_chunks_by_source(
+        self,
+        source: str,
+        user_id: Optional[str] = None,
+        limit: int = 200,
+    ) -> List[Dict[str, Any]]:
+        """Return ordered chunks for one source, optionally scoped to a user."""
+        if not self.client.has_collection(self.COLLECTION_NAME):
+            return []
+        self._ensure_loaded()
+        escaped = self._escape_filter_string(source)
+        filter_expr = f'source == "{escaped}"'
+        if user_id:
+            escaped_uid = self._escape_filter_string(user_id)
+            filter_expr = f'{filter_expr} and metadata["user_id"] == "{escaped_uid}"'
+        results = self.client.query(
+            collection_name=self.COLLECTION_NAME,
+            filter=filter_expr,
+            output_fields=["text", "source", "chunk_index", "metadata"],
+            limit=limit,
+        )
+        return sorted(results, key=lambda item: item.get("chunk_index", 0))
 
     def close(self):
+        logger.debug("Closing MilvusClient")
         self._client = None

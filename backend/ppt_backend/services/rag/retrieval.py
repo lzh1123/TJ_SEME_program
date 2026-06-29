@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import time
-from typing import Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from .content_fetcher import ContentFetcher
-from .embedding import EmbeddingService
-from .milvus_client import MilvusStore
 from .web_search import WebSearchService
+
+if TYPE_CHECKING:
+    from .embedding import EmbeddingService
+    from .milvus_client import MilvusStore
 
 
 class HybridRetriever:
@@ -35,6 +37,7 @@ class HybridRetriever:
         source_filter: Optional[str] = None,
         deep_fetch: bool = True,
         deep_fetch_count: int = 3,
+        user_id: Optional[str] = None,
     ) -> Dict[str, Any]:
         k = top_k or self._top_k
         web_results: List[Dict[str, Any]] = []
@@ -55,6 +58,7 @@ class HybridRetriever:
                     query_text=query,
                     top_k=k,
                     source_filter=source_filter,
+                    user_id=user_id,
                 )
             except Exception:
                 local_results = []

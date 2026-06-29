@@ -5,6 +5,9 @@ import time
 from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import urlparse
 
+from ...settings import settings
+from .web_search import WebSearchService
+
 
 class ContentFetcher:
     def __init__(self, timeout: int = 15, max_retries: int = 2):
@@ -69,21 +72,18 @@ class ContentFetcher:
         return docs
 
     def _search_urls(self, query: str, max_results: int, region: str) -> List[str]:
-        try:
-            from ddgs import DDGS
-        except ImportError:
-            try:
-                from duckduckgo_search import DDGS
-            except ImportError:
-                return []
-
         urls = []
         try:
-            with DDGS() as ddgs:
-                for r in ddgs.text(query, region=region, max_results=max_results):
-                    href = r.get("href", "")
-                    if href and self._is_fetchable(href):
-                        urls.append(href)
+            search = WebSearchService(
+                region=region,
+                provider=settings.web_search_provider,
+                api_key=settings.baidu_search_api_key,
+                timeout=settings.web_search_timeout,
+            )
+            for r in search.search(query, max_results=max_results):
+                href = r.get("url", "")
+                if href and self._is_fetchable(href):
+                    urls.append(href)
         except Exception:
             pass
         return urls

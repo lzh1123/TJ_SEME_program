@@ -60,3 +60,11 @@ coverage/
 # SEME
 
 data/
+
+scripts/
+
+output/pdf/
+
+tmp/
+
+docs/

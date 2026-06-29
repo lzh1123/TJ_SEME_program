@@ -117,6 +117,15 @@
                   <span class="status-badge" :class="doc.status">{{ statusLabel(doc.status) }}</span>
                 </td>
                 <td>
+                  <div class="doc-actions">
+                    <button
+                      class="mini-btn"
+                      @click="previewDoc(doc)"
+                      :disabled="doc.status !== 'ready' || previewLoading"
+                      title="预览"
+                    >
+                      <IconBase name="eye" :size="14" />
+                    </button>
                   <button
                     class="mini-btn danger"
                     @click="removeDoc(doc)"
@@ -129,12 +138,34 @@
                       :class="{ 'animate-spin': deletingSources.has(doc.source) }"
                     />
                   </button>
+                  </div>
                 </td>
               </tr>
             </tbody>
           </table>
         </div>
       </section>
+    </div>
+
+    <div v-if="previewVisible" class="preview-overlay" @click.self="closePreview">
+      <div class="preview-dialog">
+        <div class="preview-header">
+          <div>
+            <h2>{{ previewDocData.filename || '文档预览' }}</h2>
+            <p>{{ previewDocData.chunks || 0 }} 个片段</p>
+          </div>
+          <button class="mini-btn" @click="closePreview" title="关闭">
+            <IconBase name="times" :size="16" />
+          </button>
+        </div>
+        <div class="preview-body">
+          <div v-if="previewLoading" class="preview-loading">
+            <IconBase name="spinner" :size="18" class="animate-spin" />
+            <span>加载中...</span>
+          </div>
+          <pre v-else>{{ previewDocData.preview_text || '暂无可预览内容' }}</pre>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -162,6 +193,9 @@ const importedDocs = ref([])
 const deletingSources = ref(new Set())
 const clearingAll = ref(false)
 const uploadInput = ref(null)
+const previewVisible = ref(false)
+const previewLoading = ref(false)
+const previewDocData = ref({})
 
 // Derived: only "ready" docs (exclude importing placeholders from count)
 const readyDocs = computed(() =>
@@ -369,6 +403,13 @@ async function removeDoc(doc) {
   deletingSources.value = new Set([...deletingSources.value, doc.source])
 
   try {
+    if (doc.status === 'importing') {
+      kbTasks.removeFiles([doc.name, doc.source])
+      importedDocs.value = importedDocs.value.filter(d => d.source !== doc.source && d.name !== doc.name)
+      saveCache()
+      return
+    }
+
     const res = await apiService.removeKBDocument(doc.source)
     if (res.deleted === 0 && res.warning) {
       alert(res.warning)
@@ -386,6 +427,28 @@ async function removeDoc(doc) {
     next.delete(doc.source)
     deletingSources.value = next
   }
+}
+
+async function previewDoc(doc) {
+  previewVisible.value = true
+  previewLoading.value = true
+  previewDocData.value = { filename: doc.name, preview_text: '' }
+  try {
+    previewDocData.value = await apiService.previewKBDocument(doc.source)
+  } catch (e) {
+    previewDocData.value = {
+      filename: doc.name,
+      preview_text: '预览失败: ' + e.message,
+      chunks: 0
+    }
+  } finally {
+    previewLoading.value = false
+  }
+}
+
+function closePreview() {
+  previewVisible.value = false
+  previewDocData.value = {}
 }
 
 // ── Clear all ──
@@ -584,6 +647,12 @@ function statusLabel(s) {
   font-weight: 500;
 }
 
+.doc-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
 .status-badge {
   display: inline-block;
   padding: 2px 10px;
@@ -684,6 +753,73 @@ function statusLabel(s) {
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
   border-radius: 4px;
+}
+
+.preview-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-6);
+  background: rgba(17, 24, 39, 0.45);
+}
+
+.preview-dialog {
+  width: min(860px, 100%);
+  max-height: min(720px, 88vh);
+  display: flex;
+  flex-direction: column;
+  background: white;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xl);
+  overflow: hidden;
+}
+
+.preview-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-5) var(--space-6);
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.preview-header h2 {
+  margin: 0 0 var(--space-1);
+  font-size: 18px;
+  color: var(--gray-800);
+  word-break: break-word;
+}
+
+.preview-header p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--gray-500);
+}
+
+.preview-body {
+  overflow: auto;
+  padding: var(--space-5) var(--space-6);
+}
+
+.preview-body pre {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.7;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--gray-700);
+}
+
+.preview-loading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--gray-500);
+  font-size: 14px;
 }
 
 @keyframes shimmer {

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 import os
 import tempfile
 from pathlib import Path
@@ -17,6 +18,11 @@ from ..infrastructure.database import async_session_factory
 from ..infrastructure.models import Outline as OutlineModel
 from ..infrastructure.models import Presentation as PresentationModel
 from ..services.presentation_service import PresentationService
+from ..services.rag.document_parser import (
+    SUPPORTED_DOCUMENT_SUFFIXES,
+    compact_document_text,
+    parse_document,
+)
 from ..services.rag.task_queue import get_import_queue
 from .deps import get_optional_current_user
 
@@ -402,6 +408,72 @@ async def rag_upload_document(
         raise HTTPException(status_code=400, detail=str(e))
 
 
+@router.post("/rag/documents/batch")
+async def rag_upload_documents_batch(
+    files: List[UploadFile] = File(...),
+    force: bool = False,
+    svc: PresentationService = Depends(get_service),
+    current_user: Optional[dict] = Depends(get_optional_current_user),
+):
+    """Upload multiple documents for async KB import. Returns task_id."""
+    rag = getattr(svc, "_rag", None)
+    if not rag:
+        raise HTTPException(status_code=503, detail="RAG service not available")
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Please log in before uploading documents")
+    user_id = current_user["id"] if isinstance(current_user, dict) else current_user
+
+    file_pairs: List[tuple[Path, str]] = []
+    try:
+        for upload_file in files:
+            original_name = upload_file.filename or "upload"
+            file_suffix = Path(original_name).suffix or ".txt"
+            with tempfile.NamedTemporaryFile(delete=False, suffix=file_suffix) as tmp:
+                tmp.write(await upload_file.read())
+                file_pairs.append((Path(tmp.name), original_name))
+    except Exception:
+        for temp_path, _ in file_pairs:
+            try:
+                os.unlink(temp_path)
+            except Exception:
+                pass
+        raise
+
+    queue = get_import_queue()
+
+    async def process_files(pairs: List[tuple[Path, str]], task: Any) -> None:
+        skipped_count = 0
+        for i, (temp_path, original_name) in enumerate(pairs):
+            try:
+                result = rag.ingest_document(
+                    temp_path,
+                    force=force,
+                    source_override=original_name,
+                    user_id=user_id,
+                )
+                if result.get("dedup_skipped"):
+                    skipped_count += 1
+                task.processed = i + 1
+            except Exception as e:
+                task.errors.append(f"{original_name}: {type(e).__name__}: {e}")
+            finally:
+                try:
+                    os.unlink(temp_path)
+                except Exception:
+                    pass
+        if skipped_count:
+            logging.getLogger(__name__).info(
+                "KB batch import skipped %d/%d duplicate files for user=%s",
+                skipped_count,
+                len(pairs),
+                user_id,
+            )
+
+    task_id = queue.enqueue(file_pairs, handler=process_files)
+
+    return {"task_id": task_id, "file_count": len(files)}
+
+
 @router.get("/rag/sources")
 def rag_list_sources(
     svc: PresentationService = Depends(get_service),
@@ -419,17 +491,53 @@ def rag_list_sources(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.delete("/rag/documents")
-def rag_clear_all(svc: PresentationService = Depends(get_service)):
-    """Clear all documents from the knowledge base."""
+@router.get("/rag/documents")
+def rag_list_documents(
+    svc: PresentationService = Depends(get_service),
+    current_user: Optional[dict] = Depends(get_optional_current_user),
+):
+    """List documents in the current user's knowledge base with chunk counts."""
     rag = getattr(svc, "_rag", None)
     if not rag:
         raise HTTPException(status_code=503, detail="RAG service not available")
+    if not current_user:
+        return {"exists": True, "num_entities": 0, "documents": []}
+    user_id = current_user["id"] if isinstance(current_user, dict) else current_user
     try:
-        if hasattr(rag, "clear_all"):
-            count = rag.clear_all()
-            return {"message": "All documents cleared", "cleared": True, "chunks_removed": count}
-        return {"message": "clear_all not supported", "cleared": False}
+        sources = rag.list_sources(user_id=user_id)
+        actual_entities = sum(s.get("chunks", 0) for s in sources)
+        return {
+            "exists": True,
+            "num_entities": actual_entities,
+            "documents": sources,
+        }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.delete("/rag/documents")
+def rag_clear_all(
+    svc: PresentationService = Depends(get_service),
+    current_user: Optional[dict] = Depends(get_optional_current_user),
+):
+    """Clear all current-user documents from the knowledge base."""
+    rag = getattr(svc, "_rag", None)
+    if not rag:
+        raise HTTPException(status_code=503, detail="RAG service not available")
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Please log in before clearing documents")
+    user_id = current_user["id"] if isinstance(current_user, dict) else current_user
+    try:
+        sources = rag.list_sources(user_id=user_id)
+        total_deleted = 0
+        for source in sources:
+            source_name = source.get("source", "")
+            if source_name:
+                total_deleted += rag.remove_document(source_name, user_id=user_id)
+        return {
+            "sources_removed": len(sources),
+            "total_chunks_deleted": total_deleted,
+        }
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -451,8 +559,32 @@ def rag_remove_document(
         sources = rag.list_sources(user_id=user_id)
         if not any(s.get("source") == source for s in sources):
             raise HTTPException(status_code=404, detail="Source not found or not owned by you")
-        deleted = rag.remove_document(source)
+        deleted = rag.remove_document(source, user_id=user_id)
         return {"source": source, "deleted": deleted}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.get("/rag/documents/{source}/preview")
+def rag_preview_document(
+    source: str,
+    max_chunks: int = 20,
+    svc: PresentationService = Depends(get_service),
+    current_user: Optional[dict] = Depends(get_optional_current_user),
+):
+    rag = getattr(svc, "_rag", None)
+    if not rag:
+        raise HTTPException(status_code=503, detail="RAG service not available")
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Please log in before previewing documents")
+    user_id = current_user["id"] if isinstance(current_user, dict) else current_user
+    try:
+        preview = rag.preview_document(source, user_id=user_id, max_chunks=max(1, min(max_chunks, 50)))
+        if not preview.get("preview_text"):
+            raise HTTPException(status_code=404, detail="Document not found")
+        return preview
     except HTTPException:
         raise
     except Exception as e:
@@ -613,22 +745,69 @@ class DocToOutlineRequest(BaseModel):
 
 @router.post("/dsl/from-document")
 async def dsl_from_document(
-    payload: DocToOutlineRequest,
     request: Request,
     svc: PresentationService = Depends(get_service),
 ):
-    """Generate an outline from document content (PDF/DOCX/TXT text)."""
+    """Generate an outline from uploaded document file or extracted document text."""
+    tmp_path: Optional[str] = None
     try:
-        from ..services.rag.task_queue import process_document_to_outline
+        content_type = request.headers.get("content-type", "")
+        theme: Optional[str] = None
 
-        result = await process_document_to_outline(
-            content=payload.content,
-            filename=payload.filename,
-            svc=svc,
+        if content_type.startswith("multipart/form-data"):
+            form = await request.form()
+            upload = form.get("file")
+            if upload is None or not hasattr(upload, "read"):
+                raise HTTPException(status_code=400, detail="File is required")
+            filename = upload.filename or "upload"
+            suffix = Path(filename).suffix.lower()
+            if suffix not in SUPPORTED_DOCUMENT_SUFFIXES:
+                supported = ", ".join(sorted(SUPPORTED_DOCUMENT_SUFFIXES))
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Unsupported file type: {suffix or '(none)'}. Supported: {supported}",
+                )
+            theme_value = form.get("theme")
+            theme = str(theme_value) if theme_value else None
+            with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+                tmp.write(await upload.read())
+                tmp_path = tmp.name
+            content = parse_document(Path(tmp_path), suffix)
+        else:
+            payload = DocToOutlineRequest.model_validate(await request.json())
+            filename = payload.filename
+            content = payload.content
+
+        content = content.strip()
+        if not content:
+            raise HTTPException(status_code=400, detail="Could not extract text from document")
+
+        from ..services.ai.pipeline import AiPipeline
+
+        ai = AiPipeline()
+        dsl = ai.generate_dsl(
+            topic=f"Based on document: {filename}",
+            theme=theme,
+            rag_context=compact_document_text(content),
         )
-        return result
+        data = dsl.model_dump(by_alias=True)
+        slides = data.get("slides") or []
+        if isinstance(slides, list):
+            for slide in slides:
+                if isinstance(slide, dict):
+                    slide.pop("id", None)
+        data["slides"] = slides
+        return data
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+    finally:
+        if tmp_path:
+            try:
+                os.unlink(tmp_path)
+            except Exception:
+                pass
 
 
 # ── Task queue endpoints ──────────────────────────────────────
@@ -706,6 +885,7 @@ async def create_outline(
         )
         db.add(outline)
         await db.commit()
+        await db.refresh(outline)
         return {
             "id": outline.id,
             "title": outline.title,
@@ -768,15 +948,20 @@ async def update_outline(
         sets.append("slide_count = :sc")
         params["sc"] = payload.slide_count
     async with async_session_factory() as db:
-        await db.execute(
+        update_result = await db.execute(
             text(f"UPDATE outlines SET {', '.join(sets)} WHERE id = :oid AND user_id = :uid"),
             params
         )
+        if update_result.rowcount == 0:
+            raise HTTPException(status_code=404, detail="Outline not found")
         await db.commit()
         # Fetch updated record
         from sqlalchemy import select
         result = await db.execute(
-            select(OutlineModel).where(OutlineModel.id == outline_id)
+            select(OutlineModel).where(
+                OutlineModel.id == outline_id,
+                OutlineModel.user_id == user_id,
+            )
         )
         outline = result.scalar_one_or_none()
         if outline is None:

@@ -65,13 +65,13 @@ class ImportTaskQueue:
                 pass
             self._worker_task = None
 
-    def enqueue(self, items: List[Any]) -> str:
+    def enqueue(self, items: List[Any], handler: Optional[Callable] = None) -> str:
         """Enqueue items for import. Each item is typically (temp_path, original_name).
         Returns task_id for status polling."""
         task_id = new_id("import")
         task = ImportTask(task_id=task_id, total=len(items))
         self._tasks[task_id] = task
-        self._queue.put_nowait((task_id, items))
+        self._queue.put_nowait((task_id, items, handler))
         logger.info("Enqueued import task %s with %d items", task_id, len(items))
         return task_id
 
@@ -87,7 +87,7 @@ class ImportTaskQueue:
         logger.info("Import task queue worker started")
         while True:
             try:
-                task_id, file_paths = await self._queue.get()
+                task_id, file_paths, task_handler = await self._queue.get()
                 task = self._tasks.get(task_id)
                 if task is None:
                     continue
@@ -96,8 +96,9 @@ class ImportTaskQueue:
                 logger.info("Processing import task %s", task_id)
 
                 try:
-                    if self._handler is not None:
-                        await self._handler(file_paths, task)
+                    handler = task_handler or self._handler
+                    if handler is not None:
+                        await handler(file_paths, task)
                     task.status = "completed"
                 except Exception as e:
                     logger.error("Import task %s failed: %s", task_id, e)

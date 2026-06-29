@@ -1,18 +1,17 @@
-import { reactive, ref } from 'vue'
+import { reactive } from 'vue'
 
-// Module-level reactive state — persists across page navigation
 const state = reactive({
-  // Floating ball
   visible: false,
-  status: 'generating',  // 'generating' | 'success' | 'error'
+  status: 'generating',
   outlineId: null,
   position: { x: null, y: null },
 
-  // Modal
   modalVisible: false,
   formTopic: '',
   formStyle: 'paper_light',
   useRag: true,
+  inputMode: 'topic',
+  selectedDocument: null,
   isGenerating: false
 })
 
@@ -20,7 +19,6 @@ let dragState = null
 let abortController = null
 
 export function useFloatingBall() {
-  // ── Floating ball ──
   function showBall(status = 'generating', outlineId = null) {
     state.visible = true
     state.status = status
@@ -46,14 +44,21 @@ export function useFloatingBall() {
     state.status = 'error'
   }
 
-  // ── Modal ──
+  function resetForm() {
+    state.formTopic = ''
+    state.inputMode = 'topic'
+    state.selectedDocument = null
+  }
+
   function showModal() {
     state.modalVisible = true
   }
 
   function hideModal() {
     state.modalVisible = false
-    state.formTopic = ''
+    if (!state.isGenerating) {
+      resetForm()
+    }
   }
 
   function cancelGeneration() {
@@ -62,52 +67,55 @@ export function useFloatingBall() {
       abortController = null
     }
     state.isGenerating = false
+    resetForm()
   }
 
-  // ── Outline generation ──
   async function generateOutline(apiService, outlineStore) {
-    if (!state.formTopic.trim()) return false
+    if (state.inputMode === 'topic' && !state.formTopic.trim()) return false
+    if (state.inputMode === 'document' && !state.selectedDocument) return false
 
     state.isGenerating = true
 
     try {
       const controller = new AbortController()
       abortController = controller
-      const result = await apiService.generateOutline(
-        state.formTopic,
-        state.formStyle,
-        state.useRag,
-        controller.signal
-      )
+      const result = state.inputMode === 'topic'
+        ? await apiService.generateOutline(
+          state.formTopic,
+          state.formStyle,
+          state.useRag,
+          controller.signal
+        )
+        : await apiService.generateOutlineFromDocument(
+          state.selectedDocument,
+          state.formStyle,
+          controller.signal
+        )
 
-      const { id } = outlineStore.createOutline(result)
+      const { id } = await outlineStore.createOutline(result)
 
       if (!state.modalVisible) {
-        // Modal was minimized → update ball to success
         setSuccess(id)
-      } else {
-        // Still in modal → success handled by caller
       }
 
       state.isGenerating = false
       abortController = null
+      resetForm()
       return { success: true, id }
     } catch (error) {
+      state.isGenerating = false
+      abortController = null
+      resetForm()
       if (error.name === 'AbortError') {
-        state.isGenerating = false
-        abortController = null
         return { success: false, aborted: true }
       }
       if (!state.modalVisible) {
         setError()
       }
-      state.isGenerating = false
-      abortController = null
       return { success: false, error: error.message }
     }
   }
 
-  // ── Drag ──
   function onDragStart(e) {
     const touch = e.touches ? e.touches[0] : e
     dragState = {
@@ -147,6 +155,7 @@ export function useFloatingBall() {
     hideModal,
     cancelGeneration,
     generateOutline,
-    onDragStart
+    onDragStart,
+    resetForm
   }
 }

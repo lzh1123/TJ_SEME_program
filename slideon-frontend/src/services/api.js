@@ -289,6 +289,10 @@ class ApiService {
     return response.json()
   }
 
+  async getImportTaskStatus(taskId) {
+    return this.getTaskStatus(taskId)
+  }
+
   // ── 评估相关 ──
 
   async evalSingle(presentationId, referenceText = null, enableLlmJudge = true, metrics = null) {
@@ -311,6 +315,18 @@ class ApiService {
 
   async dslFromDocument(filename, content) {
     const response = await this.post(API_ENDPOINTS.dslFromDocument, { filename, content })
+    return response.json()
+  }
+
+  async generateOutlineFromDocument(file, theme = null, signal = null) {
+    const formData = new FormData()
+    formData.append('file', file)
+    if (theme) formData.append('theme', theme)
+    const response = await this.request(API_ENDPOINTS.dslFromDocument, {
+      method: 'POST',
+      body: formData,
+      signal
+    })
     return response.json()
   }
 
@@ -345,31 +361,25 @@ class ApiService {
 
   /** 获取知识库文档列表 + 统计（组合 rag/sources + rag/stats） */
   async getKBDocuments() {
-    const [sourcesRes, statsRes] = await Promise.all([
-      this.get(API_ENDPOINTS.rag.sources),
-      this.get(API_ENDPOINTS.rag.stats),
-    ])
-    const sources = await sourcesRes.json()
-    const stats = await statsRes.json()
-    return {
-      num_entities: stats.num_entities || 0,
-      documents: sources.map(s => ({
-        filename: s.filename || s.source,
-        source: s.source,
-        chunks: s.chunks,
-      }))
-    }
+    const response = await this.get(API_ENDPOINTS.rag.documents)
+    return response.json()
   }
 
   /** 上传文件到知识库（支持批量） */
   async uploadDocumentsToKB(files) {
-    const results = []
-    for (const file of files) {
-      const result = await this.ragUploadDocument(file)
-      results.push(result)
-    }
-    // 返回 task_id 格式（兼容 KnowledgeBaseView 的 task polling）
-    return { task_id: `batch_${Date.now()}_${files.length}`, results }
+    const formData = new FormData()
+    files.forEach(file => formData.append('files', file))
+    const response = await this.request(API_ENDPOINTS.rag.documentsBatch, {
+      method: 'POST',
+      body: formData
+    })
+    return response.json()
+  }
+
+  /** 预览知识库中的文档内容片段 */
+  async previewKBDocument(source) {
+    const response = await this.get(API_ENDPOINTS.rag.documentPreview(source))
+    return response.json()
   }
 
   /** 删除知识库中的文档 */

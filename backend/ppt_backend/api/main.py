@@ -75,6 +75,19 @@ def create_app() -> FastAPI:
     app.state.presentation_service = build_presentation_service()
     app.include_router(auth_router)
     app.include_router(router)
+
+    from ..services.rag.task_queue import get_import_queue
+
+    import_queue = get_import_queue()
+
+    @app.on_event("startup")
+    async def start_import_worker():
+        await import_queue.start()
+
+    @app.on_event("shutdown")
+    async def stop_import_worker():
+        await import_queue.stop()
+
     return app
 
 

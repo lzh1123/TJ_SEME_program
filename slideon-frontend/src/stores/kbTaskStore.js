@@ -1,40 +1,60 @@
 /**
- * Knowledge Base Task Store — tracks async import tasks across page navigation.
+ * Knowledge Base Task Store - tracks async import tasks across page navigation.
  *
- * Design: module-level reactive state + module-level poll timer, identical to
- * the pattern used by useFloatingBall.js. This ensures that when the user
- * navigates away from the KB page and returns, the upload progress is still
- * visible and the timer keeps polling.
- *
- * sessionStorage is used as a secondary persistence layer so that timers
- * survive a page refresh within the same tab.
+ * The store persists only active tasks. Completed, failed, stale, or server-missing
+ * tasks are removed immediately so refreshes cannot resurrect old placeholders.
  */
 import { reactive } from 'vue'
 import { apiService } from '../services/api.js'
 
 const SESSION_KEY = 'slideon_kb_active_tasks'
+const MAX_TASK_AGE_MS = 30 * 60 * 1000
+const TERMINAL_STATUSES = new Set(['completed', 'failed', 'not_found'])
 
-// ── Module-level reactive state (persists across SPA navigation) ──
 const state = reactive({
   uploading: false,
-  tasks: [],        // [{ taskId, fileCount, filenames, processed, total }]
+  tasks: [],
   progressPercent: 0,
   progressText: '',
 })
 
 let pollTimer = null
 
-// ── sessionStorage helpers ──
+function _now() {
+  return Date.now()
+}
+
+function _isActiveTask(task) {
+  if (!task || !task.taskId) return false
+  if (TERMINAL_STATUSES.has(task._status)) return false
+  if (task.createdAt && _now() - task.createdAt > MAX_TASK_AGE_MS) return false
+  return Array.isArray(task.filenames) && task.filenames.length > 0
+}
+
 function _persist() {
   try {
-    sessionStorage.setItem(SESSION_KEY, JSON.stringify(state.tasks))
+    const activeTasks = state.tasks.filter(_isActiveTask)
+    if (activeTasks.length === 0) {
+      sessionStorage.removeItem(SESSION_KEY)
+    } else {
+      sessionStorage.setItem(SESSION_KEY, JSON.stringify(activeTasks))
+    }
   } catch {}
 }
 
 function _loadPersisted() {
   try {
     const raw = sessionStorage.getItem(SESSION_KEY)
-    return raw ? JSON.parse(raw) : []
+    const saved = raw ? JSON.parse(raw) : []
+    const activeTasks = Array.isArray(saved) ? saved.filter(_isActiveTask) : []
+    if (activeTasks.length !== saved.length) {
+      if (activeTasks.length > 0) {
+        sessionStorage.setItem(SESSION_KEY, JSON.stringify(activeTasks))
+      } else {
+        sessionStorage.removeItem(SESSION_KEY)
+      }
+    }
+    return activeTasks
   } catch {
     return []
   }
@@ -46,9 +66,8 @@ function _clearPersisted() {
   } catch {}
 }
 
-// ── Polling ──
 function _startPolling() {
-  if (pollTimer) return // Already running
+  if (pollTimer) return
   pollTimer = setInterval(_pollTick, 2000)
 }
 
@@ -59,123 +78,142 @@ function _stopPolling() {
   }
 }
 
+function _resetProgress() {
+  state.uploading = false
+  state.progressPercent = 0
+  state.progressText = ''
+}
+
 async function _pollTick() {
-  if (state.tasks.length === 0) {
+  const activeBeforePoll = state.tasks.filter(_isActiveTask)
+  if (activeBeforePoll.length === 0) {
+    state.tasks = []
+    _resetProgress()
+    _clearPersisted()
     _stopPolling()
-    // 确保 uploading 状态同步：当所有任务都被移除（如连续失败超限）时，
-    // uploading 应该变为 false，以便组件检测到变更并清理占位条目。
-    if (state.uploading) {
-      state.uploading = false
-    }
     return
   }
 
-  let allDone = true
+  const nextTasks = []
   let totalProcessed = 0
   let totalFiles = 0
-  const MAX_FAILURES = 5  // ~10 seconds of failures before giving up
 
-  for (const task of [...state.tasks]) {
+  for (const task of activeBeforePoll) {
     try {
       const t = await apiService.getImportTaskStatus(task.taskId)
-      task.processed = t.processed || 0
-      task.total = t.total || task.fileCount
-      task._status = t.status
+      const total = t.total || task.total || task.fileCount || task.filenames.length
+      const processed = t.processed || 0
+      const status = t.status || 'processing'
+
+      task.processed = processed
+      task.total = total
+      task._status = status
       task._errors = t.errors || []
-      task._failures = 0  // Reset on success
 
-      totalProcessed += task.processed
-      totalFiles += task.total
+      if (status === 'completed' || status === 'failed') {
+        continue
+      }
 
-      if (t.status !== 'completed' && t.status !== 'failed') {
-        allDone = false
+      totalProcessed += processed
+      totalFiles += total
+      nextTasks.push(task)
+    } catch (error) {
+      if (error?.status === 404) {
+        task._status = 'not_found'
+        continue
       }
-    } catch {
-      task._failures = (task._failures || 0) + 1
-      // Only remove after repeated failures (e.g. task was cleaned up on server)
-      if (task._failures > MAX_FAILURES) {
-        state.tasks = state.tasks.filter(x => x.taskId !== task.taskId)
-      }
-      // Still count toward totals using last-known values
+
+      const total = task.total || task.fileCount || task.filenames.length
       totalProcessed += task.processed || 0
-      totalFiles += task.total || task.fileCount
-      allDone = false
+      totalFiles += total
+      nextTasks.push(task)
     }
   }
 
-  if (totalFiles > 0) {
-    state.progressPercent = Math.round((totalProcessed / totalFiles) * 100)
-  }
-  state.progressText = `处理中 ${totalProcessed}/${totalFiles}`
+  state.tasks = nextTasks.filter(_isActiveTask)
 
-  if (allDone && state.tasks.length > 0) {
-    _stopPolling()
-    state.tasks = []       // ← 清空任务列表，防止已完成的旧任务被重新持久化
-    state.uploading = false
+  if (state.tasks.length === 0) {
+    _resetProgress()
     _clearPersisted()
-    return                 // ← 不调用 _persist()，已完成的任务不应保留
+    _stopPolling()
+    return
   }
 
-  // 只在仍有活跃任务时才持久化
-  if (state.tasks.length > 0) {
-    _persist()
-  }
+  state.uploading = true
+  state.progressPercent = totalFiles > 0 ? Math.round((totalProcessed / totalFiles) * 100) : 0
+  state.progressText = `处理中 ${totalProcessed}/${totalFiles}`
+  _persist()
 }
 
-// ── Public API ──
 export function useKBTasks() {
-  /**
-   * Register a new import task and start background polling.
-   * Safe to call multiple times — each call adds to the task list.
-   */
   function addTask(taskId, fileCount, filenames) {
+    const safeNames = Array.isArray(filenames) ? filenames.filter(Boolean) : []
+    if (!taskId || safeNames.length === 0) return
+
     state.uploading = true
     state.tasks.push({
       taskId,
       fileCount,
-      filenames,
+      filenames: safeNames,
       processed: 0,
       total: fileCount,
+      createdAt: _now(),
       _status: 'processing',
       _errors: [],
     })
+    state.progressPercent = 0
+    state.progressText = `处理中 0/${fileCount}`
     _persist()
     _startPolling()
   }
 
-  /**
-   * Called by the KB page on mount. Returns the current set of active tasks.
-   * Restarts polling if there are saved tasks from a previous session.
-   */
   function resumeFromStorage() {
     if (state.tasks.length === 0) {
-      const saved = _loadPersisted()
-      if (saved.length > 0) {
-        state.tasks = saved
-        state.uploading = true
-        _startPolling()
-        return true
-      }
+      state.tasks = _loadPersisted()
+    } else {
+      state.tasks = state.tasks.filter(_isActiveTask)
+    }
+
+    if (state.tasks.length === 0) {
+      _resetProgress()
+      _clearPersisted()
+      _stopPolling()
       return false
     }
-    // Tasks already in memory (same SPA session)
+
+    state.uploading = true
     _startPolling()
     return true
   }
 
-  /**
-   * Called when all tasks are done and the component has consumed the results.
-   */
+  function removeFiles(filenames) {
+    const names = new Set(Array.isArray(filenames) ? filenames : [filenames])
+    state.tasks = state.tasks
+      .map(task => {
+        const keptNames = (task.filenames || []).filter(name => !names.has(name))
+        return {
+          ...task,
+          filenames: keptNames,
+          fileCount: keptNames.length,
+          total: Math.min(task.total || keptNames.length, keptNames.length),
+        }
+      })
+      .filter(_isActiveTask)
+
+    if (state.tasks.length === 0) {
+      clearCompleted()
+    } else {
+      _persist()
+    }
+  }
+
   function clearCompleted() {
     state.tasks = []
-    state.uploading = false
-    state.progressPercent = 0
-    state.progressText = ''
+    _resetProgress()
     _clearPersisted()
     _stopPolling()
   }
 
-  /** Whether polling is currently active. */
   function isPolling() {
     return pollTimer !== null
   }
@@ -184,6 +222,7 @@ export function useKBTasks() {
     state,
     addTask,
     resumeFromStorage,
+    removeFiles,
     clearCompleted,
     isPolling,
     stopPolling: _stopPolling,

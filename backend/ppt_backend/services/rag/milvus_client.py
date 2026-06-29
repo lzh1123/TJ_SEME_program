@@ -143,12 +143,15 @@ class MilvusStore:
         """
         return value.replace("\\", "\\\\").replace('"', '\\"')
 
-    def _get_ids_by_source(self, source: str) -> List[int]:
+    def _get_ids_by_source(self, source: str, user_id: Optional[str] = None) -> List[int]:
         """Get all entity IDs for a given source. Returns empty list if none found."""
         self._ensure_loaded()
         try:
             escaped = self._escape_filter_string(source)
             filter_expr = f'source == "{escaped}"'
+            if user_id:
+                escaped_uid = self._escape_filter_string(user_id)
+                filter_expr = f'{filter_expr} and metadata["user_id"] == "{escaped_uid}"'
             logger.debug("Querying IDs by source=%r (filter=%s)", source, filter_expr)
             result = self.client.query(
                 collection_name=self.COLLECTION_NAME,
@@ -163,20 +166,20 @@ class MilvusStore:
             logger.exception("Failed to query IDs for source=%r", source)
             return []
 
-    def source_exists(self, source: str) -> bool:
+    def source_exists(self, source: str, user_id: Optional[str] = None) -> bool:
         """Check if a source already has entries in the collection."""
-        ids = self._get_ids_by_source(source)
+        ids = self._get_ids_by_source(source, user_id=user_id)
         exists = len(ids) > 0
         logger.debug("source_exists(%r) = %s (%d chunks)", source, exists, len(ids))
         return exists
 
-    def count_by_source(self, source: str) -> int:
+    def count_by_source(self, source: str, user_id: Optional[str] = None) -> int:
         """Count how many chunks exist for a given source."""
-        count = len(self._get_ids_by_source(source))
+        count = len(self._get_ids_by_source(source, user_id=user_id))
         logger.debug("count_by_source(%r) = %d", source, count)
         return count
 
-    def delete_by_source(self, source: str) -> int:
+    def delete_by_source(self, source: str, user_id: Optional[str] = None) -> int:
         """Delete all entries for a given source.
         Uses ID-based deletion (query IDs first, then delete by IDs)
         which is more reliable than filter-based delete in Milvus 3.x.
@@ -184,7 +187,7 @@ class MilvusStore:
         Returns the actual number of entities deleted (from Milvus response).
         """
         self._ensure_loaded()
-        ids = self._get_ids_by_source(source)
+        ids = self._get_ids_by_source(source, user_id=user_id)
         if not ids:
             # Double-check: if source still appears via list_sources-style query,
             # then _get_ids_by_source failed — log a warning.
@@ -213,9 +216,13 @@ class MilvusStore:
             # Fallback: try filter-based delete
             try:
                 escaped = self._escape_filter_string(source)
+                filter_expr = f'source == "{escaped}"'
+                if user_id:
+                    escaped_uid = self._escape_filter_string(user_id)
+                    filter_expr = f'{filter_expr} and metadata["user_id"] == "{escaped_uid}"'
                 result = self.client.delete(
                     collection_name=self.COLLECTION_NAME,
-                    filter=f'source == "{escaped}"',
+                    filter=filter_expr,
                 )
                 delete_count = self._parse_delete_count(result, expected)
                 logger.info(
@@ -396,7 +403,7 @@ class MilvusStore:
         logger.debug("get_collection_stats: row_count=%s", row_count)
         return {"exists": True, "num_entities": row_count}
 
-    def find_by_hash(self, sha256_hash: str) -> Optional[str]:
+    def find_by_hash(self, sha256_hash: str, user_id: Optional[str] = None) -> Optional[str]:
         """Check if any entity has this SHA256 hash in metadata.
         Returns the source name if found, None otherwise."""
         if not sha256_hash:
@@ -405,9 +412,13 @@ class MilvusStore:
         logger.debug("find_by_hash: searching for hash prefix=%s", sha256_hash[:16])
         try:
             escaped = self._escape_filter_string(sha256_hash)
+            filter_expr = f'metadata like "%{escaped}%"'
+            if user_id:
+                escaped_uid = self._escape_filter_string(user_id)
+                filter_expr = f'{filter_expr} and metadata["user_id"] == "{escaped_uid}"'
             result = self.client.query(
                 collection_name=self.COLLECTION_NAME,
-                filter=f'metadata like "%{escaped}%"',
+                filter=filter_expr,
                 output_fields=["source", "metadata"],
                 limit=1,
             )
@@ -471,6 +482,29 @@ class MilvusStore:
         logger.debug("list_sources: %d distinct sources, total chunks=%d",
                       len(sorted_sources), sum(s["chunks"] for s in sorted_sources))
         return sorted_sources
+
+    def get_chunks_by_source(
+        self,
+        source: str,
+        user_id: Optional[str] = None,
+        limit: int = 200,
+    ) -> List[Dict[str, Any]]:
+        """Return ordered chunks for one source, optionally scoped to a user."""
+        if not self.client.has_collection(self.COLLECTION_NAME):
+            return []
+        self._ensure_loaded()
+        escaped = self._escape_filter_string(source)
+        filter_expr = f'source == "{escaped}"'
+        if user_id:
+            escaped_uid = self._escape_filter_string(user_id)
+            filter_expr = f'{filter_expr} and metadata["user_id"] == "{escaped_uid}"'
+        results = self.client.query(
+            collection_name=self.COLLECTION_NAME,
+            filter=filter_expr,
+            output_fields=["text", "source", "chunk_index", "metadata"],
+            limit=limit,
+        )
+        return sorted(results, key=lambda item: item.get("chunk_index", 0))
 
     def close(self):
         logger.debug("Closing MilvusClient")

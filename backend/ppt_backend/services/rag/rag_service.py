@@ -154,8 +154,8 @@ class RagService:
             meta["user_id"] = user_id
         return self._kb.ingest_text(content, source, metadata=meta, force=force)
 
-    def remove_document(self, source: str) -> int:
-        return self._kb.remove_source(source)
+    def remove_document(self, source: str, user_id: Optional[str] = None) -> int:
+        return self._kb.remove_source(source, user_id=user_id)
 
     def get_kb_stats(self) -> Dict[str, Any]:
         return self._kb.get_stats()
@@ -163,6 +163,14 @@ class RagService:
     def list_sources(self, user_id: Optional[str] = None) -> List[Dict[str, Any]]:
         """List distinct sources, optionally filtered by user."""
         return self._kb.list_sources(user_id=user_id)
+
+    def preview_document(
+        self,
+        source: str,
+        user_id: Optional[str] = None,
+        max_chunks: int = 20,
+    ) -> Dict[str, Any]:
+        return self._kb.preview_source(source, user_id=user_id, max_chunks=max_chunks)
 
     def ensure_collection(self, drop_if_exists: bool = False) -> bool:
         return self._kb.ensure_collection(drop_if_exists=drop_if_exists)

@@ -21,6 +21,13 @@ export const API_ENDPOINTS = {
   // 大纲相关
   dsl: '/dsl',
   renderTree: '/render-tree',
+  outlines: {
+    list: '/outlines',
+    create: '/outlines',
+    get: (id) => `/outlines/${id}`,
+    update: (id) => `/outlines/${id}`,
+    delete: (id) => `/outlines/${id}`
+  },
 
   // 认证相关
   auth: {
@@ -50,6 +57,8 @@ export const API_ENDPOINTS = {
     search: '/rag/search',
     enhance: '/rag/enhance',
     documents: '/rag/documents',
+    documentsBatch: '/rag/documents/batch',
+    documentPreview: (source) => `/rag/documents/${encodeURIComponent(source)}/preview`,
     documentDelete: (source) => `/rag/documents/${encodeURIComponent(source)}`,
     documentsClear: '/rag/documents',
     sources: '/rag/sources',

@@ -163,10 +163,14 @@ function confirmDelete(outline) {
   deleteTarget.value = outline
 }
 
-function doDelete() {
+async function doDelete() {
   if (deleteTarget.value) {
-    outlineStore.deleteOutline(deleteTarget.value.id)
-    deleteTarget.value = null
+    try {
+      await outlineStore.deleteOutline(deleteTarget.value.id)
+      deleteTarget.value = null
+    } catch (error) {
+      alert('删除失败: ' + error.message)
+    }
   }
 }
 

@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import hashlib
-import json
 import logging
 import re
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional
+
+from .document_parser import DocumentParseError, parse_document
 
 if TYPE_CHECKING:
     from .embedding import EmbeddingService
@@ -70,10 +71,12 @@ class KnowledgeBase:
         }
 
         # ── Dedup check ──
-        if self._store.source_exists(source):
+        user_id = (metadata or {}).get("user_id")
+
+        if self._store.source_exists(source, user_id=user_id):
             if force:
                 # Replace mode: delete old entries, then ingest fresh
-                removed = self._store.delete_by_source(source)
+                removed = self._store.delete_by_source(source, user_id=user_id)
                 result["previous_chunks_removed"] = removed
                 result["action_taken"] = "replaced"
                 logger.info(
@@ -82,7 +85,7 @@ class KnowledgeBase:
                 )
             else:
                 # Skip mode: source already exists, do nothing
-                existing_count = self._store.count_by_source(source)
+                existing_count = self._store.count_by_source(source, user_id=user_id)
                 result["dedup_skipped"] = True
                 result["action_taken"] = "skipped"
                 logger.info(
@@ -144,6 +147,7 @@ class KnowledgeBase:
             raise FileNotFoundError(f"File not found: {file_path}")
 
         suffix = path.suffix.lower()
+        meta = metadata or {}
         content = self._read_file(path, suffix)
         if not content:
             return {
@@ -167,7 +171,8 @@ class KnowledgeBase:
         # Layer 1: Content-based dedup (SHA256 hash)
         # ═══════════════════════════════════════════════════════════
         if file_hash:
-            dup_source = self._store.find_by_hash(file_hash)
+            user_id = meta.get("user_id")
+            dup_source = self._store.find_by_hash(file_hash, user_id=user_id)
             if dup_source is not None:
                 logger.info(
                     "Content dedup: SHA256 %s... matches existing source=%r — SKIPPING",
@@ -186,15 +191,15 @@ class KnowledgeBase:
         # Layer 2: Source-based dedup (filename)
         # ═══════════════════════════════════════════════════════════
         old_chunks_removed = 0
-        if self._store.source_exists(effective_source):
+        if self._store.source_exists(effective_source, user_id=meta.get("user_id")):
             if force:
-                old_chunks_removed = self._store.delete_by_source(effective_source)
+                old_chunks_removed = self._store.delete_by_source(effective_source, user_id=meta.get("user_id"))
                 logger.info(
                     "Source dedup: replaced source=%r (%d old chunks removed)",
                     effective_source, old_chunks_removed,
                 )
             else:
-                existing_count = self._store.count_by_source(effective_source)
+                existing_count = self._store.count_by_source(effective_source, user_id=meta.get("user_id"))
                 logger.info(
                     "Source dedup: source=%r already exists (%d chunks) — SKIPPING",
                     effective_source, existing_count,
@@ -208,7 +213,6 @@ class KnowledgeBase:
                 }
 
         # ── Prepare metadata ──
-        meta = metadata or {}
         meta.setdefault("filename", effective_source)
         meta["sha256"] = file_hash
 
@@ -226,8 +230,8 @@ class KnowledgeBase:
         result["file_hash"] = file_hash
         return result
 
-    def remove_source(self, source: str) -> int:
-        return self._store.delete_by_source(source)
+    def remove_source(self, source: str, user_id: Optional[str] = None) -> int:
+        return self._store.delete_by_source(source, user_id=user_id)
 
     def get_stats(self) -> Dict[str, Any]:
         return self._store.get_collection_stats()
@@ -236,41 +240,31 @@ class KnowledgeBase:
         """List distinct sources, optionally filtered by user_id."""
         return self._store.list_sources(user_id=user_id)
 
+    def preview_source(
+        self,
+        source: str,
+        user_id: Optional[str] = None,
+        max_chunks: int = 20,
+    ) -> Dict[str, Any]:
+        chunks = self._store.get_chunks_by_source(source, user_id=user_id, limit=max_chunks)
+        text = "\n\n".join(c.get("text", "") for c in chunks if c.get("text"))
+        filename = source
+        if chunks:
+            meta = chunks[0].get("metadata", {})
+            if isinstance(meta, dict):
+                filename = meta.get("filename") or source
+        return {
+            "source": source,
+            "filename": filename,
+            "chunks": len(chunks),
+            "preview_text": text,
+        }
+
     def _read_file(self, path: Path, suffix: str) -> str:
-        if suffix == ".txt" or suffix == ".md":
-            return path.read_text(encoding="utf-8")
-        if suffix == ".pdf":
-            return self._read_pdf(path)
-        if suffix == ".docx":
-            return self._read_docx(path)
-        return ""
-
-    def _read_pdf(self, path: Path) -> str:
         try:
-            import fitz
-
-            doc = fitz.open(str(path))
-            parts = []
-            for page in doc:
-                text = page.get_text()
-                if text:
-                    parts.append(text)
-            doc.close()
-            return "\n\n".join(parts)
-        except ImportError:
-            return ""
-
-    def _read_docx(self, path: Path) -> str:
-        try:
-            from docx import Document
-
-            doc = Document(str(path))
-            parts = []
-            for p in doc.paragraphs:
-                if p.text.strip():
-                    parts.append(p.text)
-            return "\n\n".join(parts)
-        except ImportError:
+            return parse_document(path, suffix)
+        except DocumentParseError:
+            logger.exception("Failed to parse document: %s", path)
             return ""
 
     def _clean_text(self, text: str) -> str:

@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, model_validator
 
 from ..services.auth_service import AuthService
 from .deps import get_auth_service, get_current_user_id
@@ -26,12 +26,19 @@ class RegisterRequest(BaseModel):
 class LoginRequest(BaseModel):
     model_config = {"extra": "forbid"}
 
-    username: str = Field(..., min_length=1)
+    username: Optional[str] = Field(None, min_length=1)
+    account: Optional[str] = Field(None, min_length=1)
     password: str = Field(..., min_length=1)
+
+    @model_validator(mode="after")
+    def require_username_or_account(self):
+        if not self.username and not self.account:
+            raise ValueError("username or account is required")
+        return self
 
 
 class RefreshRequest(BaseModel):
-    model_config = {"extra": "forbid"}
+    model_config = {"extra": "forbid", "populate_by_name": True}
 
     refresh_token: str = Field(..., alias="refreshToken")
 
@@ -95,7 +102,7 @@ async def login(
 ) -> dict:
     """Authenticate user and return tokens."""
     user = await auth.authenticate(
-        username=payload.username,
+        username=payload.username or payload.account or "",
         password=payload.password,
     )
     if user is None:

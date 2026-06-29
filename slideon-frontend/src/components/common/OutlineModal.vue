@@ -13,24 +13,63 @@
 
         <div class="modal-body">
           <div class="step-content">
-            <div class="form-step">
-              <label class="form-label">
-                <span class="step-number">1</span>
-                输入主题
-              </label>
-              <textarea
-                class="input textarea"
-                placeholder="描述你的PPT主题、目标受众和主要内容...
-
-例如：为科技公司CEO准备的产品发布会PPT，介绍新一代AI芯片的性能优势和市场前景"
-                v-model="form.topic"
+            <div class="mode-tabs">
+              <button
+                :class="['mode-tab', { active: inputMode === 'topic' }]"
                 :disabled="isGenerating"
-                @input="updateCharCount"
-              ></textarea>
-              <div class="char-count" :class="{ error: charCount > 500 }">{{ charCount }}/500</div>
+                @click="inputMode = 'topic'"
+              >
+                <IconBase name="magic" :size="14" />
+                主题生成
+              </button>
+              <button
+                :class="['mode-tab', { active: inputMode === 'document' }]"
+                :disabled="isGenerating"
+                @click="inputMode = 'document'"
+              >
+                <IconBase name="paperclip" :size="14" />
+                文档生成
+              </button>
             </div>
 
             <div class="form-step">
+              <label class="form-label">
+                <span class="step-number">1</span>
+                {{ inputMode === 'topic' ? '输入主题' : '上传文档' }}
+              </label>
+              <template v-if="inputMode === 'topic'">
+                <textarea
+                  class="input textarea"
+                  placeholder="描述你的PPT主题、目标受众和主要内容...
+
+例如：为科技公司CEO准备的产品发布会PPT，介绍新一代AI芯片的性能优势和市场前景"
+                  v-model="form.topic"
+                  :disabled="isGenerating"
+                  @input="updateCharCount"
+                ></textarea>
+                <div class="char-count" :class="{ error: charCount > 500 }">{{ charCount }}/500</div>
+              </template>
+              <template v-else>
+                <input
+                  ref="documentInput"
+                  type="file"
+                  accept=".pdf,.docx,.txt,.md,.pptx"
+                  style="display: none"
+                  @change="handleDocumentSelected"
+                >
+                <button
+                  class="document-upload"
+                  :disabled="isGenerating"
+                  @click="documentInput?.click()"
+                >
+                  <IconBase name="cloudUpload" :size="28" />
+                  <span>{{ selectedDocument ? selectedDocument.name : '选择 PDF、Word、TXT、Markdown 或 PPTX 文档' }}</span>
+                  <small v-if="selectedDocument">{{ formatFileSize(selectedDocument.size) }}</small>
+                </button>
+              </template>
+            </div>
+
+            <div v-if="inputMode === 'topic'" class="form-step">
               <label class="form-label">
                 <span class="step-number">2</span>
                 AI增强选项
@@ -58,7 +97,7 @@
           <button class="btn btn-secondary" @click="handleCancel">取消</button>
           <button
             class="btn btn-primary"
-            :disabled="isGenerating || !form.topic.trim()"
+            :disabled="isGenerating || !canGenerate"
             @click="generateOutline"
           >
             <IconBase v-if="isGenerating" name="spinner" :size="14" class="animate-spin" />
@@ -106,12 +145,25 @@ const form = ref({
   style: 'paper_light'
 })
 
+const inputMode = ref('topic')
 const useRag = ref(true)
+const selectedDocument = ref(null)
+const documentInput = ref(null)
 const charCount = computed(() => form.value.topic.length)
+const canGenerate = computed(() => {
+  return inputMode.value === 'topic'
+    ? !!form.value.topic.trim()
+    : !!selectedDocument.value
+})
 
 const close = () => {
   emit('update:modelValue', false)
   form.value.topic = ''
+  selectedDocument.value = null
+  inputMode.value = 'topic'
+  if (documentInput.value) {
+    documentInput.value.value = ''
+  }
 }
 
 const updateCharCount = () => {
@@ -142,9 +194,20 @@ const handleCancel = () => {
   }
 }
 
+const handleDocumentSelected = (event) => {
+  selectedDocument.value = event.target.files?.[0] || null
+}
+
+const formatFileSize = (bytes) => {
+  if (!Number.isFinite(bytes) || bytes <= 0) return '0 B'
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`
+}
+
 const generateOutline = async () => {
-  if (!form.value.topic.trim()) {
-    alert('请输入主题')
+  if (!canGenerate.value) {
+    alert(inputMode.value === 'topic' ? '请输入主题' : '请选择文档')
     return
   }
 
@@ -152,16 +215,22 @@ const generateOutline = async () => {
 
   try {
     abortController = new AbortController()
-    const result = await apiService.generateOutline(
-      form.value.topic,
-      form.value.style,
-      useRag.value,
-      abortController.signal
-    )
+    const result = inputMode.value === 'topic'
+      ? await apiService.generateOutline(
+        form.value.topic,
+        form.value.style,
+        useRag.value,
+        abortController.signal
+      )
+      : await apiService.generateOutlineFromDocument(
+        selectedDocument.value,
+        form.value.style,
+        abortController.signal
+      )
 
     console.log('✅ 生成大纲成功:', result)
 
-    const { id } = outlineStore.createOutline(result)
+    const { id } = await outlineStore.createOutline(result)
 
     // Check if modal was closed (minimized to ball) during generation
     if (!props.modelValue) {
@@ -280,6 +349,37 @@ const router = useRouter()
   animation: fadeIn 0.3s ease;
 }
 
+.mode-tabs {
+  display: flex;
+  gap: var(--space-2);
+  padding: 4px;
+  margin-bottom: var(--space-5);
+  background: var(--gray-100);
+  border-radius: var(--radius-lg);
+}
+
+.mode-tab {
+  flex: 1;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--gray-600);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mode-tab.active {
+  background: white;
+  color: var(--primary-600);
+  box-shadow: var(--shadow-sm);
+}
+
 .form-step {
   margin-bottom: var(--space-6);
 }
@@ -316,6 +416,39 @@ const router = useRouter()
 
 .char-count.error {
   color: var(--error-500);
+}
+
+.document-upload {
+  width: 100%;
+  min-height: 132px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-6);
+  border: 2px dashed var(--gray-300);
+  border-radius: var(--radius-lg);
+  background: var(--gray-50);
+  color: var(--gray-600);
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.document-upload:hover {
+  border-color: var(--primary-400);
+  background: var(--primary-50);
+  color: var(--primary-600);
+}
+
+.document-upload:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.document-upload small {
+  color: var(--gray-400);
 }
 
 .rag-toggle-row {

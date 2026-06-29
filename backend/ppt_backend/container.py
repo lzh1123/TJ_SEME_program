@@ -45,7 +45,12 @@ def _build_rag_service() -> "RagService | None":
 
         store = MilvusStore(uri=settings.milvus_uri, db_name=settings.milvus_db)
         embedding = EmbeddingService(model_name=settings.embedding_model)
-        web_search = WebSearchService(region=settings.web_search_region)
+        web_search = WebSearchService(
+            region=settings.web_search_region,
+            provider=settings.web_search_provider,
+            api_key=settings.baidu_search_api_key,
+            timeout=settings.web_search_timeout,
+        )
         kb = KnowledgeBase(store=store, embedding=embedding)
         fetcher = ContentFetcher()
         retriever = HybridRetriever(store=store, embedding=embedding, web_search=web_search, fetcher=fetcher)

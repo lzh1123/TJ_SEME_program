@@ -59,6 +59,14 @@ class Settings:
     milvus_db: str = os.getenv("MILVUS_DB", "default")
     embedding_model: str = os.getenv("EMBEDDING_MODEL", "BAAI/bge-small-zh-v1.5")
     web_search_region: str = os.getenv("WEB_SEARCH_REGION", "wt-wt")
+    web_search_provider: str = os.getenv("WEB_SEARCH_PROVIDER", "baidu")
+    baidu_search_api_key: str = (
+        os.getenv("BAIDU_SEARCH_API_KEY")
+        or os.getenv("QIANFAN_API_KEY")
+        or os.getenv("WEB_SEARCH_API_KEY")
+        or ""
+    )
+    web_search_timeout: int = int(os.getenv("WEB_SEARCH_TIMEOUT", "20"))
     rag_enabled: bool = os.getenv("RAG_ENABLED", "true").lower() == "true"
 
 

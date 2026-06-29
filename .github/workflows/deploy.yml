@@ -64,9 +64,9 @@ jobs:
             FRONTEND_DEPLOY_DIR="${FRONTEND_DEPLOY_DIR:-/var/www/slideon}"
 
             cd "$PROJECT_DIR"
-            git fetch origin main
-            git reset --hard origin/main
-
+            git fetch --prune origin main
+            git reset --hard FETCH_HEAD
+            
             mkdir -p backend
             touch backend/.env
             upsert_env() {

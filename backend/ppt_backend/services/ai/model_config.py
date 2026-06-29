@@ -20,34 +20,40 @@ LLM_PROVIDERS: Dict[str, LLMProviderSpec] = {
     "deepseek": LLMProviderSpec(
         provider="deepseek",
         label="DeepSeek",
-        model="Deepseek-V4-pro",
-        api_base="https://api.deepseek.com",
+        model=settings.deepseek_model,
+        api_base=settings.deepseek_api_base,
     ),
     "qwen": LLMProviderSpec(
         provider="qwen",
         label="Qwen",
-        model="qwen-plus-latest",
-        api_base="https://dashscope.aliyuncs.com/compatible-mode/v1",
+        model=settings.qwen_model,
+        api_base=settings.qwen_api_base,
     ),
     "kimi": LLMProviderSpec(
         provider="kimi",
         label="Kimi",
-        model="kimi-k2-latest",
-        api_base="https://api.moonshot.cn/v1",
+        model=settings.kimi_model,
+        api_base=settings.kimi_api_base,
     ),
+}
+
+_PROVIDER_KEYS = {
+    "deepseek": settings.deepseek_api_key,
+    "qwen": settings.qwen_api_key,
+    "kimi": settings.kimi_api_key,
 }
 
 
 @dataclass(frozen=True)
 class UserLLMConfig:
-    provider: str
-    api_key: str
+    provider: str = "deepseek"
+    api_key: Optional[str] = None
     model: Optional[str] = None
     api_base: Optional[str] = None
 
     @property
     def resolved(self) -> LLMProviderSpec:
-        spec = LLM_PROVIDERS.get(self.provider)
+        spec = LLM_PROVIDERS.get((self.provider or "deepseek").lower())
         if spec is None:
             raise ValueError(f"Unsupported LLM provider: {self.provider}")
         return LLMProviderSpec(
@@ -57,27 +63,39 @@ class UserLLMConfig:
             api_base=self.api_base or spec.api_base,
         )
 
+    @property
+    def resolved_api_key(self) -> str:
+        spec = self.resolved
+        return self.api_key or _PROVIDER_KEYS.get(spec.provider, "") or ""
+
+
+def list_public_providers() -> list[dict]:
+    return [
+        {
+            "provider": spec.provider,
+            "label": spec.label,
+            "model": spec.model,
+            "apiBase": spec.api_base,
+            "configured": bool(_PROVIDER_KEYS.get(spec.provider)),
+        }
+        for spec in LLM_PROVIDERS.values()
+    ]
+
+
+def make_platform_config(provider: Optional[str] = None) -> UserLLMConfig:
+    return UserLLMConfig(provider=(provider or "deepseek").lower())
+
 
 def make_chat_llm(config: Optional[UserLLMConfig] = None) -> ChatOpenAI:
-    if config is None:
-        if not settings.llm_api_key:
-            raise ValueError("missing LLM api key")
-        return ChatOpenAI(
-            model=settings.llm_model,
-            openai_api_base=settings.llm_api_base,
-            openai_api_key=settings.llm_api_key,
-            temperature=0,
-            timeout=settings.llm_timeout,
-            max_retries=2,
-        )
-
-    if not config.api_key:
-        raise ValueError("missing user LLM api key")
+    config = config or make_platform_config("deepseek")
     spec = config.resolved
+    api_key = config.resolved_api_key
+    if not api_key:
+        raise ValueError(f"missing platform LLM api key for provider: {spec.provider}")
     return ChatOpenAI(
         model=spec.model,
         openai_api_base=spec.api_base,
-        openai_api_key=config.api_key,
+        openai_api_key=api_key,
         temperature=0,
         timeout=settings.llm_timeout,
         max_retries=2,

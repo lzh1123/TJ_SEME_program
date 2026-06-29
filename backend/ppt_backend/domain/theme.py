@@ -149,6 +149,5 @@ DEFAULT_THEMES: Dict[str, ThemeTokens] = {
 
 def get_theme_tokens(theme_name: Optional[str]) -> ThemeTokens:
     if not theme_name:
-        return DEFAULT_THEMES["modern_blue"]
-    return DEFAULT_THEMES.get(theme_name) or DEFAULT_THEMES["modern_blue"]
-
+        return DEFAULT_THEMES["paper_light"]
+    return DEFAULT_THEMES.get(theme_name) or DEFAULT_THEMES["paper_light"]

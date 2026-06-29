@@ -12,6 +12,8 @@ const state = reactive({
   useRag: true,
   inputMode: 'topic',
   selectedDocument: null,
+  modelProvider: localStorage.getItem('slideon_model_provider') || 'deepseek',
+  pageCountPreset: localStorage.getItem('slideon_page_count_preset') || 'medium',
   isGenerating: false
 })
 
@@ -50,6 +52,16 @@ export function useFloatingBall() {
     state.selectedDocument = null
   }
 
+  function setModelProvider(provider) {
+    state.modelProvider = provider || 'deepseek'
+    localStorage.setItem('slideon_model_provider', state.modelProvider)
+  }
+
+  function setPageCountPreset(preset) {
+    state.pageCountPreset = preset || 'medium'
+    localStorage.setItem('slideon_page_count_preset', state.pageCountPreset)
+  }
+
   function showModal() {
     state.modalVisible = true
   }
@@ -82,14 +94,18 @@ export function useFloatingBall() {
       const result = state.inputMode === 'topic'
         ? await apiService.generateOutline(
           state.formTopic,
-          state.formStyle,
+          null,
           state.useRag,
-          controller.signal
+          controller.signal,
+          state.modelProvider,
+          state.pageCountPreset
         )
         : await apiService.generateOutlineFromDocument(
           state.selectedDocument,
-          state.formStyle,
-          controller.signal
+          null,
+          controller.signal,
+          state.modelProvider,
+          state.pageCountPreset
         )
 
       const { id } = await outlineStore.createOutline(result)
@@ -156,6 +172,8 @@ export function useFloatingBall() {
     cancelGeneration,
     generateOutline,
     onDragStart,
-    resetForm
+    resetForm,
+    setModelProvider,
+    setPageCountPreset
   }
 }

@@ -28,6 +28,20 @@ class Settings:
         or ""
     )
     llm_timeout: float = float(os.getenv("LLM_TIMEOUT", "180"))
+    deepseek_model: str = os.getenv("DEEPSEEK_MODEL", os.getenv("LLM_MODEL", "Deepseek-V4-pro"))
+    deepseek_api_base: str = os.getenv("DEEPSEEK_API_BASE", os.getenv("LLM_API_BASE", "https://api.deepseek.com"))
+    deepseek_api_key: str = (
+        os.getenv("DEEPSEEK_API_KEY")
+        or os.getenv("LLM_API_KEY")
+        or os.getenv("OPENAI_API_KEY")
+        or ""
+    )
+    qwen_model: str = os.getenv("QWEN_MODEL", "qwen-plus-latest")
+    qwen_api_base: str = os.getenv("QWEN_API_BASE", "https://dashscope.aliyuncs.com/compatible-mode/v1")
+    qwen_api_key: str = os.getenv("QWEN_API_KEY", "")
+    kimi_model: str = os.getenv("KIMI_MODEL", "kimi-k2-latest")
+    kimi_api_base: str = os.getenv("KIMI_API_BASE", "https://api.moonshot.cn/v1")
+    kimi_api_key: str = os.getenv("KIMI_API_KEY", "")
 
     # Database (PostgreSQL)
     database_url: str = os.getenv(

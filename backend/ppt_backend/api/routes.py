@@ -8,7 +8,7 @@ import uuid
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, Body, Depends, HTTPException, Request, UploadFile, File
+from fastapi import APIRouter, Body, Depends, Form, HTTPException, Request, UploadFile, File
 from fastapi.responses import FileResponse
 from openai import APITimeoutError
 from pydantic import BaseModel, Field
@@ -20,7 +20,7 @@ from ..infrastructure.models import Outline as OutlineModel
 from ..infrastructure.models import Presentation as PresentationModel
 from ..infrastructure.models import User as UserModel
 from ..services.presentation_service import PresentationService
-from ..services.ai.model_config import UserLLMConfig
+from ..services.ai.model_config import UserLLMConfig, list_public_providers
 from ..services.rag.document_parser import (
     SUPPORTED_DOCUMENT_SUFFIXES,
     compact_document_text,
@@ -104,11 +104,13 @@ class RegenerateRequest(BaseModel):
 
 
 class GenerateOutlineRequest(BaseModel):
-    model_config = {"extra": "forbid"}
+    model_config = {"extra": "forbid", "populate_by_name": True}
 
     topic: str
     theme: Optional[str] = None
     use_rag: bool = True
+    model_provider: str = Field("deepseek", alias="modelProvider")
+    page_count_preset: str = Field("medium", alias="pageCountPreset")
 
 
 class CompileOutlineRequest(BaseModel):
@@ -157,6 +159,11 @@ def health():
     return {"ok": True}
 
 
+@router.get("/llm/providers")
+def list_llm_providers():
+    return {"providers": list_public_providers()}
+
+
 @router.get("/themes")
 def list_themes(svc: PresentationService = Depends(get_service)):
     return svc.list_themes()
@@ -170,7 +177,6 @@ async def generate_outline(
     current_user: Optional[dict] = Depends(get_optional_current_user),
 ):
     try:
-        llm_config = await get_user_llm_config(current_user)
         loop = asyncio.get_event_loop()
         future = loop.run_in_executor(
             None,
@@ -178,7 +184,8 @@ async def generate_outline(
                 topic=payload.topic,
                 theme=payload.theme,
                 use_rag=payload.use_rag,
-                llm_config=llm_config,
+                model_provider=payload.model_provider,
+                page_count_preset=payload.page_count_preset,
             ),
         )
         while not future.done():
@@ -775,10 +782,12 @@ def eval_batch(
 # ── Document import endpoints ─────────────────────────────────
 
 class DocToOutlineRequest(BaseModel):
-    model_config = {"extra": "forbid"}
+    model_config = {"extra": "forbid", "populate_by_name": True}
 
     filename: str
     content: str
+    model_provider: str = Field("deepseek", alias="modelProvider")
+    page_count_preset: str = Field("medium", alias="pageCountPreset")
 
 
 @router.post("/dsl/from-document")
@@ -792,6 +801,8 @@ async def dsl_from_document(
     try:
         content_type = request.headers.get("content-type", "")
         theme: Optional[str] = None
+        model_provider = "deepseek"
+        page_count_preset = "medium"
 
         if content_type.startswith("multipart/form-data"):
             form = await request.form()
@@ -808,6 +819,10 @@ async def dsl_from_document(
                 )
             theme_value = form.get("theme")
             theme = str(theme_value) if theme_value else None
+            provider_value = form.get("modelProvider") or form.get("model_provider")
+            model_provider = str(provider_value) if provider_value else "deepseek"
+            preset_value = form.get("pageCountPreset") or form.get("page_count_preset")
+            page_count_preset = str(preset_value) if preset_value else "medium"
             with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
                 tmp.write(await upload.read())
                 tmp_path = tmp.name
@@ -816,6 +831,8 @@ async def dsl_from_document(
             payload = DocToOutlineRequest.model_validate(await request.json())
             filename = payload.filename
             content = payload.content
+            model_provider = payload.model_provider
+            page_count_preset = payload.page_count_preset
 
         content = content.strip()
         if not content:
@@ -823,14 +840,16 @@ async def dsl_from_document(
 
         from ..services.ai.pipeline import AiPipeline
 
-        llm_config = await get_user_llm_config(current_user)
-        ai = AiPipeline(llm_config=llm_config)
+        ai = AiPipeline(model_provider=model_provider)
         dsl = ai.generate_dsl(
-            topic=f"Based on document: {filename}",
+            topic=f"基于上传文档生成大纲：{filename}",
             theme=theme,
             rag_context=compact_document_text(content),
+            target_slide_count=9 if page_count_preset == "short" else 20 if page_count_preset == "long" else 14,
+            page_count_preset=page_count_preset,
         )
         data = dsl.model_dump(by_alias=True)
+        data.pop("theme", None)
         slides = data.get("slides") or []
         if isinstance(slides, list):
             for slide in slides:

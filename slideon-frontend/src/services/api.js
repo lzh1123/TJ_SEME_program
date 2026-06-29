@@ -17,21 +17,18 @@ class ApiService {
     const timeoutId = setTimeout(() => timeoutController.abort(), this.timeout)
     const externalSignal = options.signal
 
-    // Merge external signal with timeout signal
     const signal = externalSignal
       ? this._combinedSignal(externalSignal, timeoutController.signal)
       : timeoutController.signal
 
     delete options.signal
 
-    // Merge headers including auth
     const headers = {
       ...API_CONFIG.headers,
       ...this._getAuthHeaders(),
       ...options.headers
     }
 
-    // FormData upload: let browser set Content-Type (with boundary)
     if (options.body instanceof FormData) {
       delete headers['Content-Type']
     }
@@ -109,14 +106,11 @@ class ApiService {
   async delete(url) {
     return this.request(url, { method: 'DELETE' })
   }
-
-  // 健康检查
   async health() {
     const response = await this.get(API_ENDPOINTS.health)
     return response.json()
   }
 
-  // 获取主题列表
   async getThemes() {
     const response = await this.get(API_ENDPOINTS.themes)
     return response.json()
@@ -132,7 +126,6 @@ class ApiService {
     return response.json()
   }
 
-  // 创建演示文稿
   async createPresentation(topic, useRag = true) {
     const response = await this.post(API_ENDPOINTS.presentations.create, {
       topic,
@@ -141,25 +134,20 @@ class ApiService {
     return response.json()
   }
 
-  // 获取演示文稿
   async getPresentation(id) {
     const response = await this.get(API_ENDPOINTS.presentations.get(id))
     return response.json()
   }
 
-  // 获取DSL
   async getDsl(id) {
     const response = await this.get(API_ENDPOINTS.presentations.getDsl(id))
     return response.json()
   }
-
-  // 获取渲染树
   async getRenderTree(id) {
     const response = await this.get(API_ENDPOINTS.presentations.getRenderTree(id))
     return response.json()
   }
 
-  // 编辑组件
   async patchComponent(presentationId, componentId, patchData) {
     const response = await this.patch(
       API_ENDPOINTS.presentations.patchComponent(presentationId, componentId),
@@ -167,8 +155,6 @@ class ApiService {
     )
     return response.json()
   }
-
-  // 重排幻灯片
   async reorderSlides(id, slideIds) {
     const response = await this.patch(API_ENDPOINTS.presentations.reorderSlides(id), {
       slideIds
@@ -176,7 +162,6 @@ class ApiService {
     return response.json()
   }
 
-  // 切换主题
   async switchTheme(id, themeName, rerender = false) {
     const response = await this.put(API_ENDPOINTS.presentations.switchTheme(id), {
       themeName,
@@ -185,7 +170,6 @@ class ApiService {
     return response.json()
   }
 
-  // 重新生成
   async regenerate(id, topic = null, section = null, useRag = true) {
     const response = await this.post(API_ENDPOINTS.presentations.regenerate(id), {
       topic,
@@ -195,24 +179,20 @@ class ApiService {
     return response.json()
   }
 
-  // 导出PPTX
   async exportPptx(id) {
     const response = await this.post(API_ENDPOINTS.presentations.exportPptx(id))
     const blob = await response.blob()
     return blob
   }
 
-  // 生成大纲 (signal 可选，用于取消请求)
-  async generateOutline(topic, theme = null, useRag = true, signal = null) {
+  async generateOutline(topic, theme = null, useRag = true, signal = null, modelProvider = 'deepseek', pageCountPreset = 'medium') {
     const response = await this.request(API_ENDPOINTS.dsl, {
       method: 'POST',
-      body: JSON.stringify({ topic, theme, use_rag: useRag }),
+      body: JSON.stringify({ topic, theme, use_rag: useRag, modelProvider, pageCountPreset }),
       signal
     })
     return response.json()
   }
-
-  // 根据大纲生成渲染树
   async compileOutline(topic, outline, theme = null) {
     const response = await this.post(API_ENDPOINTS.renderTree, {
       topic,
@@ -222,13 +202,11 @@ class ApiService {
     return response.json()
   }
 
-  // 获取用户演示文稿列表
   async listPresentations() {
     const response = await this.get(API_ENDPOINTS.presentations.list)
     return response.json()
   }
 
-  // ── RAG 知识库相关 ──
 
   async ragSearch(query, topK = 5, enableWeb = true, enableLocal = true, deepFetch = true) {
     const response = await this.post(API_ENDPOINTS.rag.search, {
@@ -303,7 +281,6 @@ class ApiService {
     return this.getTaskStatus(taskId)
   }
 
-  // ── 评估相关 ──
 
   async evalSingle(presentationId, referenceText = null, enableLlmJudge = true, metrics = null) {
     const response = await this.post(API_ENDPOINTS.eval.single(presentationId), {
@@ -321,17 +298,18 @@ class ApiService {
     return response.json()
   }
 
-  // ── 文档导入生成大纲 ──
 
-  async dslFromDocument(filename, content) {
-    const response = await this.post(API_ENDPOINTS.dslFromDocument, { filename, content })
+  async dslFromDocument(filename, content, modelProvider = 'deepseek', pageCountPreset = 'medium') {
+    const response = await this.post(API_ENDPOINTS.dslFromDocument, { filename, content, modelProvider, pageCountPreset })
     return response.json()
   }
 
-  async generateOutlineFromDocument(file, theme = null, signal = null) {
+  async generateOutlineFromDocument(file, theme = null, signal = null, modelProvider = 'deepseek', pageCountPreset = 'medium') {
     const formData = new FormData()
     formData.append('file', file)
     if (theme) formData.append('theme', theme)
+    formData.append('modelProvider', modelProvider)
+    formData.append('pageCountPreset', pageCountPreset)
     const response = await this.request(API_ENDPOINTS.dslFromDocument, {
       method: 'POST',
       body: formData,
@@ -340,7 +318,6 @@ class ApiService {
     return response.json()
   }
 
-  // ── 大纲云端同步 ──
 
   async listOutlines() {
     const response = await this.get(API_ENDPOINTS.outlines.list)
@@ -367,15 +344,12 @@ class ApiService {
     return response.json()
   }
 
-  // ── 知识库别名方法（兼容 KnowledgeBaseView 调用） ──
 
-  /** 获取知识库文档列表 + 统计（组合 rag/sources + rag/stats） */
   async getKBDocuments() {
     const response = await this.get(API_ENDPOINTS.rag.documents)
     return response.json()
   }
 
-  /** 上传文件到知识库（支持批量） */
   async uploadDocumentsToKB(files) {
     const formData = new FormData()
     files.forEach(file => formData.append('files', file))
@@ -386,18 +360,15 @@ class ApiService {
     return response.json()
   }
 
-  /** 预览知识库中的文档内容片段 */
   async previewKBDocument(source) {
     const response = await this.get(API_ENDPOINTS.rag.documentPreview(source))
     return response.json()
   }
 
-  /** 删除知识库中的文档 */
   async removeKBDocument(source) {
     return this.ragDeleteDocument(source)
   }
 
-  /** 清空知识库 */
   async clearAllKBDocuments() {
     return this.ragClearAll()
   }

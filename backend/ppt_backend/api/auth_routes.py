@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, EmailStr, Field, model_validator
 
 from ..services.auth_service import AuthService
-from ..services.ai.model_config import LLM_PROVIDERS
+from ..services.ai.model_config import LLM_PROVIDERS, list_public_providers
 from .deps import get_auth_service, get_current_user_id
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -202,20 +202,13 @@ async def get_llm_config(
     user = await auth.get_user_by_id(current_user_id)
     if user is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-    providers = [
-        {
-            "provider": spec.provider,
-            "label": spec.label,
-            "model": spec.model,
-            "apiBase": spec.api_base,
-        }
-        for spec in LLM_PROVIDERS.values()
-    ]
+    providers = list_public_providers()
+    first = providers[0] if providers else {}
     return LLMConfigResponse(
-        provider=user.llm_provider,
-        model=user.llm_model,
-        apiBase=user.llm_api_base,
-        hasApiKey=bool(user.llm_api_key),
+        provider=user.llm_provider or first.get("provider"),
+        model=user.llm_model or first.get("model"),
+        apiBase=user.llm_api_base or first.get("apiBase"),
+        hasApiKey=True,
         providers=providers,
     )
 
@@ -237,20 +230,12 @@ async def update_llm_config(
     )
     if user is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-    providers = [
-        {
-            "provider": spec.provider,
-            "label": spec.label,
-            "model": spec.model,
-            "apiBase": spec.api_base,
-        }
-        for spec in LLM_PROVIDERS.values()
-    ]
+    providers = list_public_providers()
     return LLMConfigResponse(
         provider=user.llm_provider,
         model=user.llm_model,
         apiBase=user.llm_api_base,
-        hasApiKey=bool(user.llm_api_key),
+        hasApiKey=True,
         providers=providers,
     )
     if user is None:

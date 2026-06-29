@@ -64,6 +64,8 @@ jobs:
             FRONTEND_DEPLOY_DIR="${FRONTEND_DEPLOY_DIR:-/var/www/slideon}"
 
             cd "$PROJECT_DIR"
+
+            git config --local http.version HTTP/1.1
             git fetch --prune origin main
             git reset --hard FETCH_HEAD
             

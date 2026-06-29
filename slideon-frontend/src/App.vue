@@ -1,7 +1,6 @@
 <template>
   <router-view />
 
-  <!-- 全局浮动球 -->
   <Teleport to="body">
     <Transition name="ball-pop">
       <div
@@ -16,125 +15,163 @@
         <div class="ball-inner-global">
           <template v-if="ballState.status === 'generating'">
             <IconBase name="spinner" :size="22" class="ball-spin" />
-            <span class="ball-text">生成中</span>
+            <span class="ball-text">Generating</span>
           </template>
           <template v-else-if="ballState.status === 'success'">
             <IconBase name="check" :size="22" />
-            <span class="ball-text">生成成功</span>
+            <span class="ball-text">Ready</span>
           </template>
           <template v-else-if="ballState.status === 'error'">
             <IconBase name="times" :size="22" />
-            <span class="ball-text">生成失败</span>
+            <span class="ball-text">Failed</span>
           </template>
         </div>
       </div>
     </Transition>
   </Teleport>
 
-  <!-- 全局大纲生成弹窗 -->
   <Teleport to="body">
     <Transition name="modal-slide">
       <div v-if="state.modalVisible" class="modal-global active" @click.self="minimizeModal">
         <div class="modal-overlay" @click="minimizeModal"></div>
         <div class="modal-content" ref="modalContentRef">
           <div class="modal-header">
-            <h2 class="modal-title">智能生成大纲</h2>
-            <button class="modal-close" @click="minimizeModal">
+            <h2 class="modal-title">Generate Outline</h2>
+            <button class="modal-close" type="button" @click="minimizeModal">
               <IconBase name="times" :size="20" />
             </button>
           </div>
 
           <div class="modal-body">
-            <div class="step-content">
-              <div class="mode-tabs">
+            <div class="mode-tabs">
+              <button
+                type="button"
+                :class="['mode-tab', { active: state.inputMode === 'topic' }]"
+                :disabled="state.isGenerating"
+                @click="state.inputMode = 'topic'"
+              >
+                <IconBase name="magic" :size="14" />
+                Topic
+              </button>
+              <button
+                type="button"
+                :class="['mode-tab', { active: state.inputMode === 'document' }]"
+                :disabled="state.isGenerating"
+                @click="state.inputMode = 'document'"
+              >
+                <IconBase name="paperclip" :size="14" />
+                Document
+              </button>
+            </div>
+
+            <div class="form-step">
+              <label class="form-label">
+                <span class="step-number">1</span>
+                Model
+              </label>
+              <div class="model-options">
                 <button
-                  :class="['mode-tab', { active: state.inputMode === 'topic' }]"
+                  v-for="item in modelProviders"
+                  :key="item.provider"
+                  type="button"
+                  :class="['model-option', { active: state.modelProvider === item.provider }]"
                   :disabled="state.isGenerating"
-                  @click="state.inputMode = 'topic'"
+                  @click="setModelProvider(item.provider)"
                 >
-                  <IconBase name="magic" :size="14" />
-                  主题生成
+                  <strong>{{ item.label }}</strong>
+                  <span>{{ item.model }}</span>
                 </button>
+              </div>
+            </div>
+
+            <div class="form-step">
+              <label class="form-label">
+                <span class="step-number">2</span>
+                Length
+              </label>
+              <div class="page-count-options">
                 <button
-                  :class="['mode-tab', { active: state.inputMode === 'document' }]"
+                  v-for="item in pageCountOptions"
+                  :key="item.value"
+                  type="button"
+                  :class="['page-count-option', { active: state.pageCountPreset === item.value }]"
                   :disabled="state.isGenerating"
-                  @click="state.inputMode = 'document'"
+                  @click="setPageCountPreset(item.value)"
                 >
-                  <IconBase name="paperclip" :size="14" />
-                  文档生成
+                  <strong>{{ item.label }}</strong>
+                  <span>{{ item.desc }}</span>
                 </button>
               </div>
+            </div>
 
-              <div class="form-step">
-                <label class="form-label">
-                  <span class="step-number">1</span>
-                  {{ state.inputMode === 'topic' ? '输入主题' : '上传文档' }}
-                </label>
-                <textarea
-                  v-if="state.inputMode === 'topic'"
-                  class="input textarea"
-                  placeholder="描述你的PPT主题、目标受众和主要内容...
+            <div class="form-step">
+              <label class="form-label">
+                <span class="step-number">3</span>
+                {{ state.inputMode === 'topic' ? 'Topic' : 'Upload Document' }}
+              </label>
+              <textarea
+                v-if="state.inputMode === 'topic'"
+                v-model="state.formTopic"
+                class="input textarea"
+                placeholder="Example: 软件工程介绍"
+                :disabled="state.isGenerating"
+                @input="onTopicInput"
+              ></textarea>
+              <div
+                v-if="state.inputMode === 'topic'"
+                class="char-count"
+                :class="{ error: charCount > 500 }"
+              >
+                {{ charCount }}/500
+              </div>
 
-例如：为科技公司CEO准备的产品发布会PPT，介绍新一代AI芯片的性能优势和市场前景"
-                  v-model="state.formTopic"
+              <template v-else>
+                <input
+                  ref="documentInput"
+                  type="file"
+                  accept=".pdf,.docx,.txt,.md,.pptx"
+                  style="display: none"
                   :disabled="state.isGenerating"
-                  @input="onTopicInput"
-                ></textarea>
-                <div v-if="state.inputMode === 'topic'" class="char-count" :class="{ error: charCount > 500 }">{{ charCount }}/500</div>
-                <template v-else>
-                  <input
-                    ref="documentInput"
-                    type="file"
-                    accept=".pdf,.docx,.txt,.md,.pptx"
-                    style="display: none"
-                    @change="handleDocumentSelected"
-                  >
-                  <button
-                    class="document-upload"
-                    :disabled="state.isGenerating"
-                    @click="documentInput?.click()"
-                  >
-                    <IconBase name="cloudUpload" :size="28" />
-                    <span>{{ state.selectedDocument ? state.selectedDocument.name : '选择 PDF、Word、TXT、Markdown 或 PPTX 文档' }}</span>
-                    <small v-if="state.selectedDocument">{{ formatFileSize(state.selectedDocument.size) }}</small>
-                  </button>
-                </template>
-              </div>
+                  @change="handleDocumentSelected"
+                >
+                <button
+                  type="button"
+                  class="document-upload"
+                  :disabled="state.isGenerating"
+                  @click="documentInput?.click()"
+                >
+                  <IconBase name="paperclip" :size="26" />
+                  <strong>{{ state.selectedDocument ? state.selectedDocument.name : 'Choose a document' }}</strong>
+                  <span v-if="state.selectedDocument">{{ formatFileSize(state.selectedDocument.size) }}</span>
+                  <small v-else>PDF, DOCX, TXT, MD, PPTX</small>
+                </button>
+              </template>
+            </div>
 
-              <div v-if="state.inputMode === 'topic'" class="form-step">
-                <label class="form-label">
-                  <span class="step-number">2</span>
-                  AI增强选项
-                </label>
-                <div class="rag-toggle-row">
-                  <div class="rag-toggle-label">
-                    <span class="rag-toggle-title">混合RAG增强 (知识库 + 网络搜索)</span>
-                    <span class="rag-toggle-desc">AI将参考知识库和网络资料生成更专业的内容</span>
-                  </div>
-                  <button
-                    :class="['rag-toggle-switch', { active: state.useRag }]"
-                    @click="state.useRag = !state.useRag"
-                    :disabled="state.isGenerating"
-                    role="switch"
-                    :aria-checked="state.useRag"
-                  >
-                    <span class="rag-toggle-knob"></span>
-                  </button>
-                </div>
-              </div>
+            <div v-if="state.inputMode === 'topic'" class="form-step">
+              <label class="rag-option">
+                <span>
+                  <strong>RAG Enhance</strong>
+                  <small>Knowledge base and web search</small>
+                </span>
+                <input v-model="state.useRag" type="checkbox" :disabled="state.isGenerating">
+              </label>
             </div>
           </div>
 
           <div class="modal-footer">
-            <button class="btn btn-secondary" @click="handleCancel">取消</button>
+            <button type="button" class="btn btn-secondary" @click="handleCancel">
+              {{ state.isGenerating ? 'Cancel generation' : 'Cancel' }}
+            </button>
             <button
+              type="button"
               class="btn btn-primary"
               :disabled="state.isGenerating || !canGenerate"
               @click="doGenerate"
             >
-              <IconBase v-if="state.isGenerating" name="spinner" :size="14" class="animate-spin" />
-              <IconBase v-else name="magic" :size="14" />
-              {{ state.isGenerating ? '生成大纲中...' : '生成大纲' }}
+              <IconBase v-if="state.isGenerating" name="spinner" :size="16" class="ball-spin" />
+              <IconBase v-else name="magic" :size="16" />
+              {{ state.isGenerating ? 'Generating...' : 'Generate Outline' }}
             </button>
           </div>
         </div>
@@ -142,13 +179,12 @@
     </Transition>
   </Teleport>
 
-  <!-- 展开动画遮罩 -->
   <Teleport to="body">
     <div v-if="ballExpanding" class="expand-overlay">
       <div class="expand-ball" :style="expandBallStyle">
         <div class="ball-inner-global">
           <IconBase name="check" :size="22" />
-          <span class="ball-text">正在打开...</span>
+          <span class="ball-text">Opening</span>
         </div>
       </div>
     </div>
@@ -167,9 +203,33 @@ import IconBase from './components/icons/IconBase.vue'
 const router = useRouter()
 const outlineStore = useOutlineStore()
 const authStore = useAuthStore()
-const { state, showBall, hideBall, setSuccess, showModal, hideModal, cancelGeneration, generateOutline, onDragStart } = useFloatingBall()
+const {
+  state,
+  showBall,
+  hideBall,
+  setSuccess,
+  setError,
+  showModal,
+  hideModal,
+  cancelGeneration,
+  generateOutline,
+  onDragStart,
+  setModelProvider,
+  setPageCountPreset
+} = useFloatingBall()
 
-// 初始化认证状态
+const modelProviders = [
+  { provider: 'deepseek', label: 'DeepSeek', model: 'Deepseek-V4-pro' },
+  { provider: 'qwen', label: 'Qwen', model: 'qwen-plus-latest' },
+  { provider: 'kimi', label: 'Kimi', model: 'kimi-k2-latest' }
+]
+
+const pageCountOptions = [
+  { value: 'short', label: 'Short', desc: 'About 8-10 pages' },
+  { value: 'medium', label: 'Medium', desc: 'About 13-15 pages' },
+  { value: 'long', label: 'Long', desc: 'About 18-21 pages' }
+]
+
 onMounted(() => {
   authStore.init()
 })
@@ -181,15 +241,15 @@ const modalContentRef = ref(null)
 const documentInput = ref(null)
 
 const ballStyle = computed(() => ({
-  left: ballState.position.x != null ? ballState.position.x + 'px' : undefined,
-  top: ballState.position.y != null ? ballState.position.y + 'px' : undefined,
+  left: ballState.position.x != null ? `${ballState.position.x}px` : undefined,
+  top: ballState.position.y != null ? `${ballState.position.y}px` : undefined,
   right: ballState.position.x == null ? '32px' : undefined,
   bottom: ballState.position.y == null ? '32px' : undefined
 }))
 
 const expandBallStyle = computed(() => ({
-  left: ballState._expandFromX != null ? ballState._expandFromX + 'px' : '50%',
-  top: ballState._expandFromY != null ? ballState._expandFromY + 'px' : '50%',
+  left: ballState._expandFromX != null ? `${ballState._expandFromX}px` : '50%',
+  top: ballState._expandFromY != null ? `${ballState._expandFromY}px` : '50%',
   transform: 'translate(-50%, -50%) scale(1)'
 }))
 
@@ -218,13 +278,11 @@ function handleBallClick() {
   if (dragMoved) return
 
   if (ballState.status === 'success') {
-    // Animate ball expanding into outline editor
     expandToEditor()
     return
   }
 
   if (ballState.status === 'generating') {
-    // Animate ball back to center and show modal
     expandToModal()
     return
   }
@@ -235,10 +293,9 @@ function handleBallClick() {
 }
 
 async function expandToModal() {
-  // Smooth transition: ball fades out via Vue transition, then modal appears
   ballState.visible = false
   await nextTick()
-  await new Promise(r => setTimeout(r, 200))
+  await new Promise(resolve => setTimeout(resolve, 200))
   showModal()
 }
 
@@ -251,16 +308,15 @@ async function expandToEditor() {
   ballState._expandFromY = ballState.position.y
 
   await nextTick()
-  await new Promise(r => setTimeout(r, 100))
+  await new Promise(resolve => setTimeout(resolve, 100))
 
-  // Scale up animation
   const el = document.querySelector('.expand-ball')
   if (el) {
     el.style.transform = 'translate(-50%, -50%) scale(25)'
     el.style.transition = 'transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)'
   }
 
-  await new Promise(r => setTimeout(r, 650))
+  await new Promise(resolve => setTimeout(resolve, 650))
   hideBall()
   ballExpanding.value = false
   router.replace({ path: '/outline-editor', query: { id } })
@@ -268,7 +324,6 @@ async function expandToEditor() {
 
 function minimizeModal() {
   if (state.isGenerating) {
-    // Animate: modal shrinks to ball position
     animateMinimize()
   } else {
     hideModal()
@@ -277,8 +332,7 @@ function minimizeModal() {
 
 async function animateMinimize() {
   hideModal()
-  // Show ball at corner with bounce-in animation
-  await new Promise(r => setTimeout(r, 150))
+  await new Promise(resolve => setTimeout(resolve, 150))
   ballEntering.value = true
   showBall('generating')
   setTimeout(() => { ballEntering.value = false }, 500)
@@ -313,7 +367,7 @@ function formatFileSize(bytes) {
 
 async function doGenerate() {
   if (!canGenerate.value) {
-    alert(state.inputMode === 'topic' ? '请输入主题' : '请选择文档')
+    alert(state.inputMode === 'topic' ? 'Please enter a topic.' : 'Please choose a document.')
     return
   }
 
@@ -321,7 +375,6 @@ async function doGenerate() {
 
   if (result.success) {
     hideModal()
-    // Don't auto-navigate — show success ball instead
     const cx = ballState.position.x != null ? ballState.position.x : window.innerWidth - 104
     const cy = ballState.position.y != null ? ballState.position.y : window.innerHeight - 104
     ballState.position = { x: cx, y: cy }
@@ -329,11 +382,11 @@ async function doGenerate() {
     setSuccess(result.id)
     ballEntering.value = false
   } else if (!result.aborted && state.modalVisible) {
-    alert('生成大纲失败: ' + result.error)
+    setError()
+    alert(`Generate outline failed: ${result.error || 'Unknown error'}`)
   }
 }
 
-// Show ball entrance animation when success ball appears
 watch(() => ballState.status, (val) => {
   if (val === 'success' && ballState.visible) {
     ballEntering.value = true
@@ -343,17 +396,19 @@ watch(() => ballState.status, (val) => {
 </script>
 
 <style>
-/* ── Floating ball ── */
 .floating-ball-global {
   position: fixed;
-  width: 72px; height: 72px;
-  background: white;
+  width: 72px;
+  height: 72px;
+  background: #fff;
   border-radius: 50%;
   box-shadow: 0 4px 24px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.06);
-  display: flex; align-items: center; justify-content: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: grab;
   z-index: 9000;
-  user-select: none; -webkit-user-select: none;
+  user-select: none;
 }
 
 .floating-ball-global:active { cursor: grabbing; }
@@ -361,38 +416,41 @@ watch(() => ballState.status, (val) => {
 .floating-ball-global.success { border: 2px solid #10b981; }
 .floating-ball-global.error { border: 2px solid #ef4444; }
 
-/* Ball entrance animation */
 .floating-ball-global.ball-enter {
   animation: ballBounceIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 @keyframes ballBounceIn {
-  0%   { transform: scale(0.3); opacity: 0; }
-  60%  { transform: scale(1.15); }
+  0% { transform: scale(0.3); opacity: 0; }
+  60% { transform: scale(1.15); }
   100% { transform: scale(1); opacity: 1; }
 }
 
-/* Ball pop transition */
 .ball-pop-enter-active { animation: ballBounceIn 0.45s cubic-bezier(0.34, 1.56, 0.64, 1); }
 .ball-pop-leave-active { animation: ballPopOut 0.3s ease-in; }
 
 @keyframes ballPopOut {
-  0%   { transform: scale(1); opacity: 1; }
+  0% { transform: scale(1); opacity: 1; }
   100% { transform: scale(0.2); opacity: 0; }
 }
 
 .ball-inner-global {
-  display: flex; flex-direction: column; align-items: center;
-  gap: 2px; color: #374151; pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  color: #374151;
+  pointer-events: none;
 }
 .floating-ball-global.success .ball-inner-global { color: #10b981; }
 .floating-ball-global.error .ball-inner-global { color: #ef4444; }
 .ball-text { font-size: 10px; font-weight: 600; white-space: nowrap; }
 .ball-spin { animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
 
-/* ── Expand overlay ── */
 .expand-overlay {
-  position: fixed; inset: 0;
+  position: fixed;
+  inset: 0;
   z-index: 9500;
   background: rgba(255,255,255,0.6);
   backdrop-filter: blur(8px);
@@ -401,25 +459,29 @@ watch(() => ballState.status, (val) => {
 
 .expand-ball {
   position: fixed;
-  width: 72px; height: 72px;
-  background: white;
+  width: 72px;
+  height: 72px;
+  background: #fff;
   border: 2px solid #10b981;
   border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   z-index: 9501;
 }
 
-/* ── Modal ── */
 .modal-global {
   display: none;
-  position: fixed; inset: 0;
+  position: fixed;
+  inset: 0;
   z-index: 2000;
-  align-items: center; justify-content: center;
+  align-items: center;
+  justify-content: center;
 }
 .modal-global.active { display: flex; }
-
 .modal-overlay {
-  position: absolute; inset: 0;
+  position: absolute;
+  inset: 0;
   background: rgba(0,0,0,0.5);
   backdrop-filter: blur(4px);
 }
@@ -437,33 +499,47 @@ watch(() => ballState.status, (val) => {
 
 .modal-content {
   position: relative;
-  width: 640px; max-height: 85vh;
-  background: white;
+  width: min(640px, calc(100vw - 32px));
+  max-height: 85vh;
+  background: #fff;
   border-radius: 16px;
   box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
-  display: flex; flex-direction: column;
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
 }
 
 .modal-header {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 24px 32px; border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 32px;
+  border-bottom: 1px solid #e5e7eb;
 }
 .modal-title { font-size: 20px; font-weight: 600; color: #1f2937; }
 .modal-close {
-  width: 36px; height: 36px;
-  display: flex; align-items: center; justify-content: center;
-  border-radius: 6px; color: #6b7280;
-  background: transparent; border: none; cursor: pointer;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  color: #6b7280;
+  background: transparent;
+  border: none;
+  cursor: pointer;
 }
 .modal-close:hover { background: #f3f4f6; color: #374151; }
 .modal-body { flex: 1; padding: 24px 32px; overflow-y: auto; }
 .modal-footer {
-  display: flex; justify-content: flex-end; gap: 12px;
-  padding: 16px 32px; border-top: 1px solid #e5e7eb; background: #f9fafb;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 32px;
+  border-top: 1px solid #e5e7eb;
+  background: #f9fafb;
 }
 
-.step-content { animation: fadeIn 0.3s ease; }
 .mode-tabs {
   display: flex;
   gap: 8px;
@@ -488,20 +564,94 @@ watch(() => ballState.status, (val) => {
   transition: all 0.2s ease;
 }
 .mode-tab.active {
-  background: white;
+  background: #fff;
   color: #2563eb;
   box-shadow: 0 1px 2px rgba(0,0,0,0.08);
 }
+
 .form-step { margin-bottom: 24px; }
 .form-label {
-  display: flex; align-items: center; gap: 8px;
-  font-size: 14px; font-weight: 600; color: #374151; margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 12px;
 }
 .step-number {
-  display: flex; align-items: center; justify-content: center;
-  width: 24px; height: 24px; font-size: 12px; font-weight: 600;
-  color: white; background: #6366f1; border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  background: #6366f1;
+  border-radius: 999px;
 }
+
+.model-options,
+.page-count-options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.model-option,
+.page-count-option {
+  min-height: 64px;
+  padding: 10px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #fff;
+  color: #374151;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.model-option strong,
+.model-option span,
+.page-count-option strong,
+.page-count-option span {
+  display: block;
+  line-height: 1.3;
+}
+.model-option strong,
+.page-count-option strong { font-size: 14px; font-weight: 700; }
+.model-option span,
+.page-count-option span {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #6b7280;
+  overflow-wrap: anywhere;
+}
+.model-option:hover,
+.page-count-option:hover { border-color: #a5b4fc; background: #f8faff; }
+.model-option.active,
+.page-count-option.active {
+  border-color: #6366f1;
+  background: #eef2ff;
+  box-shadow: 0 0 0 1px #6366f1 inset;
+}
+.model-option:disabled,
+.page-count-option:disabled { cursor: not-allowed; opacity: 0.65; }
+
+.textarea {
+  min-height: 120px;
+  padding: 12px 16px;
+  resize: vertical;
+  width: 100%;
+  font-size: 14px;
+  color: #374151;
+  background: #fff;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  outline: none;
+  font-family: inherit;
+}
+.textarea:focus { border-color: #a5b4fc; box-shadow: 0 0 0 3px #e0e7ff; }
+.input:disabled { background: #f3f4f6; color: #9ca3af; }
 .char-count { text-align: right; font-size: 12px; color: #9ca3af; margin-top: 8px; }
 .char-count.error { color: #ef4444; }
 
@@ -527,58 +677,70 @@ watch(() => ballState.status, (val) => {
   background: #eff6ff;
   color: #2563eb;
 }
-.document-upload:disabled {
-  cursor: not-allowed;
-  opacity: 0.7;
-}
+.document-upload:disabled { cursor: not-allowed; opacity: 0.7; }
 .document-upload small { color: #9ca3af; }
 
-.textarea {
-  min-height: 120px; padding: 12px 16px; resize: vertical;
-  width: 100%; font-size: 14px; color: #374151;
-  background: white; border: 1px solid #d1d5db; border-radius: 6px;
-  outline: none; font-family: inherit;
+.rag-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #fff;
+  color: #374151;
 }
-.textarea:focus { border-color: #a5b4fc; box-shadow: 0 0 0 3px #e0e7ff; }
+.rag-option span { display: flex; flex-direction: column; gap: 4px; }
+.rag-option strong { font-size: 14px; }
+.rag-option small { color: #6b7280; }
+.rag-option input { width: 20px; height: 20px; accent-color: #6366f1; }
 
-.input {
-  width: 100%; height: 40px; padding: 0 16px;
-  font-size: 14px; color: #374151; background: white;
-  border: 1px solid #d1d5db; border-radius: 6px; outline: none;
+.btn {
+  min-width: 96px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
-.input:focus { border-color: #a5b4fc; box-shadow: 0 0 0 3px #e0e7ff; }
-.input:disabled { background: #f3f4f6; color: #9ca3af; }
-
-.rag-toggle-row {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 16px; background: #f9fafb; border: 1px solid #e5e7eb;
-  border-radius: 8px; gap: 16px;
+.btn-secondary { background: #fff; color: #374151; }
+.btn-secondary:hover { background: #f3f4f6; }
+.btn-primary {
+  background: #6366f1;
+  border-color: #6366f1;
+  color: #fff;
 }
-.rag-toggle-label { flex: 1; }
-.rag-toggle-title { display: block; font-size: 14px; font-weight: 600; color: #1f2937; margin-bottom: 4px; }
-.rag-toggle-desc { display: block; font-size: 12px; color: #6b7280; line-height: 1.4; }
+.btn-primary:hover { background: #4f46e5; border-color: #4f46e5; }
+.btn:disabled { cursor: not-allowed; opacity: 0.65; }
 
-.rag-toggle-switch {
-  position: relative; width: 48px; height: 28px;
-  background: #d1d5db; border: none; border-radius: 14px;
-  cursor: pointer; transition: background 0.2s; flex-shrink: 0;
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
-.rag-toggle-switch.active { background: #6366f1; }
-.rag-toggle-knob {
-  position: absolute; top: 3px; left: 3px;
-  width: 22px; height: 22px; background: white;
-  border-radius: 50%; transition: transform 0.2s;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-}
-.rag-toggle-switch.active .rag-toggle-knob { transform: translateX(20px); }
-
-.animate-spin { animation: spin 1s linear infinite; }
-
-@keyframes spin { to { transform: rotate(360deg) } }
-@keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
 
 @media (max-width: 640px) {
-  .modal-content { width: 100%; max-height: 100vh; border-radius: 0; }
-  .floating-ball-global { width: 60px; height: 60px; }
+  .modal-header,
+  .modal-body,
+  .modal-footer {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+  .model-options,
+  .page-count-options {
+    grid-template-columns: 1fr;
+  }
+  .modal-footer {
+    flex-direction: column-reverse;
+  }
+  .btn {
+    width: 100%;
+  }
 }
 </style>

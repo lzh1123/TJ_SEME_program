@@ -14,6 +14,7 @@ from ..exporters.pptx_exporter import PptxExporter
 from ..repos.presentation_repo import PresentationRepository
 from ..settings import settings
 from .ai.pipeline import AiPipeline
+from .ai.model_config import UserLLMConfig
 from .rendering.compiler import RenderCompiler
 from .rendering.theme_engine import apply_theme_to_tree
 
@@ -23,6 +24,17 @@ except ImportError:
     log_retrieval = None
 
 logger = logging.getLogger(__name__)
+
+
+PAGE_COUNT_TARGETS = {
+    "short": 9,
+    "medium": 14,
+    "long": 20,
+}
+
+
+def resolve_page_count_target(page_count_preset: Optional[str]) -> int:
+    return PAGE_COUNT_TARGETS.get((page_count_preset or "medium").lower(), PAGE_COUNT_TARGETS["medium"])
 
 
 class PresentationService:
@@ -70,7 +82,15 @@ class PresentationService:
         self._repo.save(bundle)
         return bundle
 
-    def generate_outline(self, topic: str, theme: Optional[str] = None, use_rag: bool = True) -> dict:
+    def generate_outline(
+        self,
+        topic: str,
+        theme: Optional[str] = None,
+        use_rag: bool = True,
+        llm_config: Optional[UserLLMConfig] = None,
+        model_provider: str = "deepseek",
+        page_count_preset: str = "medium",
+    ) -> dict:
         rag_context = ""
         rag_enabled = use_rag and self._rag is not None
         if rag_enabled:
@@ -92,8 +112,17 @@ class PresentationService:
                 rag_context = ""
         else:
             logger.info("RAG DISABLED for generate_outline topic=%r (use_rag=%s, _rag=%s)", topic[:80], use_rag, self._rag is not None)
-        dsl = self._ai.generate_dsl(topic=topic, theme=theme, rag_context=rag_context)
+        ai = AiPipeline(llm_config=llm_config, model_provider=model_provider)
+        target_slide_count = resolve_page_count_target(page_count_preset)
+        dsl = ai.generate_dsl(
+            topic=topic,
+            theme=theme,
+            rag_context=rag_context,
+            target_slide_count=target_slide_count,
+            page_count_preset=page_count_preset,
+        )
         data = dsl.model_dump(by_alias=True)
+        data.pop("theme", None)
         slides = data.get("slides") or []
         if isinstance(slides, list):
             for s in slides:
@@ -154,7 +183,7 @@ class PresentationService:
         data.setdefault("tone", "清晰、教学")
         if theme:
             data["theme"] = theme
-        data.setdefault("theme", "modern_blue")
+        data.setdefault("theme", "paper_light")
 
         slides = data.get("slides")
         if not isinstance(slides, list):

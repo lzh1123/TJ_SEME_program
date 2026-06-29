@@ -1,5 +1,5 @@
 <script setup>
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/authStore.js'
 import { authService } from '../services/auth.js'
@@ -14,6 +14,7 @@ const saving = ref(false)
 const error = ref('')
 const success = ref('')
 const user = ref(null)
+const llmProviders = ref([])
 
 const form = reactive({
   displayName: ''
@@ -25,27 +26,42 @@ onMounted(async () => {
     router.push('/login')
     return
   }
+
   try {
     const data = await authService.getMe()
     user.value = data
     form.displayName = data.displayName || ''
+    await loadLLMProviders()
   } catch (e) {
-    error.value = '获取用户信息失败'
+    error.value = e.message || '获取用户信息失败'
   } finally {
     loading.value = false
   }
 })
+
+async function loadLLMProviders() {
+  try {
+    const data = await apiService.getLLMConfig()
+    llmProviders.value = data.providers || []
+  } catch (e) {
+    llmProviders.value = [
+      { provider: 'deepseek', label: 'DeepSeek', model: 'Deepseek-V4-pro' },
+      { provider: 'qwen', label: 'Qwen', model: 'qwen-plus-latest' },
+      { provider: 'kimi', label: 'Kimi', model: 'kimi-k2-latest' }
+    ]
+  }
+}
 
 async function handleSubmit() {
   error.value = ''
   success.value = ''
   saving.value = true
   try {
-    const data = await apiService.request('/auth/me', {
+    const response = await apiService.request('/auth/me', {
       method: 'PUT',
       body: JSON.stringify({ displayName: form.displayName })
     })
-    const result = await data.json()
+    const result = await response.json()
     user.value = result
     authStore.user = result
     success.value = '个人信息已更新'
@@ -75,7 +91,6 @@ async function handleLogout() {
       </div>
 
       <template v-else-if="user">
-        <!-- 用户基本信息卡片 -->
         <div class="card info-card">
           <div class="avatar-section">
             <div class="avatar">{{ (user.displayName || user.username)[0].toUpperCase() }}</div>
@@ -86,7 +101,6 @@ async function handleLogout() {
           </div>
         </div>
 
-        <!-- 登录状态卡片 -->
         <div class="card status-card">
           <h3 class="card-title">登录状态</h3>
           <div class="status-row">
@@ -99,7 +113,6 @@ async function handleLogout() {
           </div>
         </div>
 
-        <!-- 编辑信息卡片 -->
         <div class="card edit-card">
           <h3 class="card-title">编辑资料</h3>
 
@@ -138,7 +151,22 @@ async function handleLogout() {
           </button>
         </div>
 
-        <!-- 退出登录 -->
+        <div class="card model-card">
+          <h3 class="card-title">平台大模型</h3>
+          <p class="form-hint model-hint">系统已统一配置平台 API Key，生成大纲时可直接选择模型。</p>
+          <div class="model-list">
+            <div v-for="item in llmProviders" :key="item.provider" class="model-list-item">
+              <div>
+                <strong>{{ item.label }}</strong>
+                <span>{{ item.model }}</span>
+              </div>
+              <span :class="['badge', item.configured === false ? 'badge-warn' : 'badge-active']">
+                {{ item.configured === false ? '未配置' : '可用' }}
+              </span>
+            </div>
+          </div>
+        </div>
+
         <div class="card logout-card">
           <button class="btn btn-danger" @click="handleLogout">
             退出登录
@@ -201,7 +229,6 @@ async function handleLogout() {
   margin: 0 0 var(--space-4);
 }
 
-/* Avatar */
 .avatar-section {
   display: flex;
   align-items: center;
@@ -235,7 +262,6 @@ async function handleLogout() {
   margin: var(--space-1) 0 0;
 }
 
-/* Status */
 .status-row {
   display: flex;
   justify-content: space-between;
@@ -270,7 +296,48 @@ async function handleLogout() {
   color: var(--success-700);
 }
 
-/* Form */
+.badge-warn {
+  background: var(--warning-50, #fffbeb);
+  color: var(--warning-700, #b45309);
+}
+
+.model-hint {
+  margin-bottom: var(--space-4);
+}
+
+.model-list {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.model-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  background: var(--gray-50);
+}
+
+.model-list-item strong,
+.model-list-item span {
+  display: block;
+}
+
+.model-list-item strong {
+  font-size: 14px;
+  color: var(--gray-900);
+}
+
+.model-list-item div > span {
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--gray-500);
+  overflow-wrap: anywhere;
+}
+
 .form-group {
   margin-bottom: var(--space-5);
 }
@@ -313,7 +380,6 @@ async function handleLogout() {
   margin: var(--space-1) 0 0;
 }
 
-/* Messages */
 .msg {
   padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-lg);
@@ -331,7 +397,6 @@ async function handleLogout() {
   color: var(--success-700);
 }
 
-/* Buttons */
 .btn {
   padding: var(--space-3) var(--space-6);
   border: none;
@@ -358,16 +423,12 @@ async function handleLogout() {
 }
 
 .btn-danger {
-  background: var(--error-50);
-  color: var(--error-700);
+  background: var(--error-600);
+  color: white;
   width: 100%;
 }
 
 .btn-danger:hover {
-  background: var(--error-100);
-}
-
-.logout-card {
-  text-align: center;
+  background: var(--error-700);
 }
 </style>

@@ -29,6 +29,10 @@ class User(Base):
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     display_name: Mapped[Optional[str]] = mapped_column(String(100), default=None)
     avatar_url: Mapped[Optional[str]] = mapped_column(String(500), default=None)
+    llm_provider: Mapped[Optional[str]] = mapped_column(String(50), default=None)
+    llm_model: Mapped[Optional[str]] = mapped_column(String(100), default=None)
+    llm_api_base: Mapped[Optional[str]] = mapped_column(String(500), default=None)
+    llm_api_key: Mapped[Optional[str]] = mapped_column(String(1000), default=None)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False

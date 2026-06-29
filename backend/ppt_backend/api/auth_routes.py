@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, EmailStr, Field, model_validator
 
 from ..services.auth_service import AuthService
+from ..services.ai.model_config import LLM_PROVIDERS, list_public_providers
 from .deps import get_auth_service, get_current_user_id
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -65,6 +66,25 @@ class UpdateProfileRequest(BaseModel):
     model_config = {"extra": "forbid"}
 
     display_name: Optional[str] = Field(None, max_length=100, alias="displayName")
+
+
+class LLMConfigRequest(BaseModel):
+    model_config = {"extra": "forbid"}
+
+    provider: str = Field(..., max_length=50)
+    model: str = Field(..., max_length=100)
+    api_base: str = Field(..., max_length=500, alias="apiBase")
+    api_key: Optional[str] = Field(None, max_length=1000, alias="apiKey")
+
+
+class LLMConfigResponse(BaseModel):
+    model_config = {"extra": "forbid"}
+
+    provider: Optional[str] = None
+    model: Optional[str] = None
+    api_base: Optional[str] = Field(None, alias="apiBase")
+    has_api_key: bool = Field(False, alias="hasApiKey")
+    providers: list[dict]
 
 
 # ── Endpoints ──────────────────────────────────────────────
@@ -171,6 +191,52 @@ async def update_me(
     user = await auth.update_profile(
         user_id=current_user_id,
         display_name=payload.display_name,
+    )
+
+
+@router.get("/llm-config")
+async def get_llm_config(
+    current_user_id: str = Depends(get_current_user_id),
+    auth: AuthService = Depends(get_auth_service),
+) -> LLMConfigResponse:
+    user = await auth.get_user_by_id(current_user_id)
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    providers = list_public_providers()
+    first = providers[0] if providers else {}
+    return LLMConfigResponse(
+        provider=user.llm_provider or first.get("provider"),
+        model=user.llm_model or first.get("model"),
+        apiBase=user.llm_api_base or first.get("apiBase"),
+        hasApiKey=True,
+        providers=providers,
+    )
+
+
+@router.put("/llm-config")
+async def update_llm_config(
+    payload: LLMConfigRequest,
+    current_user_id: str = Depends(get_current_user_id),
+    auth: AuthService = Depends(get_auth_service),
+) -> LLMConfigResponse:
+    if payload.provider not in LLM_PROVIDERS:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Unsupported LLM provider")
+    user = await auth.update_llm_config(
+        user_id=current_user_id,
+        provider=payload.provider,
+        model=payload.model,
+        api_base=payload.api_base,
+        api_key=payload.api_key,
+    )
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    providers = list_public_providers()
+    return LLMConfigResponse(
+        provider=user.llm_provider,
+        model=user.llm_model,
+        apiBase=user.llm_api_base,
+        hasApiKey=True,
+        providers=providers,
     )
     if user is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")

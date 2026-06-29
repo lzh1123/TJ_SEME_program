@@ -237,7 +237,6 @@ class PresentationDSL(BaseModel):
 
     title: str
     audience: str = "通用受众"
-    tone: str = "清晰、教学"
-    theme: str = "modern_blue"
+    tone: str = "清晰、专业、教学友好"
+    theme: str = "paper_light"
     slides: List[SlideDSL] = Field(default_factory=list)
-

@@ -35,6 +35,7 @@ export const API_ENDPOINTS = {
     login: '/auth/login',
     refresh: '/auth/refresh',
     me: '/auth/me',
+    llmConfig: '/auth/llm-config',
     logout: '/auth/logout'
   },
 

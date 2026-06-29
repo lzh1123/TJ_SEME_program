@@ -8,6 +8,7 @@ from langchain_openai import ChatOpenAI
 from pydantic import BaseModel, TypeAdapter
 
 from ...settings import settings
+from .model_config import UserLLMConfig, make_chat_llm
 
 
 def _strip_markdown_fences(text: str) -> str:
@@ -82,17 +83,8 @@ def _extract_json_substring(text: str) -> str:
     return s
 
 
-def make_llm() -> ChatOpenAI:
-    if not settings.llm_api_key:
-        raise ValueError("missing LLM api key")
-    return ChatOpenAI(
-        model=settings.llm_model,
-        openai_api_base=settings.llm_api_base,
-        openai_api_key=settings.llm_api_key,
-        temperature=0,
-        timeout=settings.llm_timeout,
-        max_retries=2,
-    )
+def make_llm(config: Optional[UserLLMConfig] = None) -> ChatOpenAI:
+    return make_chat_llm(config)
 
 
 def invoke_llm_text(

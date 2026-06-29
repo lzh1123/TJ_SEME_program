@@ -218,6 +218,30 @@ class AuthService:
         await self.db.flush()
         return user
 
+    async def update_llm_config(
+        self,
+        user_id: str,
+        provider: str,
+        model: str,
+        api_base: str,
+        api_key: Optional[str] = None,
+    ) -> Optional[User]:
+        try:
+            uid = uuid.UUID(user_id)
+        except ValueError:
+            return None
+        result = await self.db.execute(select(User).where(User.id == uid))
+        user = result.scalar_one_or_none()
+        if user is None or not user.is_active:
+            return None
+        user.llm_provider = provider
+        user.llm_model = model
+        user.llm_api_base = api_base
+        if api_key is not None and api_key.strip():
+            user.llm_api_key = api_key.strip()
+        await self.db.flush()
+        return user
+
     # ── Logout (revoke all refresh tokens) ──
 
     async def logout(self, user_id: str) -> None:

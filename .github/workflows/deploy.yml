@@ -94,12 +94,33 @@ jobs:
             python3 -m pip install -i https://pypi.tuna.tsinghua.edu.cn/simple --timeout 120 -r requirements.txt
             python3 -m alembic upgrade head
 
-            OLD_PIDS="$(pgrep -f 'python3 -m uvicorn ppt_backend.api.main:app' || true)"
+            OLD_PIDS="$(pgrep -f '[p]ython3 -m uvicorn ppt_backend\.api\.main:app' || true)"
+
             if [ -n "$OLD_PIDS" ]; then
+              echo "Stopping old backend PID(s): $OLD_PIDS"
               kill $OLD_PIDS
               sleep 2
             fi
-            HF_ENDPOINT=https://hf-mirror.com nohup python3 -m uvicorn ppt_backend.api.main:app --host 0.0.0.0 --port 8000 > /tmp/slideon.log 2>&1 &
+            
+            HF_ENDPOINT=https://hf-mirror.com \
+            nohup python3 -m uvicorn ppt_backend.api.main:app \
+              --host 0.0.0.0 \
+              --port 8000 \
+              > /tmp/slideon.log 2>&1 &
+            
+            for attempt in $(seq 1 15); do
+              if curl -fsS http://127.0.0.1:8000/health; then
+                break
+              fi
+            
+              if [ "$attempt" -eq 15 ]; then
+                echo "Backend health check failed. Recent backend log:"
+                tail -n 100 /tmp/slideon.log || true
+                exit 1
+              fi
+            
+              sleep 1
+            done
 
             if [ "$FRONTEND_DEPLOY_DIR" = "/" ] || [ -z "$FRONTEND_DEPLOY_DIR" ]; then
               echo "Invalid FRONTEND_DEPLOY_DIR"
@@ -111,4 +132,3 @@ jobs:
 
             nginx -t
             systemctl reload nginx
-            curl -fsS http://127.0.0.1:8000/health

@@ -3,18 +3,10 @@ from __future__ import annotations
 from typing import Any, Optional
 
 from ...domain.dsl import (
-    ArchitectureLayer,
     ChartSemantic,
-    ChartSeries,
-    ColumnBlock,
     ComparisonSide,
-    KPIItem,
     PresentationDSL,
-    ProcessStep,
-    RoadmapPhase,
     SwotBlock,
-    TeamMember,
-    TimelineEvent,
 )
 from ...domain.ids import new_id
 from ...domain.theme import get_theme_tokens
@@ -179,81 +171,57 @@ class AiPipeline:
             slide.notes = notes or [text]
 
         def defaults(title, count=3):
-            base = title or "content"
+            base = title or "本页主题"
             samples = [
-                f"Explain the core concept and use scenario of {base}",
-                f"Analyze key problems, methods, and constraints of {base}",
-                f"Summarize the value of {base} for the whole topic",
-                f"Provide practical implementation points for {base}",
-                f"Identify risks and improvement directions for {base}",
+                f"说明“{base}”的核心概念与适用场景",
+                f"分析“{base}”涉及的关键问题、方法与约束",
+                f"总结“{base}”对整体主题的价值",
+                f"给出“{base}”的实践要点与落地路径",
+                f"识别“{base}”的风险、挑战与改进方向",
             ]
             return samples[:count]
 
         for slide in dsl.slides:
             intent = getattr(slide, "intent", "")
-            title = getattr(slide, "title", "") or "content"
-            ensure_notes(slide, f"This slide explains {title} and its role in the outline.")
+            title = getattr(slide, "title", "") or "本页主题"
+            ensure_notes(slide, f"本页围绕“{title}”展开，说明其在整体大纲中的作用。")
 
             if intent == "cover":
-                if not getattr(slide, "subtitle", None) and not getattr(slide, "tagline", None):
-                    slide.subtitle = "Core concepts, methods, and practical value"
                 highlights = clean_list(getattr(slide, "highlights", []) or [])
-                while len(highlights) < 3:
-                    highlights.append(defaults(title, 5)[len(highlights)])
                 slide.highlights = highlights[:5]
                 continue
 
             if intent == "agenda":
                 items = clean_list(getattr(slide, "items", []) or [])
-                if len(items) < 5:
-                    items = ["Background", "Core concepts", "Key methods", "Process", "Cases and summary"]
                 slide.items = items[:8]
                 continue
 
             if intent == "text":
                 paragraphs = clean_list(getattr(slide, "paragraphs", []) or [])
                 bullets = clean_list(getattr(slide, "bullets", []) or [])
-                if not paragraphs:
-                    head = ", ".join((bullets or defaults(title, 3))[:2])
-                    paragraphs = [
-                        f"{title} should be explained from background, problems, and methods. Around {head}, the audience can build a clear knowledge framework and connect concepts to practical scenarios."
-                    ]
-                while len(bullets) < 3:
-                    bullets.append(defaults(title, 5)[len(bullets)])
                 slide.paragraphs = paragraphs[:2]
                 slide.bullets = bullets[:5]
                 continue
 
             if intent == "timeline":
                 events = list(getattr(slide, "events", []) or [])
-                while len(events) < 4:
-                    idx = len(events) + 1
-                    events.append(TimelineEvent(label=f"Stage {idx}", date=f"Stage {idx}", detail=f"Explain key tasks, outputs, and evolution meaning for {title}."))
                 slide.events = events[:6]
                 continue
 
             if intent == "kpi":
                 items = list(getattr(slide, "items", []) or [])
-                fallback = [("Coverage", "80", "%", "Scope coverage"), ("Efficiency", "30", "%", "Improvement potential"), ("Quality", "90", "%", "Result stability")]
-                while len(items) < 3:
-                    label, value, unit, delta = fallback[len(items) % len(fallback)]
-                    items.append(KPIItem(label=label, value=value, unit=unit, delta=delta))
                 slide.items = items[:5]
                 continue
 
             if intent == "comparison":
-                left = getattr(slide, "left", None) or ComparisonSide(title="Option A", bullets=[])
-                right = getattr(slide, "right", None) or ComparisonSide(title="Option B", bullets=[])
+                left = getattr(slide, "left", None) or ComparisonSide(title="方案 A", bullets=[])
+                right = getattr(slide, "right", None) or ComparisonSide(title="方案 B", bullets=[])
                 if not getattr(left, "title", "") or left.title == "Left":
-                    left.title = "Option A"
+                    left.title = "方案 A"
                 if not getattr(right, "title", "") or right.title == "Right":
-                    right.title = "Option B"
+                    right.title = "方案 B"
                 left_bullets = clean_list(getattr(left, "bullets", []) or [])
                 right_bullets = clean_list(getattr(right, "bullets", []) or [])
-                while len(left_bullets) < 3:
-                    left_bullets.append(f"Explain {left.title} by goal, cost, or scenario")
-                while len(right_bullets) < 3:
-                    right_bullets.append(f"Explain {right.title} by goal, cost, or scenario")
                 left.bullets = left_bullets[:5]
                 right.bullets = right_bullets[:5]
                 slide.left = left
@@ -262,47 +230,33 @@ class AiPipeline:
 
             if intent == "swot":
                 swot = getattr(slide, "swot", None) or SwotBlock()
-                for attr, label in (("strengths", "strength"), ("weaknesses", "weakness"), ("opportunities", "opportunity"), ("threats", "threat")):
+                for attr, label in (("strengths", "优势"), ("weaknesses", "劣势"), ("opportunities", "机会"), ("threats", "威胁")):
                     values = clean_list(getattr(swot, attr, []) or [])
-                    while len(values) < 2:
-                        values.append(f"Analyze one key {label} related to {title}")
                     setattr(swot, attr, values[:4])
                 slide.swot = swot
                 continue
 
             if intent == "roadmap":
                 phases = list(getattr(slide, "phases", []) or [])
-                while len(phases) < 3:
-                    idx = len(phases) + 1
-                    phases.append(RoadmapPhase(name=f"Phase {idx}", timeframe=f"Phase {idx}", deliverables=[f"Complete tasks related to {title}", "Create verifiable outputs"]))
                 for phase in phases:
                     deliverables = clean_list(getattr(phase, "deliverables", []) or [])
-                    while len(deliverables) < 2:
-                        deliverables.append(f"Add a key deliverable for {phase.name}")
                     phase.deliverables = deliverables[:4]
                 slide.phases = phases[:5]
                 continue
 
             if intent == "process_flow":
                 steps = list(getattr(slide, "steps", []) or [])
-                while len(steps) < 4:
-                    idx = len(steps) + 1
-                    steps.append(ProcessStep(name=f"Step {idx}", detail=f"Explain input, action, and output for {title}."))
                 slide.steps = steps[:7]
                 continue
 
             if intent == "chart":
                 chart = getattr(slide, "chart", None)
                 if not chart:
-                    chart = ChartSemantic(chartType="bar", labels=["A", "B", "C", "D"], series=[ChartSeries(name="Example", values=[20, 35, 50, 65])])
+                    chart = ChartSemantic(chartType="bar", labels=[], series=[])
                 labels = clean_list(getattr(chart, "labels", []) or [])
-                if len(labels) < 4:
-                    labels = ["A", "B", "C", "D"]
-                series = list(getattr(chart, "series", []) or []) or [ChartSeries(name="Example", values=[20, 35, 50, 65])]
+                series = list(getattr(chart, "series", []) or [])
                 for item in series:
                     values = list(getattr(item, "values", []) or [])
-                    while len(values) < len(labels):
-                        values.append(float(10 + len(values) * 10))
                     item.values = values[:len(labels)]
                 chart.labels = labels[:6]
                 chart.series = series[:3]
@@ -311,51 +265,34 @@ class AiPipeline:
 
             if intent == "multi_column":
                 columns = list(getattr(slide, "columns", []) or [])
-                while len(columns) < 2:
-                    idx = len(columns) + 1
-                    columns.append(ColumnBlock(title=f"Dimension {idx}", bullets=defaults(title, 3)))
                 for col in columns:
                     bullets = clean_list(getattr(col, "bullets", []) or [])
-                    while len(bullets) < 3:
-                        bullets.append(defaults(title, 5)[len(bullets)])
                     col.bullets = bullets[:5]
                 slide.columns = columns[:4]
                 continue
 
             if intent == "architecture":
                 layers = list(getattr(slide, "layers", []) or [])
-                while len(layers) < 3:
-                    idx = len(layers) + 1
-                    layers.append(ArchitectureLayer(name=f"Layer {idx}", items=defaults(title, 3)))
                 for layer in layers:
                     items = clean_list(getattr(layer, "items", []) or [])
-                    while len(items) < 2:
-                        items.append(f"Add component for {title}")
                     layer.items = items[:5]
                 slide.layers = layers[:5]
                 continue
 
             if intent == "quote":
-                if not getattr(slide, "quote", ""):
-                    slide.quote = f"{title} is valuable because it guides analysis and improvement of real problems."
                 if not getattr(slide, "author", None):
-                    slide.author = "Course summary"
+                    slide.author = "课程总结"
                 continue
 
             if intent == "divider":
                 if not getattr(slide, "subtitle", None):
-                    slide.subtitle = f"Next section: {title}."
+                    slide.subtitle = f"进入“{title}”部分。"
                 continue
 
             if intent == "team":
                 members = list(getattr(slide, "members", []) or [])
-                while len(members) < 3:
-                    idx = len(members) + 1
-                    members.append(TeamMember(name=f"Role {idx}", role="Key participant", highlights=defaults(title, 3)))
                 for member in members:
                     highlights = clean_list(getattr(member, "highlights", []) or [])
-                    while len(highlights) < 2:
-                        highlights.append(f"Explain this role's responsibility in {title}")
                     member.highlights = highlights[:4]
                 slide.members = members[:6]
                 continue
@@ -451,13 +388,13 @@ class AiPipeline:
         section = text(slide.get("section"))
         notes = first_list(slide.get("notes"), slide.get("purpose"), slide.get("intent"))
         if not notes:
-            notes = [f"Explain the role of {title} in {topic}."]
+            notes = [f"说明“{title}”在“{topic}”中的作用。"]
         bullets = first_list(slide.get("bullets"), slide.get("items"), slide.get("highlights"), slide.get("points"))
         paragraphs = first_list(slide.get("paragraphs"), slide.get("content"), slide.get("summary"), slide.get("description"))
         if not bullets and paragraphs:
             bullets = paragraphs[:3]
         if not bullets:
-            bullets = [f"Key point for {title}", f"Evidence or context for {title}", f"Implication for {topic}"]
+            bullets = [f"“{title}”的关键要点", f"“{title}”的证据与背景", f"“{title}”对“{topic}”的启示"]
 
         base = {
             "id": text(slide.get("id")) or new_id("slide"),
@@ -486,7 +423,7 @@ class AiPipeline:
                 **base,
                 "columns": columns or [
                     {"title": title, "bullets": bullets[:3]},
-                    {"title": f"{title} details", "bullets": (bullets[3:6] or bullets[:3])},
+                    {"title": f"{title}的补充说明", "bullets": (bullets[3:6] or bullets[:3])},
                 ],
             }
         if intent == "process_flow":
@@ -511,8 +448,8 @@ class AiPipeline:
 
             return {
                 **base,
-                "left": side(slide.get("left"), "Option A", bullets[:3]),
-                "right": side(slide.get("right"), "Option B", bullets[3:6] or bullets[:3]),
+                "left": side(slide.get("left"), "方案 A", bullets[:3]),
+                "right": side(slide.get("right"), "方案 B", bullets[3:6] or bullets[:3]),
             }
         if intent == "timeline":
             events = []
@@ -618,7 +555,7 @@ class AiPipeline:
         return {
             **base,
             "intent": "text",
-            "paragraphs": paragraphs or [f"{title} is an important part of {topic}."],
+            "paragraphs": paragraphs or [f"“{title}”是理解“{topic}”的重要内容，需要结合背景、方法与实践场景展开说明。"],
             "bullets": bullets[:5],
         }
 
@@ -740,7 +677,7 @@ class AiPipeline:
                     if value is None:
                         value = item.get("number")
                     out = {
-                        "label": as_str(item.get("label") or item.get("name") or item.get("title") or "Metric"),
+                        "label": as_str(item.get("label") or item.get("name") or item.get("title") or "指标"),
                         "value": as_str(value),
                     }
                     unit = as_str(item.get("unit"))
@@ -758,7 +695,7 @@ class AiPipeline:
                 if isinstance(value, dict):
                     return {"title": as_str(value.get("title") or value.get("name") or default_title), "bullets": as_str_list(value.get("bullets") or value.get("items"))}
                 return {"title": default_title, "bullets": []}
-            return {**base, "left": side(s.get("left") or wrapper.get("left"), "Option A"), "right": side(s.get("right") or wrapper.get("right"), "Option B")}
+            return {**base, "left": side(s.get("left") or wrapper.get("left"), "方案 A"), "right": side(s.get("right") or wrapper.get("right"), "方案 B")}
         if intent == "swot":
             swot = s.get("swot") or wrapper.get("swot") or {}
             return {**base, "swot": {"strengths": as_str_list(swot.get("strengths") or swot.get("s") or s.get("strengths")), "weaknesses": as_str_list(swot.get("weaknesses") or swot.get("w") or s.get("weaknesses")), "opportunities": as_str_list(swot.get("opportunities") or swot.get("o") or s.get("opportunities")), "threats": as_str_list(swot.get("threats") or swot.get("t") or s.get("threats"))}}
@@ -768,7 +705,7 @@ class AiPipeline:
                 if isinstance(item, str) and item.strip():
                     phases.append({"name": item.strip(), "deliverables": []})
                 elif isinstance(item, dict):
-                    phases.append({"name": as_str(item.get("name") or item.get("phase") or item.get("title") or item.get("label") or "Phase"), "timeframe": as_str(item.get("timeframe") or item.get("time") or item.get("when") or item.get("period")) or None, "deliverables": as_str_list(item.get("deliverables") or item.get("tasks") or item.get("items") or item.get("outputs"))})
+                    phases.append({"name": as_str(item.get("name") or item.get("phase") or item.get("title") or item.get("label") or "阶段"), "timeframe": as_str(item.get("timeframe") or item.get("time") or item.get("when") or item.get("period")) or None, "deliverables": as_str_list(item.get("deliverables") or item.get("tasks") or item.get("items") or item.get("outputs"))})
             return {**base, "phases": phases}
         if intent == "process_flow":
             steps = []
@@ -780,7 +717,7 @@ class AiPipeline:
                     else:
                         steps.append({"name": item.strip(), "detail": None})
                 elif isinstance(item, dict):
-                    steps.append({"name": as_str(item.get("name") or item.get("label") or item.get("title") or item.get("step") or "Step"), "detail": as_str(item.get("detail") or item.get("desc") or item.get("description") or item.get("content")) or None})
+                    steps.append({"name": as_str(item.get("name") or item.get("label") or item.get("title") or item.get("step") or "步骤"), "detail": as_str(item.get("detail") or item.get("desc") or item.get("description") or item.get("content")) or None})
             return {**base, "steps": steps}
         if intent == "chart":
             chart = s.get("chart") or wrapper.get("chart") or {}
@@ -796,7 +733,7 @@ class AiPipeline:
                             values.append(float(value))
                         except Exception:
                             pass
-                    series.append({"name": as_str(item.get("name") or item.get("label") or item.get("title") or "Series"), "values": values})
+                    series.append({"name": as_str(item.get("name") or item.get("label") or item.get("title") or "数据系列"), "values": values})
             return {**base, "chart": {"chartType": chart_type, "labels": as_str_list(chart.get("labels") or chart.get("x") or chart.get("categories")), "series": series}}
         if intent == "multi_column":
             columns = []
@@ -812,7 +749,7 @@ class AiPipeline:
                 if isinstance(item, str) and item.strip():
                     layers.append({"name": item.strip(), "items": []})
                 elif isinstance(item, dict):
-                    layers.append({"name": as_str(item.get("name") or item.get("layer") or item.get("title") or item.get("label") or "Layer"), "items": as_str_list(item.get("items") or item.get("bullets") or item.get("components") or item.get("modules"))})
+                    layers.append({"name": as_str(item.get("name") or item.get("layer") or item.get("title") or item.get("label") or "层级"), "items": as_str_list(item.get("items") or item.get("bullets") or item.get("components") or item.get("modules"))})
             return {**base, "layers": layers}
         if intent == "quote":
             return {**base, "quote": as_str(s.get("quote") or wrapper.get("quote") or s.get("text") or base["title"]), "author": as_str(s.get("author") if s.get("author") is not None else wrapper.get("author")) or None}
@@ -824,6 +761,6 @@ class AiPipeline:
                 if isinstance(item, str) and item.strip():
                     members.append({"name": item.strip(), "highlights": []})
                 elif isinstance(item, dict):
-                    members.append({"name": as_str(item.get("name") or item.get("title") or item.get("label") or "Member"), "role": as_str(item.get("role") or item.get("position")) or None, "highlights": as_str_list(item.get("highlights") or item.get("bullets") or item.get("items") or item.get("points"))})
+                    members.append({"name": as_str(item.get("name") or item.get("title") or item.get("label") or "成员"), "role": as_str(item.get("role") or item.get("position")) or None, "highlights": as_str_list(item.get("highlights") or item.get("bullets") or item.get("items") or item.get("points"))})
             return {**base, "members": members}
         return {**base, "intent": "text", "paragraphs": [], "bullets": [base["title"]]}

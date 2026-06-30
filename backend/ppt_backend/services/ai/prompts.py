@@ -51,6 +51,8 @@ def dsl_generation_prompt() -> ChatPromptTemplate:
             "system",
             f"{JSON_ONLY}\n"
             "你是 PPT 大纲 DSL 生成专家。输出 PresentationDSL 兼容 JSON：title, audience, tone, slides。"
+            "字段类型规则：title/audience/tone/theme 必须是字符串；所有列表元素必须是字符串；"
+            "kpi.items[].value 必须是字符串，即使内容是数字也要加引号。"
             "不要在大纲中输出视觉风格、颜色、模板、坐标、尺寸、字体大小或排版参数。"
             "如果下游 schema 需要 theme，最多使用 paper_light 作为内部默认值，不把它当作大纲内容。\n"
             "语言规则：用户主题是中文时，所有可读内容必须是中文；禁止把“软件工程介绍”生成成英文大纲。\n"

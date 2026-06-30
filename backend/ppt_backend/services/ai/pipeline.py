@@ -362,9 +362,29 @@ class AiPipeline:
         return dsl
 
     def _repair_dsl_dict(self, data: dict, *, topic: str, analysis: IntentAnalysis, theme_name: str) -> dict:
-        title = data.get("title") or topic
-        audience = data.get("audience") or analysis.audience or "General audience"
-        tone = data.get("tone") or analysis.tone or "Clear and professional"
+        def as_str(v: Any) -> str:
+            if v is None:
+                return ""
+            if isinstance(v, str):
+                return v.strip()
+            if isinstance(v, list):
+                return "、".join(as_str(item) for item in v if as_str(item))
+            if isinstance(v, dict):
+                for key in ("label", "title", "name", "text", "content", "value"):
+                    value = v.get(key)
+                    if value is not None:
+                        text = as_str(value)
+                        if text:
+                            return text
+                return "、".join(as_str(value) for value in v.values() if as_str(value))
+            return str(v)
+
+        if not isinstance(data, dict):
+            data = {}
+
+        title = as_str(data.get("title")) or topic
+        audience = as_str(data.get("audience")) or as_str(analysis.audience) or "General audience"
+        tone = as_str(data.get("tone")) or as_str(analysis.tone) or "Clear and professional"
 
         slides_in = data.get("slides")
         if not isinstance(slides_in, list):
@@ -644,11 +664,21 @@ class AiPipeline:
                     else:
                         items.append({"label": item.strip(), "value": ""})
                 elif isinstance(item, dict):
-                    out = {"label": as_str(item.get("label") or item.get("name") or item.get("title") or "Metric"), "value": as_str(item.get("value") or item.get("val") or item.get("number") or "")}
-                    if isinstance(item.get("unit"), str):
-                        out["unit"] = item["unit"].strip()
-                    if isinstance(item.get("delta") or item.get("change"), str):
-                        out["delta"] = (item.get("delta") or item.get("change")).strip()
+                    value = item.get("value")
+                    if value is None:
+                        value = item.get("val")
+                    if value is None:
+                        value = item.get("number")
+                    out = {
+                        "label": as_str(item.get("label") or item.get("name") or item.get("title") or "Metric"),
+                        "value": as_str(value),
+                    }
+                    unit = as_str(item.get("unit"))
+                    delta = as_str(item.get("delta") if item.get("delta") is not None else item.get("change"))
+                    if unit:
+                        out["unit"] = unit
+                    if delta:
+                        out["delta"] = delta
                     items.append(out)
             return {**base, "items": items}
         if intent == "comparison":

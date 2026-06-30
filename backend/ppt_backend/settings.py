@@ -36,12 +36,20 @@ class Settings:
         or os.getenv("OPENAI_API_KEY")
         or ""
     )
-    qwen_model: str = os.getenv("QWEN_MODEL", "qwen-plus-latest")
-    qwen_api_base: str = os.getenv("QWEN_API_BASE", "https://dashscope.aliyuncs.com/compatible-mode/v1")
-    qwen_api_key: str = os.getenv("QWEN_API_KEY", "")
-    kimi_model: str = os.getenv("KIMI_MODEL", "kimi-k2-latest")
+    qwen_model: str = os.getenv("QWEN_MODEL", "qwen-plus")
+    qwen_workspace_id: str = os.getenv("QWEN_WORKSPACE_ID", os.getenv("DASHSCOPE_WORKSPACE_ID", ""))
+    qwen_api_base: str = os.getenv(
+        "QWEN_API_BASE",
+        (
+            f"https://{qwen_workspace_id}.cn-beijing.maas.aliyuncs.com/compatible-mode/v1"
+            if qwen_workspace_id
+            else "https://dashscope.aliyuncs.com/compatible-mode/v1"
+        ),
+    )
+    qwen_api_key: str = os.getenv("QWEN_API_KEY", os.getenv("DASHSCOPE_API_KEY", ""))
+    kimi_model: str = os.getenv("KIMI_MODEL", "kimi-k2.6")
     kimi_api_base: str = os.getenv("KIMI_API_BASE", "https://api.moonshot.cn/v1")
-    kimi_api_key: str = os.getenv("KIMI_API_KEY", "")
+    kimi_api_key: str = os.getenv("KIMI_API_KEY", os.getenv("MOONSHOT_API_KEY", ""))
 
     # Database (PostgreSQL)
     database_url: str = os.getenv(

@@ -368,7 +368,7 @@ class AiPipeline:
             if isinstance(v, str):
                 return v.strip()
             if isinstance(v, list):
-                return "、".join(as_str(item) for item in v if as_str(item))
+                return " / ".join(as_str(item) for item in v if as_str(item))
             if isinstance(v, dict):
                 for key in ("label", "title", "name", "text", "content", "value"):
                     value = v.get(key)
@@ -376,7 +376,7 @@ class AiPipeline:
                         text = as_str(value)
                         if text:
                             return text
-                return "、".join(as_str(value) for value in v.values() if as_str(value))
+                return " / ".join(as_str(value) for value in v.values() if as_str(value))
             return str(v)
 
         if not isinstance(data, dict):
@@ -405,152 +405,220 @@ class AiPipeline:
         }
 
     def _rebalance_slide_intents(self, slides: list[dict], *, topic: str, target_count: int) -> list[dict]:
-        if not slides:
-            return slides
-
-        short_plan = ["cover", "agenda", "text", "multi_column", "process_flow", "comparison", "timeline", "chart", "text"]
-        medium_plan = short_plan + ["swot", "roadmap", "kpi", "architecture", "quote"]
-        long_plan = medium_plan + ["divider", "team", "text", "process_flow", "comparison", "chart"]
-        desired = long_plan if target_count >= 18 else medium_plan if target_count >= 13 else short_plan
-
-        non_text = sum(1 for slide in slides if slide.get("intent") != "text")
-        should_rebalance = non_text < max(3, len(slides) // 3) or slides[0].get("intent") != "cover"
-        if not should_rebalance:
-            return slides
-
-        balanced = []
-        for index, slide in enumerate(slides):
-            intent = desired[index] if index < len(desired) else slide.get("intent", "text")
-            balanced.append(self._coerce_slide_intent(slide, intent=intent, topic=topic, index=index))
-        return balanced
+        return slides
 
     def _coerce_slide_intent(self, slide: dict, *, intent: str, topic: str, index: int) -> dict:
-        title = slide.get("title") or topic
-        section = slide.get("section") or ""
-        notes = slide.get("notes") or [f"讲解“{title}”在“{topic}”中的作用。"]
-        bullets = slide.get("bullets") or slide.get("items") or []
-        paragraphs = slide.get("paragraphs") or []
+        def text(value: Any) -> str:
+            if value is None:
+                return ""
+            if isinstance(value, str):
+                return value.strip()
+            if isinstance(value, dict):
+                label = text(value.get("label") or value.get("title") or value.get("name") or value.get("text") or value.get("content"))
+                raw_value = text(value.get("value") if value.get("value") is not None else value.get("number"))
+                unit = text(value.get("unit"))
+                detail = text(value.get("detail") or value.get("desc") or value.get("description") or value.get("delta"))
+                parts = []
+                if label:
+                    parts.append(label)
+                if raw_value:
+                    parts.append(f"{raw_value}{unit}")
+                if detail:
+                    parts.append(detail)
+                if parts:
+                    return " - ".join(parts)
+                return " / ".join(text(v) for v in value.values() if text(v))
+            if isinstance(value, list):
+                return " / ".join(text(v) for v in value if text(v))
+            return str(value).strip()
+
+        def text_list(value: Any) -> list[str]:
+            if value is None:
+                return []
+            if isinstance(value, list):
+                return [item for item in (text(v) for v in value) if item]
+            item = text(value)
+            return [item] if item else []
+
+        def first_list(*values: Any) -> list[str]:
+            for value in values:
+                items = text_list(value)
+                if items:
+                    return items
+            return []
+
+        title = text(slide.get("title")) or topic
+        section = text(slide.get("section"))
+        notes = first_list(slide.get("notes"), slide.get("purpose"), slide.get("intent"))
+        if not notes:
+            notes = [f"Explain the role of {title} in {topic}."]
+        bullets = first_list(slide.get("bullets"), slide.get("items"), slide.get("highlights"), slide.get("points"))
+        paragraphs = first_list(slide.get("paragraphs"), slide.get("content"), slide.get("summary"), slide.get("description"))
         if not bullets and paragraphs:
             bullets = paragraphs[:3]
         if not bullets:
-            bullets = [f"{title}的核心概念", f"{title}的关键方法", f"{title}的实践价值"]
+            bullets = [f"Key point for {title}", f"Evidence or context for {title}", f"Implication for {topic}"]
 
         base = {
-            "id": slide.get("id") or new_id("slide"),
+            "id": text(slide.get("id")) or new_id("slide"),
             "intent": intent,
             "section": section,
             "title": title,
-            "notes": notes if isinstance(notes, list) else [str(notes)],
+            "notes": notes,
         }
 
         if intent == "cover":
             return {
                 **base,
                 "title": topic,
-                "subtitle": "概念、方法与实践路径",
-                "tagline": "从工程化视角理解软件开发",
+                "subtitle": text(slide.get("subtitle")) or title,
+                "tagline": text(slide.get("tagline")) or None,
                 "highlights": bullets[:3],
             }
         if intent == "agenda":
-            return {**base, "title": "今天的内容", "items": bullets[:6]}
+            return {**base, "items": bullets[:8]}
         if intent == "multi_column":
+            columns = []
+            for item in slide.get("columns") or []:
+                if isinstance(item, dict):
+                    columns.append({"title": text(item.get("title") or item.get("name") or item.get("label")) or title, "bullets": first_list(item.get("bullets"), item.get("items"), item.get("points")) or bullets[:3]})
             return {
                 **base,
-                "columns": [
-                    {"title": "核心概念", "bullets": bullets[:3]},
-                    {"title": "实践要点", "bullets": (bullets[3:6] or bullets[:3])},
+                "columns": columns or [
+                    {"title": title, "bullets": bullets[:3]},
+                    {"title": f"{title} details", "bullets": (bullets[3:6] or bullets[:3])},
                 ],
             }
         if intent == "process_flow":
+            steps = []
+            for item in slide.get("steps") or []:
+                if isinstance(item, dict):
+                    steps.append({"name": text(item.get("name") or item.get("label") or item.get("title") or item.get("step")) or title, "detail": text(item.get("detail") or item.get("desc") or item.get("description") or item.get("content")) or None})
+                else:
+                    item_text = text(item)
+                    if item_text:
+                        steps.append({"name": item_text, "detail": None})
             return {
                 **base,
-                "steps": [
-                    {"name": "需求分析", "detail": "明确用户目标、业务约束和验收标准"},
-                    {"name": "系统设计", "detail": "拆分模块、定义接口并规划技术方案"},
-                    {"name": "实现与测试", "detail": "编码实现、持续集成并验证质量"},
-                    {"name": "交付迭代", "detail": "上线反馈、缺陷修复和版本演进"},
-                ],
+                "steps": steps or [{"name": item, "detail": None} for item in bullets[:4]],
             }
         if intent == "comparison":
+            def side(value: Any, default_title: str, fallback: list[str]) -> dict:
+                if isinstance(value, dict):
+                    return {"title": text(value.get("title") or value.get("name")) or default_title, "bullets": first_list(value.get("bullets"), value.get("items"), value.get("points")) or fallback}
+                items = text_list(value)
+                return {"title": default_title, "bullets": items or fallback}
+
             return {
                 **base,
-                "left": {"title": "传统方式", "bullets": ["流程清晰", "文档完整", "适合需求稳定场景"]},
-                "right": {"title": "敏捷方式", "bullets": ["快速反馈", "持续迭代", "适合变化频繁场景"]},
+                "left": side(slide.get("left"), "Option A", bullets[:3]),
+                "right": side(slide.get("right"), "Option B", bullets[3:6] or bullets[:3]),
             }
         if intent == "timeline":
+            events = []
+            for item in slide.get("events") or []:
+                if isinstance(item, dict):
+                    events.append({"label": text(item.get("label") or item.get("title") or item.get("name") or item.get("event")) or title, "date": text(item.get("date") or item.get("time") or item.get("when")) or None, "detail": text(item.get("detail") or item.get("desc") or item.get("description") or item.get("content")) or None})
+                else:
+                    item_text = text(item)
+                    if item_text:
+                        events.append({"label": item_text})
             return {
                 **base,
-                "events": [
-                    {"label": "需求阶段", "date": "第1阶段", "detail": "定义范围与目标"},
-                    {"label": "设计阶段", "date": "第2阶段", "detail": "形成架构与计划"},
-                    {"label": "开发阶段", "date": "第3阶段", "detail": "实现功能并持续测试"},
-                    {"label": "运维阶段", "date": "第4阶段", "detail": "监控反馈并持续改进"},
-                ],
+                "events": events or [{"label": item} for item in bullets[:4]],
             }
         if intent == "chart":
+            chart = slide.get("chart") if isinstance(slide.get("chart"), dict) else {}
+            labels = text_list(chart.get("labels") or chart.get("x") or chart.get("categories")) or bullets[:4]
+            values = []
+            for value in chart.get("values") or []:
+                try:
+                    values.append(float(value))
+                except Exception:
+                    pass
+            if len(values) < len(labels):
+                values = [float(i + 1) for i in range(len(labels))]
             return {
                 **base,
                 "chart": {
-                    "chartType": "bar",
-                    "labels": ["质量", "效率", "协作", "可维护性"],
-                    "series": [{"name": "工程化收益", "values": [85, 78, 82, 88]}],
+                    "chartType": chart.get("chartType") or chart.get("chart_type") or chart.get("type") or "bar",
+                    "labels": labels[:6],
+                    "series": chart.get("series") or [{"name": title, "values": values[:6]}],
                 },
             }
         if intent == "swot":
+            swot = slide.get("swot") if isinstance(slide.get("swot"), dict) else {}
             return {
                 **base,
                 "swot": {
-                    "strengths": ["流程规范", "质量可控"],
-                    "weaknesses": ["沟通成本较高", "前期规划压力大"],
-                    "opportunities": ["自动化工具提升效率", "AI 辅助开发降低重复劳动"],
-                    "threats": ["需求频繁变化", "技术债累积"],
+                    "strengths": text_list(swot.get("strengths") or slide.get("strengths")),
+                    "weaknesses": text_list(swot.get("weaknesses") or slide.get("weaknesses")),
+                    "opportunities": text_list(swot.get("opportunities") or slide.get("opportunities")),
+                    "threats": text_list(swot.get("threats") or slide.get("threats")),
                 },
             }
         if intent == "roadmap":
+            phases = []
+            for item in slide.get("phases") or []:
+                if isinstance(item, dict):
+                    phases.append({"name": text(item.get("name") or item.get("phase") or item.get("title")) or title, "timeframe": text(item.get("timeframe") or item.get("time") or item.get("period")) or None, "deliverables": first_list(item.get("deliverables"), item.get("tasks"), item.get("items"), item.get("outputs"))})
+                else:
+                    item_text = text(item)
+                    if item_text:
+                        phases.append({"name": item_text, "deliverables": []})
             return {
                 **base,
-                "phases": [
-                    {"name": "夯实基础", "timeframe": "近期", "deliverables": ["统一流程", "明确规范"]},
-                    {"name": "工具化提效", "timeframe": "中期", "deliverables": ["自动化测试", "持续集成"]},
-                    {"name": "持续优化", "timeframe": "长期", "deliverables": ["度量体系", "经验复盘"]},
-                ],
+                "phases": phases or [{"name": item, "deliverables": []} for item in bullets[:3]],
             }
         if intent == "kpi":
+            items = []
+            for item in slide.get("items") or []:
+                if isinstance(item, dict):
+                    raw_value = item.get("value") if item.get("value") is not None else item.get("number")
+                    items.append({"label": text(item.get("label") or item.get("name") or item.get("title")) or title, "value": text(raw_value), "unit": text(item.get("unit")) or None, "delta": text(item.get("delta") or item.get("change")) or None})
+                else:
+                    item_text = text(item)
+                    if item_text:
+                        items.append({"label": item_text, "value": ""})
             return {
                 **base,
-                "items": [
-                    {"label": "交付准时率", "value": "90", "unit": "%", "delta": "提升项目可预测性"},
-                    {"label": "缺陷修复率", "value": "85", "unit": "%", "delta": "降低上线风险"},
-                    {"label": "测试覆盖率", "value": "80", "unit": "%", "delta": "增强质量保障"},
-                ],
+                "items": items or [{"label": item, "value": ""} for item in bullets[:3]],
             }
         if intent == "architecture":
+            layers = []
+            for item in slide.get("layers") or []:
+                if isinstance(item, dict):
+                    layers.append({"name": text(item.get("name") or item.get("layer") or item.get("title")) or title, "items": first_list(item.get("items"), item.get("components"), item.get("modules"), item.get("bullets"))})
+                else:
+                    item_text = text(item)
+                    if item_text:
+                        layers.append({"name": item_text, "items": []})
             return {
                 **base,
-                "layers": [
-                    {"name": "用户层", "items": ["需求表达", "使用反馈"]},
-                    {"name": "业务层", "items": ["功能模块", "业务规则"]},
-                    {"name": "工程层", "items": ["代码实现", "测试部署", "监控运维"]},
-                ],
+                "layers": layers or [{"name": item, "items": []} for item in bullets[:3]],
             }
         if intent == "quote":
-            return {**base, "quote": f"软件工程的价值，在于用系统化方法把复杂想法稳定地交付为可用产品。", "author": "课程总结"}
+            return {**base, "quote": text(slide.get("quote") or slide.get("text")) or title, "author": text(slide.get("author")) or None}
         if intent == "divider":
-            return {**base, "subtitle": f"进入“{title}”部分"}
+            return {**base, "subtitle": text(slide.get("subtitle")) or title}
         if intent == "team":
+            members = []
+            for item in slide.get("members") or []:
+                if isinstance(item, dict):
+                    members.append({"name": text(item.get("name") or item.get("title") or item.get("label")) or title, "role": text(item.get("role") or item.get("position")) or None, "highlights": first_list(item.get("highlights"), item.get("bullets"), item.get("items"), item.get("points"))})
+                else:
+                    item_text = text(item)
+                    if item_text:
+                        members.append({"name": item_text, "highlights": []})
             return {
                 **base,
-                "members": [
-                    {"name": "产品负责人", "role": "需求与优先级", "highlights": ["定义目标", "协调资源"]},
-                    {"name": "开发工程师", "role": "设计与实现", "highlights": ["架构设计", "代码交付"]},
-                    {"name": "测试/运维", "role": "质量与稳定性", "highlights": ["测试验证", "上线保障"]},
-                ],
+                "members": members or [{"name": item, "highlights": []} for item in bullets[:3]],
             }
 
         return {
             **base,
             "intent": "text",
-            "paragraphs": paragraphs or [f"{title}是理解“{topic}”的重要内容，需要结合概念、方法和实践场景展开说明。"],
+            "paragraphs": paragraphs or [f"{title} is an important part of {topic}."],
             "bullets": bullets[:5],
         }
 
@@ -633,6 +701,8 @@ class AiPipeline:
             content = s.get("content") or wrapper.get("content")
             paragraphs = as_str_list(s.get("paragraphs") if s.get("paragraphs") is not None else wrapper.get("paragraphs"))
             bullets = as_str_list(s.get("bullets") if s.get("bullets") is not None else wrapper.get("bullets"))
+            if not bullets:
+                bullets = as_str_list(s.get("items") if s.get("items") is not None else wrapper.get("items"))
             if not paragraphs and not bullets and isinstance(content, str) and content.strip():
                 paragraphs = [content.strip()]
             if isinstance(content, dict):

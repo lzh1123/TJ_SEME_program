@@ -14,6 +14,7 @@ class LLMProviderSpec:
     label: str
     model: str
     api_base: str
+    temperature: float = 0.0
 
 
 LLM_PROVIDERS: Dict[str, LLMProviderSpec] = {
@@ -34,6 +35,7 @@ LLM_PROVIDERS: Dict[str, LLMProviderSpec] = {
         label="Kimi",
         model=settings.kimi_model,
         api_base=settings.kimi_api_base,
+        temperature=1.0,
     ),
 }
 
@@ -61,6 +63,7 @@ class UserLLMConfig:
             label=spec.label,
             model=self.model or spec.model,
             api_base=self.api_base or spec.api_base,
+            temperature=spec.temperature,
         )
 
     @property
@@ -96,7 +99,7 @@ def make_chat_llm(config: Optional[UserLLMConfig] = None) -> ChatOpenAI:
         model=spec.model,
         openai_api_base=spec.api_base,
         openai_api_key=api_key,
-        temperature=0,
+        temperature=spec.temperature,
         timeout=settings.llm_timeout,
         max_retries=2,
     )

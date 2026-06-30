@@ -70,7 +70,7 @@ class Settings:
     )
     jwt_algorithm: str = "HS256"
     jwt_access_token_expire_minutes: int = int(
-        os.getenv("JWT_ACCESS_TOKEN_EXPIRE_MINUTES", "30")
+        os.getenv("JWT_ACCESS_TOKEN_EXPIRE_MINUTES", "1440")
     )
     jwt_refresh_token_expire_days: int = int(
         os.getenv("JWT_REFRESH_TOKEN_EXPIRE_DAYS", "7")

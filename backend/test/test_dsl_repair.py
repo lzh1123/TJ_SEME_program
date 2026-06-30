@@ -84,8 +84,9 @@ def test_repair_dsl_dict_accepts_descriptive_invalid_intents_without_templates()
     assert validated.slides[0].bullets[0] == "Lithium reserve life"
 
 
-def test_kimi_provider_uses_required_temperature():
-    assert LLM_PROVIDERS["kimi"].temperature == 1.0
+def test_glm_provider_uses_required_temperature():
+    assert LLM_PROVIDERS["glm"].temperature == 1.0
+    assert LLM_PROVIDERS["glm"].model == "glm-4.7"
     assert LLM_PROVIDERS["qwen"].temperature == 0.0
 
 

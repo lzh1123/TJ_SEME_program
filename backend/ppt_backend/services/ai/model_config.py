@@ -30,11 +30,11 @@ LLM_PROVIDERS: Dict[str, LLMProviderSpec] = {
         model=settings.qwen_model,
         api_base=settings.qwen_api_base,
     ),
-    "kimi": LLMProviderSpec(
-        provider="kimi",
-        label="Kimi",
-        model=settings.kimi_model,
-        api_base=settings.kimi_api_base,
+    "glm": LLMProviderSpec(
+        provider="glm",
+        label="GLM",
+        model=settings.glm_model,
+        api_base=settings.glm_api_base,
         temperature=1.0,
     ),
 }
@@ -42,7 +42,7 @@ LLM_PROVIDERS: Dict[str, LLMProviderSpec] = {
 _PROVIDER_KEYS = {
     "deepseek": settings.deepseek_api_key,
     "qwen": settings.qwen_api_key,
-    "kimi": settings.kimi_api_key,
+    "glm": settings.glm_api_key,
 }
 
 

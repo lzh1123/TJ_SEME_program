@@ -47,7 +47,7 @@ async function loadLLMProviders() {
     llmProviders.value = [
       { provider: 'deepseek', label: 'DeepSeek', model: 'Deepseek-V4-pro' },
       { provider: 'qwen', label: 'Qwen', model: 'qwen-plus' },
-      { provider: 'kimi', label: 'Kimi', model: 'kimi-k2.6' }
+      { provider: 'glm', label: 'GLM', model: 'glm-4.7' }
     ]
   }
 }

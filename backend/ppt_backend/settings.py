@@ -47,9 +47,14 @@ class Settings:
         ),
     )
     qwen_api_key: str = os.getenv("QWEN_API_KEY", os.getenv("DASHSCOPE_API_KEY", ""))
-    kimi_model: str = os.getenv("KIMI_MODEL", "kimi-k2.6")
-    kimi_api_base: str = os.getenv("KIMI_API_BASE", "https://api.moonshot.cn/v1")
-    kimi_api_key: str = os.getenv("KIMI_API_KEY", os.getenv("MOONSHOT_API_KEY", ""))
+    glm_model: str = os.getenv("GLM_MODEL", "glm-4.7")
+    glm_api_key: str = (
+        os.getenv("GLM_API_KEY")
+        or os.getenv("ZHIPU_API_KEY")
+        or os.getenv("ZAI_API_KEY")
+        or ""
+    )
+    glm_api_base: str = os.getenv("GLM_API_BASE", "https://open.bigmodel.cn/api/paas/v4")
 
     # Database (PostgreSQL)
     database_url: str = os.getenv(

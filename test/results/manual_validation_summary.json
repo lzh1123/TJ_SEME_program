@@ -1,0 +1,35 @@
+{
+  "timestamp": "2026-07-02T08:05:00Z",
+  "source": "manual browser validation supplied by project user",
+  "items": [
+    {
+      "case": "profile_get_current_user",
+      "method": "GET",
+      "path": "/auth/me",
+      "status": "passed",
+      "evidence": "Chrome DevTools Network screenshot shows 200 OK for /auth/me during Profile page usage.",
+      "classification": "manual validation"
+    },
+    {
+      "case": "rag_preview_existing_document",
+      "method": "GET",
+      "path": "/rag/documents/{encoded_source}/preview",
+      "status": "passed",
+      "evidence": "Chrome DevTools Network screenshot shows 200 OK for encoded document preview path, with preview modal populated.",
+      "classification": "manual validation"
+    },
+    {
+      "case": "profile_and_knowledge_base_user_workflows",
+      "method": "UI",
+      "path": "Profile and Knowledge Base pages",
+      "status": "passed",
+      "evidence": "User confirmed the previously flagged functions work during actual product use.",
+      "classification": "manual validation"
+    }
+  ],
+  "notes": [
+    "Previous live automation failures for these areas should not be reported as product failures without qualification.",
+    "The RAG preview automation used a synthetic uploaded text file and should be treated as a test-data mismatch until reproduced with the same source value used by the frontend document table.",
+    "The profile automation failure should be treated as an automation/user-state mismatch unless a real browser save action and corresponding network response reproduce it."
+  ]
+}

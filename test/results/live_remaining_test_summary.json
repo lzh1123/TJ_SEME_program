@@ -1,0 +1,29 @@
+{
+  "timestamp": "2026-07-02T07:39:39.930912+00:00",
+  "base_url": "http://119.3.125.141",
+  "success": false,
+  "tests": 22,
+  "failures": 1,
+  "failed_cases": [
+    {
+      "timestamp": "2026-07-02T07:32:59.350993+00:00",
+      "case": "rag_preview_uploaded_document",
+      "method": "GET",
+      "path": "/rag/documents/slideon-rag-live-phrase-20260702073257.txt/preview",
+      "status_code": 404,
+      "status": "failed",
+      "detail": "Document not found"
+    }
+  ],
+  "outputs": {
+    "live_remaining_results_csv": "test\\results\\live_remaining_test_results.csv"
+  },
+  "requirements_traceability": {
+    "2.0": "deployed frontend and backend runtime workflows are exercised",
+    "2.3": "deployed presentation creation and export are attempted",
+    "3.0": "deployed SPA routes are reachable over HTTP",
+    "4.0": "live LLM outline generation is attempted with a long timeout",
+    "7.0": "RAG upload, preview, search, and cleanup workflow is exercised",
+    "8.0": "deployed PPTX export payload is validated when presentation creation succeeds"
+  }
+}

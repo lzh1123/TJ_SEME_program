@@ -1,0 +1,18 @@
+{
+  "timestamp": "2026-07-02T07:51:36.415456+00:00",
+  "base_url": "http://119.3.125.141",
+  "success": true,
+  "tests": 8,
+  "failures": 0,
+  "failed_cases": [],
+  "outputs": {
+    "frontend_e2e_results_csv": "test\\results\\frontend_e2e_test_results.csv"
+  },
+  "requirements_traceability": {
+    "3.0": "deployed frontend pages are opened in a real browser",
+    "3.1": "registration and login UI flow is exercised",
+    "3.2": "authenticated profile/dashboard navigation is exercised",
+    "3.3": "frontend communicates with deployed authentication API",
+    "7.0": "knowledge base route is opened in a real browser"
+  }
+}

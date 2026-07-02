@@ -1,0 +1,66 @@
+[
+  {
+    "case_id": "SE_SHORT_01",
+    "domain": "software_engineering",
+    "scenario": "short_topic",
+    "page_count_preset": "short",
+    "topic": "软件工程介绍"
+  },
+  {
+    "case_id": "SE_PRO_01",
+    "domain": "software_engineering",
+    "scenario": "professional_topic",
+    "page_count_preset": "medium",
+    "topic": "面向高校课程展示的软件工程需求分析、架构设计、测试验证与项目管理体系"
+  },
+  {
+    "case_id": "SE_LONG_01",
+    "domain": "software_engineering",
+    "scenario": "long_input",
+    "page_count_preset": "medium",
+    "topic": "请基于以下长文本生成软件工程主题PPT大纲：软件工程是一门研究如何以系统化、规范化、可度量的方法开发和维护软件的工程学科。它覆盖需求工程、软件架构、详细设计、编码实现、测试验证、部署运维、质量保证、项目管理、配置管理、风险管理和过程改进等环节。现代软件工程强调用户价值、快速迭代、持续集成、自动化测试、DevOps、软件安全、可维护性和团队协作。"
+  },
+  {
+    "case_id": "AD_SHORT_01",
+    "domain": "alzheimer",
+    "scenario": "short_topic",
+    "page_count_preset": "short",
+    "topic": "阿尔茨海默病早期诊断"
+  },
+  {
+    "case_id": "AD_PRO_01",
+    "domain": "alzheimer",
+    "scenario": "professional_topic",
+    "page_count_preset": "medium",
+    "topic": "从β-淀粉样蛋白、tau蛋白、生物标志物和认知评估角度介绍阿尔茨海默病的诊断与分期"
+  },
+  {
+    "case_id": "AD_LONG_01",
+    "domain": "alzheimer",
+    "scenario": "long_input",
+    "page_count_preset": "medium",
+    "topic": "请基于以下长文本生成阿尔茨海默病主题PPT大纲：阿尔茨海默病是导致痴呆的常见原因，通常表现为进行性记忆、语言、判断和日常生活能力下降。疾病相关病理改变包括β-淀粉样蛋白斑块和tau蛋白神经原纤维缠结。诊断通常结合病史、照护者访谈、认知评估、功能评估、影像检查、实验室检查以及必要时的生物标志物检测。疾病管理需要药物治疗、非药物干预、照护者支持和长期照护计划。"
+  },
+  {
+    "case_id": "FB_SHORT_01",
+    "domain": "football",
+    "scenario": "short_topic",
+    "page_count_preset": "short",
+    "topic": "现代足球高位逼抢战术"
+  },
+  {
+    "case_id": "FB_PRO_01",
+    "domain": "football",
+    "scenario": "professional_topic",
+    "page_count_preset": "medium",
+    "topic": "结合阵型结构、攻防转换、xG指标和StatsBomb事件数据介绍现代足球比赛分析方法"
+  },
+  {
+    "case_id": "FB_LONG_01",
+    "domain": "football",
+    "scenario": "long_input",
+    "page_count_preset": "medium",
+    "topic": "请基于以下长文本生成足球主题PPT大纲：现代足球分析不仅关注比分、控球率和射门次数，也关注阵型结构、空间占用、压迫触发点、攻防转换、定位球设计和机会质量。高位压迫强调在对方后场施压，低位防守强调压缩危险区域。xG可以衡量射门机会质量，事件数据和追踪数据可用于传球网络、射门地图、热区图和战术复盘。"
+  }
+]
+

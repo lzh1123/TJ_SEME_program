@@ -1,0 +1,38 @@
+{
+  "timestamp": "2026-07-02T07:25:44.658354+00:00",
+  "base_url": "http://119.3.125.141",
+  "success": false,
+  "tests": 23,
+  "failures": 2,
+  "failed_cases": [
+    {
+      "timestamp": "2026-07-02T07:22:44.110022+00:00",
+      "case": "auth_update_profile",
+      "method": "PUT",
+      "path": "/auth/me",
+      "status_code": 500,
+      "status": "failed",
+      "detail": "Internal Server Error"
+    },
+    {
+      "timestamp": "2026-07-02T07:25:44.628976+00:00",
+      "case": "llm_generate_short_outline",
+      "method": "POST",
+      "path": "/dsl",
+      "status_code": "",
+      "status": "failed",
+      "detail": "ReadTimeout"
+    }
+  ],
+  "outputs": {
+    "live_api_results_csv": "test\\results\\live_api_llm_test_results.csv"
+  },
+  "requirements_traceability": {
+    "2.0": "deployed backend API runtime endpoints are exercised",
+    "2.2": "authentication and profile endpoints are exercised on the deployed service",
+    "2.3": "outline persistence endpoints are exercised on the deployed service",
+    "3.3": "frontend-facing API paths are exercised through deployed HTTP endpoints",
+    "4.2": "render-tree generation from structured outline is exercised",
+    "7.0": "deployed RAG read endpoints are exercised without mutating the knowledge base"
+  }
+}

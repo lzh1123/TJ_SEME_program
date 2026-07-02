@@ -1,0 +1,25 @@
+{
+  "timestamp": "2026-07-02T07:59:48.384268+00:00",
+  "base_url": "http://119.3.125.141",
+  "success": false,
+  "tests": 9,
+  "failures": 1,
+  "failed_cases": [
+    {
+      "timestamp": "2026-07-02T07:59:46.542436+00:00",
+      "case": "frontend_profile_update_display_name",
+      "status": "failed",
+      "detail": "AssertionError: "
+    }
+  ],
+  "outputs": {
+    "frontend_e2e_results_csv": "test\\results\\frontend_e2e_profile_test_results.csv"
+  },
+  "requirements_traceability": {
+    "3.0": "deployed frontend pages are opened in a real browser",
+    "3.1": "registration and login UI flow is exercised",
+    "3.2": "authenticated profile/dashboard navigation is exercised",
+    "3.3": "frontend communicates with deployed authentication API",
+    "7.0": "knowledge base route is opened in a real browser"
+  }
+}

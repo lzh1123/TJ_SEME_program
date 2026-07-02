@@ -1,0 +1,19 @@
+[
+  {
+    "strategy": "baseline",
+    "prefix": ""
+  },
+  {
+    "strategy": "stepwise",
+    "prefix": "请先梳理主题的核心逻辑、受众需求和章节层级，再生成结构清晰的PPT大纲："
+  },
+  {
+    "strategy": "few_shot",
+    "prefix": "请参考这种大纲风格：1 背景与定义；2 核心机制；3 关键方法；4 案例或应用；5 挑战与展望。现在生成主题PPT大纲："
+  },
+  {
+    "strategy": "expert_role",
+    "prefix": "你是一名领域专家和课程讲师，请面向大学课堂展示生成专业、准确、层次清晰的PPT大纲："
+  }
+]
+

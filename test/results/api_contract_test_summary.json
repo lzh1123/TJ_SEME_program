@@ -1,0 +1,34 @@
+{
+  "timestamp": "2026-07-02T07:19:32.640465+00:00",
+  "success": true,
+  "backend_route_count": 45,
+  "frontend_path_reference_count": 47,
+  "backend_routes_referenced_by_frontend": 44,
+  "backend_only_route_count": 1,
+  "frontend_only_path_count": 0,
+  "upload_type_mismatch_count": 0,
+  "backend_only_routes": [
+    {
+      "method": "GET",
+      "path": "/llm/providers",
+      "source_file": "backend\\ppt_backend\\api\\routes.py",
+      "line": 162,
+      "frontend_referenced": false,
+      "status": "backend_only"
+    }
+  ],
+  "frontend_only_paths": [],
+  "upload_type_mismatches": [],
+  "outputs": {
+    "backend_routes_csv": "test\\results\\api_contract_test_backend_routes.csv",
+    "frontend_paths_csv": "test\\results\\api_contract_test_frontend_paths.csv",
+    "upload_types_csv": "test\\results\\api_contract_test_upload_types.csv"
+  },
+  "requirements_traceability": {
+    "2.2": "REST route definitions are discoverable from backend decorators",
+    "2.3": "frontend-referenced API paths are checked against backend-defined paths",
+    "3.3": "frontend API integration paths are checked against backend contract",
+    "4.2": "document upload file type preprocessing contract is compared",
+    "7.0": "RAG document/search endpoints are included in the contract"
+  }
+}

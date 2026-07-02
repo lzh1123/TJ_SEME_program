@@ -1,0 +1,121 @@
+{
+  "timestamp": "2026-07-02T07:19:17.493929+00:00",
+  "success": true,
+  "layers": [
+    {
+      "timestamp": "2026-07-02T07:18:16.398810+00:00",
+      "layer": "unit",
+      "command": "E:\\Application\\Python\\Python313\\python.exe -m pytest backend/test/unit --junitxml=test\\results\\unit_test_20260702T071753Z.xml -q",
+      "artifact": "test\\results\\unit_test_20260702T071753Z.xml",
+      "tests": 10,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "duration_seconds": 22.864,
+      "success": true
+    },
+    {
+      "timestamp": "2026-07-02T07:18:37.029631+00:00",
+      "layer": "integration",
+      "command": "E:\\Application\\Python\\Python313\\python.exe -m pytest backend/test/integration --junitxml=test\\results\\integration_test_20260702T071753Z.xml -q",
+      "artifact": "test\\results\\integration_test_20260702T071753Z.xml",
+      "tests": 5,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "duration_seconds": 20.61,
+      "success": true
+    },
+    {
+      "timestamp": "2026-07-02T07:18:57.002415+00:00",
+      "layer": "api_runtime",
+      "command": "E:\\Application\\Python\\Python313\\python.exe -m pytest backend/test/integration/test_api_runtime_smoke.py --junitxml=test\\results\\api_runtime_test_20260702T071753Z.xml -q",
+      "artifact": "test\\results\\api_runtime_test_20260702T071753Z.xml",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "duration_seconds": 19.952,
+      "success": true
+    },
+    {
+      "timestamp": "2026-07-02T07:19:14.335969+00:00",
+      "layer": "regression",
+      "command": "E:\\Application\\Python\\Python313\\python.exe -m pytest backend/test/test_dsl_repair.py --junitxml=test\\results\\regression_test_20260702T071753Z.xml -q",
+      "artifact": "test\\results\\regression_test_20260702T071753Z.xml",
+      "tests": 5,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "duration_seconds": 17.312,
+      "success": true
+    },
+    {
+      "timestamp": "2026-07-02T07:19:14.523470+00:00",
+      "layer": "frontend_static",
+      "command": "E:\\Application\\Python\\Python313\\python.exe test/scripts/run_frontend_static_tests.py",
+      "tests": 6,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "duration_seconds": 0.169,
+      "success": true,
+      "artifact": "test\\results\\frontend_static_test_summary.json"
+    },
+    {
+      "timestamp": "2026-07-02T07:19:17.492782+00:00",
+      "layer": "frontend_build",
+      "command": "E:\\nodejs\\npm.cmd run build",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "duration_seconds": 2.927,
+      "success": true,
+      "artifact": "slideon-frontend/dist"
+    }
+  ],
+  "outputs": {
+    "layered_results_csv": "test\\results\\layered_test_results.csv"
+  },
+  "requirements_traceability": {
+    "unit": [
+      "1.0",
+      "2.5",
+      "4.0",
+      "5.0",
+      "6.0",
+      "7.0"
+    ],
+    "integration": [
+      "2.0",
+      "5.0",
+      "6.0",
+      "8.0"
+    ],
+    "api_runtime": [
+      "2.0",
+      "2.2",
+      "2.3",
+      "4.0",
+      "7.0"
+    ],
+    "regression": [
+      "4.0",
+      "5.0",
+      "6.0"
+    ],
+    "frontend_static": [
+      "3.0",
+      "3.3",
+      "4.2"
+    ],
+    "frontend_build": [
+      "3.0",
+      "3.1",
+      "3.2",
+      "3.3",
+      "3.4"
+    ]
+  }
+}

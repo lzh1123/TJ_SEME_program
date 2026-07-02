@@ -1,0 +1,15 @@
+{
+  "timestamp": "2026-07-02T07:19:14.494751+00:00",
+  "success": true,
+  "tests": 6,
+  "failures": 0,
+  "failed_cases": [],
+  "outputs": {
+    "frontend_static_results_csv": "test\\results\\frontend_static_test_results.csv"
+  },
+  "requirements_traceability": {
+    "3.0": "frontend routes and view modules are statically verified",
+    "3.3": "frontend service references are checked against API endpoint configuration",
+    "4.2": "document upload accept list is checked against frontend upload configuration"
+  }
+}

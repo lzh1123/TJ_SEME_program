@@ -67,8 +67,10 @@ jobs:
             cd "$PROJECT_DIR"
 
             git config --local http.version HTTP/1.1
+            export GIT_LFS_SKIP_SMUDGE=1
             git fetch --prune origin main
             git reset --hard FETCH_HEAD
+            unset GIT_LFS_SKIP_SMUDGE
 
             mkdir -p backend
             touch backend/.env

@@ -61,11 +61,11 @@ coverage/
 
 data/
 
-scripts/
+/scripts/
 
 output/pdf/
 
-tmp/
+tmp/pdfs/
 
 docs/
 

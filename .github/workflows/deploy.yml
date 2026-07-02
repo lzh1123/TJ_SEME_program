@@ -67,8 +67,36 @@ jobs:
             cd "$PROJECT_DIR"
 
             git config --local http.version HTTP/1.1
-            git fetch --prune origin main
-            git reset --hard FETCH_HEAD
+            export GIT_LFS_SKIP_SMUDGE=1
+            
+            if [ ! -f ".git/slideon-deploy-clone" ]; then
+              echo "=== Initializing lightweight deployment repository ==="
+            
+              rm -rf .git
+            
+              git init
+              git remote add origin https://github.com/lzh1123/TJ_SEME_program.git
+            
+              git fetch \
+                --depth=1 \
+                --filter=blob:none \
+                origin main
+            
+              git checkout -f FETCH_HEAD
+            
+              touch .git/slideon-deploy-clone
+            else
+              echo "=== Updating lightweight deployment repository ==="
+            
+              git fetch \
+                --depth=1 \
+                --filter=blob:none \
+                origin main
+            
+              git reset --hard FETCH_HEAD
+            fi
+            
+            unset GIT_LFS_SKIP_SMUDGE
 
             mkdir -p backend
             touch backend/.env
